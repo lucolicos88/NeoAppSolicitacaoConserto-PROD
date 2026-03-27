@@ -74,7 +74,9 @@ const CONFIG = {
     CRITICAL_MINUTES: 30,
     TIMEZONE: "America/Sao_Paulo"
   },
-  DEBUG_ENABLED: true
+  DEBUG_ENABLED: true,
+  APP_VERSION: "v223",
+  APP_ENV: "PROD"
 };
 
 // ============================================================================
@@ -103,6 +105,8 @@ function doGet() {
 
   const tpl = HtmlService.createTemplateFromFile("ui");
   tpl.logoUrl = LOGO_URL || "";
+  tpl.appVersion = CONFIG.APP_VERSION || "v???";
+  tpl.appEnv = CONFIG.APP_ENV || "PROD";
 
   try {
     tpl.userEmail = Session.getActiveUser().getEmail() || "usuario@exemplo.com";

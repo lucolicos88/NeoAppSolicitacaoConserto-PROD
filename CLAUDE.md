@@ -162,6 +162,7 @@ clasp deploy \
 > ⚠️ **NUNCA usar** `clasp deploy` sem `--deploymentId` — isso cria um novo deployment com URL diferente.
 > ⚠️ **NUNCA sobrescrever** `.clasp.json` com o do DEV — têm Script IDs diferentes.
 > ⚠️ **NUNCA sobrescrever** o `SPREADSHEET_ID` no Code.gs com o ID do DEV.
+> ⚠️ Ao promover DEV → PROD: além do `SPREADSHEET_ID`, atualizar `APP_ENV: "PROD"` e `APP_VERSION` no Code.gs do PROD.
 
 ## Configuração do appsscript.json (igual em DEV e PROD)
 
@@ -173,6 +174,23 @@ clasp deploy \
 ```
 
 `USER_ACCESSING` + `ANYONE` = qualquer conta Google pode acessar o app.
+
+---
+
+## Rodapé do sistema (identifica ambiente e versão)
+
+O `ui.html` exibe um rodapé fixo no rodapé da tela:
+
+```
+Solicitação Conserto · Deploy vXXX · Versão PROD
+```
+
+Controlado por dois campos no `CONFIG` em `Code.gs`:
+
+```js
+APP_VERSION: "vXXX",   // atualizar a cada deploy
+APP_ENV: "PROD"        // sempre "PROD" neste repositório
+```
 
 ---
 
