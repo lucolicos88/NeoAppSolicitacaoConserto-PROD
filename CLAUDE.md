@@ -163,6 +163,17 @@ clasp deploy \
 > ⚠️ **NUNCA sobrescrever** `.clasp.json` com o do DEV — têm Script IDs diferentes.
 > ⚠️ **NUNCA sobrescrever** o `SPREADSHEET_ID` no Code.gs com o ID do DEV.
 
+## Configuração do appsscript.json (igual em DEV e PROD)
+
+```json
+"webapp": {
+  "executeAs": "USER_ACCESSING",
+  "access": "ANYONE"
+}
+```
+
+`USER_ACCESSING` + `ANYONE` = qualquer conta Google pode acessar o app.
+
 ---
 
 ## SLA padrão
