@@ -83,52 +83,85 @@ Sistema de Solicitação de Consertos da **NeoFormula**. Registra e acompanha er
 
 ---
 
-## Links fixos do projeto
+## Ambiente
 
-| Recurso | URL |
-| ------- | --- |
-| **Web App (FIXA)** | `https://script.google.com/macros/s/AKfycbwOM3Dl61OZT0dfSmZjv41-2b12t-lBet3MNYrpXGTL8CmsFNvAMTXyKIVI0Y2mzxynVg/exec` |
-| Planilha de dados | `https://docs.google.com/spreadsheets/d/1YALSvcJ8ETZSHm6wFvhS7uNnbvBUfT_9fnoC6O5-WBc/edit` |
-| Projeto GAS | `https://script.google.com/u/0/home/projects/1JlKPUx3SFy09mmcFlNBFgcmjgoPqXJkADQdPqAa8Vkcefdgn0cG9J57F/edit` |
+Este é o repositório de **PRODUÇÃO**. O desenvolvimento acontece no DEV e é promovido para cá.
+
+| Ambiente | Repositório GitHub | Pasta local |
+|----------|-------------------|-------------|
+| **DEV** | `NeoAppSolicitacaoConserto-DEV` | `App_Solicitacao_Conserto-DEV` |
+| **PROD** | `NeoAppSolicitacaoConserto-PROD` | `App_Solicitacao_Conserto-PROD` |
 
 ---
 
-## Fluxo de deploy — TOTALMENTE AUTOMATIZADO PELO CLAUDE
+## Links fixos do projeto — PROD
 
-> O Claude executa todos os passos abaixo. O usuário não precisa fazer nada manualmente.
+| Recurso | URL |
+| ------- | --- |
+| **Web App PROD (FIXA)** | `https://script.google.com/macros/s/AKfycbwPnDnjPdcMSALvbeQHAMfHWraUO03xjBHQq-cGGfcRH5DT0_Qw3OMmCAXdcwcUirWKsw/exec` |
+| Planilha PROD | `https://docs.google.com/spreadsheets/d/1h4bCllbefqsmsjXpMSSRXVR6avdeXgDS3uGA3NercH8/edit` |
+| Projeto GAS PROD | `https://script.google.com/u/0/home/projects/1z9htiRIBjfPCDVbxmghhOafZHI5gNddIeFdPrbp8Wb-1RPiasZed3FFD/edit` |
 
-### O Claude executa na ordem
+## Links fixos do projeto — DEV (referência)
+
+| Recurso | URL |
+| ------- | --- |
+| **Web App DEV (FIXA)** | `https://script.google.com/macros/s/AKfycbwOM3Dl61OZT0dfSmZjv41-2b12t-lBet3MNYrpXGTL8CmsFNvAMTXyKIVI0Y2mzxynVg/exec` |
+| Planilha DEV | `https://docs.google.com/spreadsheets/d/1YALSvcJ8ETZSHm6wFvhS7uNnbvBUfT_9fnoC6O5-WBc/edit` |
+
+---
+
+## Fluxo de promoção DEV → PROD — TOTALMENTE AUTOMATIZADO PELO CLAUDE
+
+> Quando o usuário pedir "subir para PROD" ou "promover para PROD", o Claude executa a partir da pasta PROD:
 
 ```bash
-# 1. Commit e push no GitHub
+# Pasta: App_Solicitacao_Conserto-PROD
+
+# 1. Copiar arquivos de código do DEV (NÃO copiar .clasp.json nem appsscript.json)
+cp ../App_Solicitacao_Conserto-DEV/api.gs .
+cp ../App_Solicitacao_Conserto-DEV/audit.gs .
+cp ../App_Solicitacao_Conserto-DEV/db.gs .
+cp ../App_Solicitacao_Conserto-DEV/logic.gs .
+cp ../App_Solicitacao_Conserto-DEV/ui.html .
+
+# Para Code.gs: copiar e substituir SPREADSHEET_ID
+# DEV usa: 1YALSvcJ8ETZSHm6wFvhS7uNnbvBUfT_9fnoC6O5-WBc
+# PROD usa: 1h4bCllbefqsmsjXpMSSRXVR6avdeXgDS3uGA3NercH8
+
+# 2. Commit e push no GitHub PROD
 git add .
-git commit -m "feat(vXXX): descrição"
+git commit -m "feat(vXXX-PROD): Promoção DEV vXXX → PROD"
 git push
 
-# 2. Envia código ao GAS
+# 3. Envia código ao GAS PROD
 clasp push --force
 
-# 3. Cria nova versão no GAS
-clasp version "vXXX: descrição"
+# 4. Cria nova versão no GAS PROD
+clasp version "vXXX-PROD: descrição"
 
-# 4. Atualiza o deployment ativo (URL não muda)
+# 5. Atualiza o deployment ativo PROD (URL não muda)
 clasp deploy \
-  --deploymentId "AKfycbwOM3Dl61OZT0dfSmZjv41-2b12t-lBet3MNYrpXGTL8CmsFNvAMTXyKIVI0Y2mzxynVg" \
+  --deploymentId "AKfycbwPnDnjPdcMSALvbeQHAMfHWraUO03xjBHQq-cGGfcRH5DT0_Qw3OMmCAXdcwcUirWKsw" \
   --versionNumber XXX \
-  --description "vXXX: descrição"
+  --description "vXXX-PROD: descrição"
 
-# 5. Arquivar deployments antigos (manter apenas @HEAD e o ativo atual)
+# 6. Arquivar deployments antigos (manter apenas @HEAD e o ativo atual)
 # Listar: clasp deployments
 # Arquivar cada ID antigo: clasp undeploy "<ID_ANTIGO>"
 ```
 
-### IDs fixos para os comandos clasp
+### IDs fixos PROD para os comandos clasp
 
-- **Deployment ID (URL fixa):** `AKfycbwOM3Dl61OZT0dfSmZjv41-2b12t-lBet3MNYrpXGTL8CmsFNvAMTXyKIVI0Y2mzxynVg`
+- **Deployment ID PROD (URL fixa):** `AKfycbwPnDnjPdcMSALvbeQHAMfHWraUO03xjBHQq-cGGfcRH5DT0_Qw3OMmCAXdcwcUirWKsw`
+- **Script ID PROD:** `1z9htiRIBjfPCDVbxmghhOafZHI5gNddIeFdPrbp8Wb-1RPiasZed3FFD`
+- **Spreadsheet ID PROD:** `1h4bCllbefqsmsjXpMSSRXVR6avdeXgDS3uGA3NercH8`
 - O `@HEAD` é automático do GAS — **nunca arquivar**
 - O número da versão é sequencial — verificar com `clasp deployments` e incrementar
 
 > ⚠️ **NUNCA usar** `clasp deploy` sem `--deploymentId` — isso cria um novo deployment com URL diferente.
+> ⚠️ **NUNCA sobrescrever** `.clasp.json` com o do DEV — têm Script IDs diferentes.
+> ⚠️ **NUNCA sobrescrever** o `SPREADSHEET_ID` no Code.gs com o ID do DEV.
 
 ---
 
