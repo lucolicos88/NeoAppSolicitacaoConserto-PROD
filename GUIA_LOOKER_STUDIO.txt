@@ -1,0 +1,722 @@
+================================================================================
+    GUIA COMPLETO - LOOKER STUDIO DASHBOARD
+    Sistema de Solicitação de Consertos
+================================================================================
+
+ÍNDICE:
+1. Configuração Inicial
+2. Campos Calculados
+3. Página 1 - Dashboard Colaboradores
+4. Página 2 - Dashboard Solicitantes
+5. Página 3 - Ranking
+6. Página 4 - Análise de Erros
+7. Checklist Final
+
+================================================================================
+1. CONFIGURAÇÃO INICIAL
+================================================================================
+
+1.1 Conectar a Base de Dados
+-----------------------------
+1. Acesse: https://lookerstudio.google.com
+2. Clique em "Criar" → "Relatório"
+3. Clique em "Criar fonte de dados"
+4. Escolha "Google Planilhas"
+5. Selecione a planilha "Backup_Looker_Studio"
+6. Selecione a aba "Dados"
+7. Clique em "Conectar"
+8. Clique em "Adicionar ao relatório"
+
+1.2 Configurar Tema
+-------------------
+1. Clique em "Tema e layout" (ícone de paleta)
+2. Configure:
+   - Cor primária: #009688
+   - Cor secundária: #455a64
+   - Fonte: Roboto
+
+1.3 Configurar Página
+---------------------
+1. Arquivo → Configurações do relatório
+2. Tamanho da página: Personalizado 1200 x 1800
+   (ou escolha "Responsivo")
+
+================================================================================
+2. CAMPOS CALCULADOS
+================================================================================
+
+Antes de criar gráficos, crie os campos calculados.
+
+2.1 Acessar Editor de Campos
+-----------------------------
+1. Clique em "Recurso" → "Gerenciar fontes de dados adicionadas"
+2. Clique no nome da sua fonte de dados
+3. Clique em "EDITAR" (canto superior direito)
+4. Clique em "ADICIONAR UM CAMPO" (botão azul)
+
+2.2 Criar Cada Campo
+--------------------
+Crie os campos abaixo, um por vez. Após cada um, clique em "SALVAR".
+
+Campo 1:
+Nome: Tempo Minutos Num
+Fórmula: CAST(Tempo_Resposta_Minutos AS NUMBER)
+
+Campo 2:
+Nome: Tempo Horas Num
+Fórmula: CAST(REPLACE(Tempo_Resposta_Horas, ",", ".") AS NUMBER)
+
+Campo 3:
+Nome: Tempo Dias Num
+Fórmula: CAST(REPLACE(Tempo_Resposta_Dias, ",", ".") AS NUMBER)
+
+Campo 4:
+Nome: Dentro SLA Flag
+Fórmula: CASE WHEN Dentro_SLA = "SIM" THEN 1 ELSE 0 END
+
+Campo 5:
+Nome: Fora SLA Flag
+Fórmula: CASE WHEN Dentro_SLA = "NÃO" THEN 1 ELSE 0 END
+
+Campo 6:
+Nome: Com Diferenca Valor Flag
+Fórmula: CASE WHEN Houve_Diferenca_Valor = "SIM" THEN 1 ELSE 0 END
+
+Campo 7:
+Nome: SLA No Prazo Flag
+Fórmula: CASE WHEN Status_SLA = "OK" THEN 1 ELSE 0 END
+
+Campo 8:
+Nome: SLA Alerta Flag
+Fórmula: CASE WHEN Status_SLA = "ALERTA" THEN 1 ELSE 0 END
+
+2.3 Finalizar
+-------------
+Clique em "CONCLUÍDO" para voltar ao relatório.
+
+================================================================================
+3. PÁGINA 1 - DASHBOARD COLABORADORES
+================================================================================
+
+3.1 Configurar Página
+---------------------
+1. Clique com botão direito na aba da página
+2. Selecione "Renomear"
+3. Digite: 👥 Colaboradores
+
+3.2 Adicionar Título
+--------------------
+1. Inserir → Caixa de texto
+2. Digite: 👥 Dashboard Colaboradores - Histórico
+3. Formate:
+   - Tamanho: 24px
+   - Negrito: Sim
+   - Cor: #009688
+4. Posicione: x=20, y=20
+
+3.3 Criar Filtros (5 filtros em linha)
+---------------------------------------
+
+Filtro 1 - Intervalo de Datas:
+1. Inserir → Controle de intervalo de datas
+2. Posição: x=20, y=70
+3. Tamanho: 220 x 40
+
+Filtro 2 - Tipo de Erro:
+1. Inserir → Controle de lista suspensa
+2. Dimensão: Tipo_Erro
+3. Estilo: Marcar "Pesquisável" e "Permitir selecionar todos"
+4. Posição: x=250, y=70
+5. Tamanho: 180 x 40
+
+Filtro 3 - Responsável:
+1. Inserir → Controle de lista suspensa
+2. Dimensão: Nome_Responsavel
+3. Estilo: Pesquisável, Permitir todos
+4. Posição: x=440, y=70
+5. Tamanho: 200 x 40
+
+Filtro 4 - Setor:
+1. Inserir → Controle de lista suspensa
+2. Dimensão: Setor_Local
+3. Estilo: Pesquisável, Permitir todos
+4. Posição: x=650, y=70
+5. Tamanho: 180 x 40
+
+Filtro 5 - Ano:
+1. Inserir → Controle de lista suspensa
+2. Dimensão: Ano_Pedido
+3. Ordem: Decrescente
+4. Posição: x=840, y=70
+5. Tamanho: 100 x 40
+
+3.4 Seção "Visão Geral - Volume" (6 KPIs)
+------------------------------------------
+
+Título da Seção:
+1. Inserir → Caixa de texto
+2. Digite: 📊 Visão Geral - Volume
+3. Formato: 14px, Negrito, Cor #1e293b
+4. Posição: x=20, y=130
+
+Criar 6 Scorecards (todos na posição y=160):
+
+KPI 1 - Total de Erros:
+1. Inserir → Scorecard
+2. Métrica: Sequencia_Erro, Agregação: COUNT
+3. Estilo: Cor #1e88e5, Tamanho 32px
+4. Posição: x=20, y=160
+5. Tamanho: 180 x 80
+6. Adicionar rótulo acima: "Total de Erros" (caixa de texto, 11px, cinza)
+
+KPI 2 - Solicitações:
+1. Inserir → Scorecard
+2. Métrica: ID_Solicitacao, Agregação: COUNT_DISTINCT
+3. Estilo: Cor #00897b
+4. Posição: x=210, y=160
+5. Rótulo: "Solicitações"
+
+KPI 3 - Colaboradores:
+1. Inserir → Scorecard
+2. Métrica: Nome_Responsavel, Agregação: COUNT_DISTINCT
+3. Estilo: Cor #5e35b1
+4. Posição: x=400, y=160
+5. Rótulo: "Colaboradores"
+
+KPI 4 - Setores:
+1. Inserir → Scorecard
+2. Métrica: Setor_Local, Agregação: COUNT_DISTINCT
+3. Estilo: Cor #ff6f00
+4. Posição: x=590, y=160
+5. Rótulo: "Setores"
+
+KPI 5 - Tipos de Erro:
+1. Inserir → Scorecard
+2. Métrica: Tipo_Erro, Agregação: COUNT_DISTINCT
+3. Estilo: Cor #e53935
+4. Posição: x=780, y=160
+5. Rótulo: "Tipos de Erro"
+
+KPI 6 - Com Variação R$:
+1. Inserir → Scorecard
+2. Métrica: Com Diferenca Valor Flag, Agregação: SUM
+3. Estilo: Cor #7b1fa2
+4. Posição: x=970, y=160
+5. Rótulo: "Com Variação R$"
+
+3.5 Seção "Métricas de Tempo" (5 KPIs)
+---------------------------------------
+
+Título:
+1. Caixa de texto: ⏱️ Métricas de Tempo de Resolução
+2. Posição: x=20, y=260
+
+5 Scorecards (y=290):
+
+KPI 1 - Tempo Médio (min):
+1. Scorecard
+2. Métrica: Tempo Minutos Num, AVG
+3. Formato: Número, 0 decimais
+4. Cor: #1e88e5
+5. Posição: x=20
+
+KPI 2 - Tempo Mínimo (min):
+1. Métrica: Tempo Minutos Num, MIN
+2. Cor: #43a047
+3. Posição: x=210
+
+KPI 3 - Tempo Máximo (min):
+1. Métrica: Tempo Minutos Num, MAX
+2. Cor: #e53935
+3. Posição: x=400
+
+KPI 4 - Tempo Médio (horas):
+1. Métrica: Tempo Horas Num, AVG
+2. Formato: 1 decimal
+3. Cor: #ff9800
+4. Posição: x=590
+
+KPI 5 - Tempo Médio (dias):
+1. Métrica: Tempo Dias Num, AVG
+2. Formato: 2 decimais
+3. Cor: #795548
+4. Posição: x=780
+
+3.6 Seção "Performance SLA" (4 KPIs)
+-------------------------------------
+
+Título:
+1. Caixa de texto: 🎯 Performance SLA
+2. Posição: x=20, y=390
+
+4 Scorecards (y=420):
+
+KPI 1 - % Dentro do SLA:
+1. Métrica: Dentro SLA Flag, AVG
+2. Formato: Porcentagem, 1 decimal
+3. Cor: #43a047
+4. Posição: x=20
+
+KPI 2 - % Fora do SLA:
+1. Métrica: Fora SLA Flag, AVG
+2. Formato: Porcentagem, 1 decimal
+3. Cor: #e53935
+4. Posição: x=210
+
+KPI 3 - OK (No Prazo):
+1. Métrica: SLA No Prazo Flag, SUM
+2. Cor: #43a047
+3. Posição: x=400
+
+KPI 4 - Em Alerta:
+1. Métrica: SLA Alerta Flag, SUM
+2. Cor: #ffc107
+3. Posição: x=590
+
+3.7 Gráfico Timeline
+--------------------
+
+Título:
+1. Texto: 📈 Evolução Mensal de Erros Corrigidos
+2. Posição: x=20, y=520
+
+Gráfico:
+1. Inserir → Gráfico de série temporal
+2. Dimensão de data: Data_Hora_Correcao
+3. Métrica: COUNT de Sequencia_Erro
+4. Estilo:
+   - Cor: #009688
+   - Mostrar pontos: Sim
+   - Espessura: 2px
+5. Posição: x=20, y=550
+6. Tamanho: 1160 x 250
+
+3.8 Análise por Colaborador (2 gráficos)
+-----------------------------------------
+
+Título:
+1. Texto: 👤 Análise por Colaborador
+2. Posição: x=20, y=820
+
+Gráfico 1 - Top 10 Volume:
+1. Inserir → Gráfico de barras horizontais
+2. Dimensão: Nome_Responsavel
+3. Métrica: COUNT de Sequencia_Erro
+4. Classificação: Métrica, Decrescente
+5. Estilo:
+   - Barras: 10
+   - Cor: #009688
+   - Rótulos: Sim
+6. Posição: x=20, y=850
+7. Tamanho: 560 x 280
+8. Subtítulo: "Top 10 - Erros Corrigidos"
+
+Gráfico 2 - Tempo Médio:
+1. Inserir → Gráfico de barras horizontais
+2. Dimensão: Nome_Responsavel
+3. Métrica: AVG de Tempo Minutos Num
+4. Classificação: Métrica, Decrescente
+5. Estilo:
+   - Barras: 10
+   - Cor: #ff9800
+   - Rótulos: Sim, 0 decimais
+6. Posição: x=600, y=850
+7. Tamanho: 560 x 280
+8. Subtítulo: "Tempo Médio de Resolução (min)"
+
+3.9 Análise por Setor e Tipo (3 gráficos)
+------------------------------------------
+
+Título:
+1. Texto: 🏢 Análise por Setor e Tipo de Erro
+2. Posição: x=20, y=1150
+
+Gráfico 1 - Erros por Setor:
+1. Inserir → Gráfico de pizza
+2. Dimensão: Setor_Local
+3. Métrica: COUNT
+4. Estilo: Rosca, Mostrar porcentagem
+5. Posição: x=20, y=1180
+6. Tamanho: 360 x 280
+
+Gráfico 2 - Tipos de Erros:
+1. Inserir → Gráfico de pizza
+2. Dimensão: Tipo_Erro
+3. Métrica: COUNT
+4. Estilo: Rosca, Porcentagem
+5. Posição: x=400, y=1180
+6. Tamanho: 360 x 280
+
+Gráfico 3 - Status SLA:
+1. Inserir → Gráfico de pizza
+2. Dimensão: Status_SLA
+3. Métrica: COUNT
+4. Estilo: Rosca
+5. Cores personalizadas:
+   - OK → #43a047 (verde)
+   - ALERTA → #ffc107 (amarelo)
+6. Posição: x=780, y=1180
+7. Tamanho: 360 x 280
+
+3.10 Tabela Detalhada
+---------------------
+
+Título:
+1. Texto: 📋 Performance por Colaborador
+2. Posição: x=20, y=1480
+
+Tabela:
+1. Inserir → Tabela
+2. Dimensão: Nome_Responsavel
+3. Métricas:
+   - Sequencia_Erro, COUNT (renomear "Erros")
+   - Tempo Minutos Num, AVG (renomear "Tempo Médio (min)", 0 decimais)
+   - Dentro SLA Flag, AVG (renomear "% Dentro SLA", formato %)
+   - Com Diferenca Valor Flag, SUM (renomear "Variações R$")
+4. Classificação: Erros, Decrescente
+5. Estilo:
+   - Linhas por página: 10
+   - Cabeçalho: Fundo #009688, texto branco
+   - Mostrar paginação: Sim
+6. Posição: x=20, y=1510
+7. Tamanho: 1160 x 280
+
+================================================================================
+4. PÁGINA 2 - DASHBOARD SOLICITANTES
+================================================================================
+
+4.1 Criar Nova Página
+---------------------
+1. Página → Nova página (ou Ctrl+M)
+2. Renomear: 🏪 Solicitantes
+
+4.2 Copiar da Página 1
+----------------------
+1. Volte para Página 1 (Colaboradores)
+2. Selecione TODOS os elementos: Ctrl+A
+3. Copie: Ctrl+C
+4. Vá para Página 2
+5. Cole: Ctrl+V
+
+4.3 Modificar Elementos
+------------------------
+Altere os seguintes elementos:
+
+Título:
+- De: "Dashboard Colaboradores"
+- Para: "Dashboard Solicitantes"
+
+Filtro 3:
+- De: Dimensão Nome_Responsavel
+- Para: Dimensão Solicitante
+
+Todos os gráficos de barra e tabela:
+- De: Dimensão Nome_Responsavel
+- Para: Dimensão Solicitante
+
+KPI "Colaboradores":
+- De: COUNT_DISTINCT Nome_Responsavel
+- Para: COUNT_DISTINCT Solicitante
+- Renomear rótulo para: "Solicitantes"
+
+Subtítulos:
+- Trocar todas as referências "Colaborador" para "Solicitante"
+
+================================================================================
+5. PÁGINA 3 - RANKING
+================================================================================
+
+5.1 Criar Nova Página
+---------------------
+1. Página → Nova página
+2. Renomear: 🏆 Ranking
+
+5.2 Título e Filtros
+--------------------
+
+Título:
+1. Caixa de texto: 🏆 Ranking de Performance
+2. Formato: 24px, Negrito, #009688
+3. Posição: x=20, y=20
+
+Filtro 1 - Intervalo de Datas:
+1. Inserir → Controle de intervalo de datas
+2. Posição: x=20, y=70
+
+Filtro 2 - Setor:
+1. Inserir → Controle de lista suspensa
+2. Dimensão: Setor_Local
+3. Posição: x=250, y=70
+
+Filtro 3 - Ano:
+1. Inserir → Controle de lista suspensa
+2. Dimensão: Ano_Pedido
+3. Posição: x=440, y=70
+
+5.3 KPIs de Resumo (4)
+----------------------
+
+Título:
+1. Texto: 📊 Resumo do Período
+2. Posição: x=20, y=130
+
+KPI 1 - Total Erros:
+1. Scorecard
+2. Métrica: Sequencia_Erro, COUNT
+3. Cor: #1e88e5
+4. Posição: x=20, y=160
+5. Tamanho: 260 x 80
+
+KPI 2 - Colaboradores:
+1. Métrica: Nome_Responsavel, COUNT_DISTINCT
+2. Cor: #009688
+3. Posição: x=300, y=160
+
+KPI 3 - Tempo Médio Geral:
+1. Métrica: Tempo Minutos Num, AVG
+2. Cor: #ff9800
+3. Posição: x=580, y=160
+
+KPI 4 - % SLA Geral:
+1. Métrica: Dentro SLA Flag, AVG
+2. Formato: Porcentagem
+3. Cor: #43a047
+4. Posição: x=860, y=160
+
+5.4 Ranking Principal
+---------------------
+
+Título:
+1. Texto: 🥇 Ranking de Colaboradores (Mais Erros Corrigidos)
+2. Posição: x=20, y=260
+
+Tabela:
+1. Inserir → Tabela
+2. Dimensão: Nome_Responsavel
+3. Métricas:
+   - Sequencia_Erro, COUNT (renomear "Total Erros")
+   - Tempo Minutos Num, AVG (renomear "Tempo Médio (min)", 0 dec)
+   - Tempo Minutos Num, MAX (renomear "Tempo Máx (min)", 0 dec)
+   - Dentro SLA Flag, AVG (renomear "% Dentro SLA", %)
+   - Com Diferenca Valor Flag, SUM (renomear "Variações R$")
+4. Classificação: Total Erros, Decrescente
+5. Estilo:
+   - Mostrar número de linha: SIM (será o Rank)
+   - Linhas: 15
+   - Cabeçalho: #009688, branco
+6. Posição: x=20, y=290
+7. Tamanho: 1160 x 450
+
+5.5 Ranking por Melhor SLA
+---------------------------
+
+Título:
+1. Texto: ⭐ Ranking por Melhor Performance SLA
+2. Posição: x=20, y=760
+
+Tabela:
+1. Inserir → Tabela
+2. Dimensão: Nome_Responsavel
+3. Métricas: Total Erros, % Dentro SLA, Tempo Médio
+4. Classificação: % Dentro SLA, Decrescente
+5. Filtro de gráfico: COUNT > 5
+6. Estilo: Número de linha Sim, 10 linhas
+7. Posição: x=20, y=790
+8. Tamanho: 560 x 350
+
+5.6 Ranking por Menor Tempo
+----------------------------
+
+Título:
+1. Texto: ⚡ Ranking por Menor Tempo de Resolução
+2. Posição: x=600, y=760
+
+Tabela:
+1. Inserir → Tabela
+2. Dimensão: Nome_Responsavel
+3. Métricas: Total Erros, Tempo Médio, % SLA
+4. Classificação: Tempo Médio, Crescente (menor primeiro)
+5. Filtro: COUNT > 5
+6. Estilo: Número linha Sim, 10 linhas
+7. Posição: x=600, y=790
+8. Tamanho: 560 x 350
+
+================================================================================
+6. PÁGINA 4 - ANÁLISE DE ERROS
+================================================================================
+
+6.1 Criar Nova Página
+---------------------
+1. Página → Nova página
+2. Renomear: ⚠️ Erros
+
+6.2 Título e Filtros
+--------------------
+
+Título:
+1. Texto: ⚠️ Análise Detalhada de Erros
+2. Posição: x=20, y=20
+
+Filtros (4):
+
+Filtro 1 - Período:
+1. Controle de intervalo de datas
+2. Posição: x=20, y=70
+
+Filtro 2 - Tipo de Erro:
+1. Lista suspensa, Dimensão: Tipo_Erro
+2. Posição: x=250, y=70
+
+Filtro 3 - Setor:
+1. Lista suspensa, Dimensão: Setor_Local
+2. Posição: x=440, y=70
+
+Filtro 4 - Responsável:
+1. Lista suspensa, Dimensão: Nome_Responsavel
+2. Posição: x=630, y=70
+
+6.3 KPIs (5)
+------------
+
+Título:
+1. Texto: 📊 Visão Geral de Erros
+2. Posição: x=20, y=130
+
+KPI 1 - Total de Erros:
+1. Métrica: Sequencia_Erro, COUNT
+2. Cor: #e53935
+3. Posição: x=20, y=160
+
+KPI 2 - Tipos Diferentes:
+1. Métrica: Tipo_Erro, COUNT_DISTINCT
+2. Cor: #ff9800
+3. Posição: x=230, y=160
+
+KPI 3 - Setores Afetados:
+1. Métrica: Setor_Local, COUNT_DISTINCT
+2. Cor: #1e88e5
+3. Posição: x=440, y=160
+
+KPI 4 - Tempo Médio (min):
+1. Métrica: Tempo Minutos Num, AVG
+2. Cor: #009688
+3. Posição: x=650, y=160
+
+KPI 5 - % Dentro SLA:
+1. Métrica: Dentro SLA Flag, AVG
+2. Formato: %
+3. Cor: #43a047
+4. Posição: x=860, y=160
+
+6.4 Gráficos de Volume
+----------------------
+
+Título:
+1. Texto: 📊 Volume por Tipo de Erro
+2. Posição: x=20, y=260
+
+Gráfico 1 - Barras por Tipo:
+1. Inserir → Gráfico de barras horizontais
+2. Dimensão: Tipo_Erro
+3. Métrica: COUNT
+4. Classificação: Decrescente
+5. Estilo: Cor #e53935, Rótulos Sim
+6. Posição: x=20, y=290
+7. Tamanho: 560 x 300
+
+Título:
+1. Texto: 🏢 Volume por Setor
+2. Posição: x=600, y=260
+
+Gráfico 2 - Barras por Setor:
+1. Inserir → Gráfico de barras horizontais
+2. Dimensão: Setor_Local
+3. Métrica: COUNT
+4. Estilo: Cor #1e88e5
+5. Posição: x=600, y=290
+6. Tamanho: 560 x 300
+
+6.5 Evolução por Tipo
+---------------------
+
+Título:
+1. Texto: 📈 Evolução Mensal por Tipo de Erro
+2. Posição: x=20, y=610
+
+Gráfico:
+1. Inserir → Gráfico de série temporal
+2. Dimensão de data: Data_Hora_Pedido
+3. Dimensão de detalhamento: Tipo_Erro
+4. Métrica: COUNT
+5. Estilo: Linhas coloridas por tipo
+6. Posição: x=20, y=640
+7. Tamanho: 1160 x 280
+
+6.6 Matriz Setor x Tipo
+------------------------
+
+Título:
+1. Texto: 🔥 Concentração: Setor x Tipo de Erro
+2. Posição: x=20, y=940
+
+Tabela Dinâmica:
+1. Inserir → Tabela dinâmica
+2. Dimensão de linha: Setor_Local
+3. Dimensão de coluna: Tipo_Erro
+4. Métrica: COUNT
+5. Estilo:
+   - Mapa de calor: Sim
+   - Mostrar totais: Sim
+6. Posição: x=20, y=970
+7. Tamanho: 1160 x 350
+
+6.7 Tabela de Detalhamento
+---------------------------
+
+Título:
+1. Texto: 📋 Detalhamento de Erros
+2. Posição: x=20, y=1340
+
+Tabela:
+1. Inserir → Tabela
+2. Dimensões:
+   - Requisicao
+   - Solicitante
+   - Tipo_Erro
+   - Setor_Local
+3. Métricas:
+   - Tempo Minutos Num, AVG
+   - Dentro SLA Flag, AVG (formato %)
+4. Classificação: Requisicao
+5. Estilo: 15 linhas, paginação
+6. Posição: x=20, y=1370
+7. Tamanho: 1160 x 400
+
+================================================================================
+7. CHECKLIST FINAL
+================================================================================
+
+[ ] Campos calculados criados (8 campos)
+[ ] Página 1 - Colaboradores completa
+[ ] Página 2 - Solicitantes completa
+[ ] Página 3 - Ranking completo
+[ ] Página 4 - Análise de Erros completa
+[ ] Filtros funcionando em todas as páginas
+[ ] Cores consistentes em todo o relatório
+[ ] Todos os gráficos com títulos/rótulos
+[ ] Tabelas com paginação configurada
+[ ] Testado em diferentes dispositivos
+
+================================================================================
+DICAS FINAIS
+================================================================================
+
+1. Para copiar elementos entre páginas: Ctrl+C e Ctrl+V
+2. Para alinhar elementos: Selecione vários → Botão direito → Alinhar
+3. Para distribuir espaçamento: Selecione vários → Distribuir
+4. Para alterar cores em massa: Tema e layout
+5. Para compartilhar: Arquivo → Compartilhar → Definir permissões
+
+================================================================================
+FIM DO GUIA
+================================================================================

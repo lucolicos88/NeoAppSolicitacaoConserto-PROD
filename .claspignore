@@ -1,0 +1,7 @@
+**/**
+!*.gs
+!*.html
+!*.json
+!appsscript.json
+deploy-webapp.js
+.claspignore
