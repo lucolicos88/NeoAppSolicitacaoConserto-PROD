@@ -169,10 +169,18 @@ function getThresholds_() {
   };
 }
 
+// Limites de tamanho de campo (caracteres)
+const MAX_REQUISICAO_LEN = 30;
+const MAX_DETALHAMENTO_LEN = 2000;
+const MAX_OBSERVACOES_LEN = 1000;
+const MAX_DIFERENCA_VALOR_LEN = 50;
+
 function validateRequestPayload_(payload, config) {
   const errors = [];
   if (!payload.requisicao) {
     errors.push("Informe a requisição.");
+  } else if (String(payload.requisicao).length > MAX_REQUISICAO_LEN) {
+    errors.push("Requisição não pode exceder " + MAX_REQUISICAO_LEN + " caracteres.");
   }
   if (!payload.solicitante || config.pharmaceuticas.indexOf(payload.solicitante) === -1) {
     errors.push("Selecione uma farmacêutica válida.");
@@ -184,6 +192,8 @@ function validateRequestPayload_(payload, config) {
   }
   if (!payload.detalhamento) {
     errors.push("Detalhamento do erro é obrigatório.");
+  } else if (String(payload.detalhamento).length > MAX_DETALHAMENTO_LEN) {
+    errors.push("Detalhamento não pode exceder " + MAX_DETALHAMENTO_LEN + " caracteres.");
   }
   if (!payload.setorLocal || config.setores.indexOf(payload.setorLocal) === -1) {
     errors.push("Selecione um setor/local válido.");
@@ -227,8 +237,11 @@ function validateResponsePayload_(payload, config) {
   if (!payload.dataHoraCorrecao) {
     errors.push("Informe a data/hora da correção.");
   }
-  if (payload.observacoes && payload.observacoes.length > 1000) {
-    errors.push("Observações não podem exceder 1000 caracteres.");
+  if (payload.observacoes && String(payload.observacoes).length > MAX_OBSERVACOES_LEN) {
+    errors.push("Observações não podem exceder " + MAX_OBSERVACOES_LEN + " caracteres.");
+  }
+  if (payload.diferencaValorResposta && String(payload.diferencaValorResposta).length > MAX_DIFERENCA_VALOR_LEN) {
+    errors.push("Diferença de valor não pode exceder " + MAX_DIFERENCA_VALOR_LEN + " caracteres.");
   }
   if (errors.length) {
     logDebug_("validateResponsePayload_", "errors", errors);
@@ -247,26 +260,48 @@ function getSlaStatus_(requestDatetime, correcaoDatetime) {
   return "OK";
 }
 
+// Gera chave de cache segura a partir do email
+function usuarioCacheKey_(email) {
+  return "uctx_" + email.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 60);
+}
+
 function getUsuarioContexto_(email) {
+  // Cache de 5 min: leitura da sheet de usuários é cara e o perfil muda raramente
+  const cache = CacheService.getScriptCache();
+  const cacheKey = usuarioCacheKey_(email);
+  try {
+    const cached = cache.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+  } catch(e) { /* cache miss ou parse error — continua */ }
+
   const sheet = getSheet_(CONFIG.SHEETS.USUARIOS);
   const values = sheet.getDataRange().getValues();
+  let result = null;
   for (let i = 1; i < values.length; i++) {
     if (values[i][0] === email) {
-      return {
+      result = {
         email: values[i][0],
         nome: values[i][1],
         perfil: values[i][2],
         setores: parseSetores_(values[i][3])
       };
+      break;
     }
   }
-  logDebug_("getUsuarioContexto_", "usuario_nao_encontrado", { email: email });
-  return {
-    email: email,
-    nome: "",
-    perfil: "ESPECTADOR",
-    setores: []
-  };
+  if (!result) {
+    logDebug_("getUsuarioContexto_", "usuario_nao_encontrado", {});
+    result = { email: email, nome: "", perfil: "ESPECTADOR", setores: [] };
+  }
+
+  try { cache.put(cacheKey, JSON.stringify(result), 300); } catch(e) { /* ignore */ }
+  return result;
+}
+
+// Invalida o cache de um usuário específico após alteração de perfil/setores
+function invalidateUsuarioCache_(email) {
+  try {
+    CacheService.getScriptCache().remove(usuarioCacheKey_(email));
+  } catch(e) { /* ignore */ }
 }
 
 function parseSetores_(raw) {

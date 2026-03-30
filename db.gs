@@ -1,12 +1,32 @@
+// Memoiza a instância da planilha durante uma execução.
+// SpreadsheetApp.openById() é uma chamada HTTP cara — chamá-la uma vez por execução economiza segundos.
+let _ssInstance_ = null;
 function getSpreadsheet_() {
-  return SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  if (!_ssInstance_) {
+    // PropertiesService é preferido: o ID não fica exposto no código-fonte do repositório.
+    // Fallback para CONFIG.SPREADSHEET_ID durante a transição (remover após rodar setupPropriedades_).
+    const props = PropertiesService.getScriptProperties();
+    const spreadsheetId = props.getProperty("SPREADSHEET_ID") || CONFIG.SPREADSHEET_ID;
+    if (!spreadsheetId) {
+      throw new Error("SPREADSHEET_ID não configurado. Execute 'Configurar Propriedades' no menu App Solicitações.");
+    }
+    _ssInstance_ = SpreadsheetApp.openById(spreadsheetId);
+  }
+  return _ssInstance_;
 }
 
 function getSheet_(name) {
   return getSpreadsheet_().getSheetByName(name);
 }
 
+// Cache key para flag de sheets inicializadas (5 minutos)
+const CACHE_KEY_SHEETS_OK_ = "app_sheets_ok_v1";
+
 function ensureSheets_() {
+  // Pula verificação se sheets já foram confirmadas recentemente
+  const cache = CacheService.getScriptCache();
+  if (cache.get(CACHE_KEY_SHEETS_OK_) === "1") return;
+
   const ss = getSpreadsheet_();
   ensureSheet_(ss, CONFIG.SHEETS.SOLICITACOES, [
     "id_solicitacao",
@@ -86,6 +106,9 @@ function ensureSheets_() {
 
   ensureThresholdDefault_();
   ensureConfigDefaults_();
+
+  // Marca sheets como verificadas por 5 minutos
+  try { cache.put(CACHE_KEY_SHEETS_OK_, "1", 300); } catch(e) { /* ignore */ }
 }
 
 function ensureSheet_(ss, name, headers) {
@@ -150,6 +173,9 @@ function ensureConfigDefaults_() {
 }
 
 function resetPlanilha_() {
+  // Invalidar cache de sheets ao resetar para forçar recriação
+  try { CacheService.getScriptCache().remove(CACHE_KEY_SHEETS_OK_); } catch(e) { /* ignore */ }
+
   const ss = getSpreadsheet_();
   const sheets = [
     CONFIG.SHEETS.SOLICITACOES,
@@ -280,32 +306,27 @@ function deleteSolicitacao_(solicitacaoId) {
       return null;
     }
 
-    // Delete all associated errors
+    // Batch delete erros: filtra as linhas a manter e reescreve de uma vez
+    // Muito mais rápido que N chamadas deleteRow() individuais
     const errosData = errosSheet.getDataRange().getValues();
-    const errosToDelete = [];
-    for (let i = errosData.length - 1; i >= 1; i--) {
-      if (errosData[i][0] === solicitacaoId) {
-        errosToDelete.push(i + 1); // Convert to 1-indexed
-      }
+    const errosRemaining = errosData.filter(function(row, idx) {
+      return idx === 0 || row[0] !== solicitacaoId;
+    });
+    const errosDeleted = errosData.length - errosRemaining.length;
+    if (errosDeleted > 0) {
+      errosSheet.clearContents();
+      errosSheet.getRange(1, 1, errosRemaining.length, errosRemaining[0].length).setValues(errosRemaining);
     }
 
-    for (const rowNum of errosToDelete) {
-      errosSheet.deleteRow(rowNum);
-      logDebug_("deleteSolicitacao_", "erro_deleted", { solicitacaoId: solicitacaoId, row: rowNum });
-    }
-
-    // Delete all associated responses
+    // Batch delete respostas: mesmo padrão
     const respostasData = respostasSheet.getDataRange().getValues();
-    const respostasToDelete = [];
-    for (let i = respostasData.length - 1; i >= 1; i--) {
-      if (respostasData[i][1] === solicitacaoId) {
-        respostasToDelete.push(i + 1); // Convert to 1-indexed
-      }
-    }
-
-    for (const rowNum of respostasToDelete) {
-      respostasSheet.deleteRow(rowNum);
-      logDebug_("deleteSolicitacao_", "resposta_deleted", { solicitacaoId: solicitacaoId, row: rowNum });
+    const respostasRemaining = respostasData.filter(function(row, idx) {
+      return idx === 0 || row[1] !== solicitacaoId;
+    });
+    const respostasDeleted = respostasData.length - respostasRemaining.length;
+    if (respostasDeleted > 0) {
+      respostasSheet.clearContents();
+      respostasSheet.getRange(1, 1, respostasRemaining.length, respostasRemaining[0].length).setValues(respostasRemaining);
     }
 
     // Finally, delete the solicitation itself
@@ -322,8 +343,8 @@ function deleteSolicitacao_(solicitacaoId) {
 
     logDebug_("deleteSolicitacao_", "solicitacao_deleted", {
       solicitacaoId: solicitacaoId,
-      errosDeleted: errosToDelete.length,
-      respostasDeleted: respostasToDelete.length
+      errosDeleted: errosDeleted,
+      respostasDeleted: respostasDeleted
     });
 
     return { solicitacaoId: solicitacaoId };
@@ -402,15 +423,17 @@ function updateResposta_(payload, userEmail) {
 
     const now = new Date();
 
-    // Update the existing row (columns D, E, G, H, I, J)
-    respostasSheet.getRange(rowToUpdate, 4).setValue(payload.nomeResponsavel || ""); // Nome Responsável
-    respostasSheet.getRange(rowToUpdate, 5).setValue(userEmail); // Email Responsável
-    // Column 6 (Correção Finalizada) stays as "SIM"
-    respostasSheet.getRange(rowToUpdate, 7).setValue(payload.houveDiferencaValor || ""); // Houve Diferença Valor
-    respostasSheet.getRange(rowToUpdate, 8).setValue(payload.diferencaValorResposta || ""); // Diferença Valor Resposta
-    respostasSheet.getRange(rowToUpdate, 9).setValue(payload.observacoes || ""); // Observações
-    respostasSheet.getRange(rowToUpdate, 10).setValue(payload.dataHoraCorrecao ? new Date(payload.dataHoraCorrecao) : ""); // Data/Hora Correção
-    respostasSheet.getRange(rowToUpdate, 11).setValue(now); // Data/Hora Cadastro (update timestamp)
+    // Atualiza cols 4–11 em uma única chamada ao Sheets (7x mais rápido que setValue individual)
+    respostasSheet.getRange(rowToUpdate, 4, 1, 8).setValues([[
+      payload.nomeResponsavel || "",                                          // col 4: nome_responsavel
+      userEmail,                                                               // col 5: email_responsavel
+      "SIM",                                                                   // col 6: erro_corrigido (mantém SIM)
+      payload.houveDiferencaValor || "",                                      // col 7: houve_diferenca_valor
+      payload.diferencaValorResposta || "",                                   // col 8: diferenca_valor_resposta
+      payload.observacoes || "",                                               // col 9: observacoes
+      payload.dataHoraCorrecao ? new Date(payload.dataHoraCorrecao) : "",    // col 10: data_hora_correcao
+      now                                                                      // col 11: criado_em (timestamp update)
+    ]]);
 
     logDebug_("updateResposta_", "resposta_atualizada", {
       respostaId: respostaId,

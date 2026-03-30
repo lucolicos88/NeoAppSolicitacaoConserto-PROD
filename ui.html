@@ -117,6 +117,273 @@
 
       }
 
+      /* ===== DARK MODE ===== */
+      body.dark-mode {
+        --background: #0f172a;
+        --surface: #1e293b;
+        --surface-2: #273549;
+        --text: #e2e8f0;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+        --border: #334155;
+        --shadow: 0 1px 3px 0 rgba(0,0,0,0.4), 0 1px 2px 0 rgba(0,0,0,0.3);
+        --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5), 0 4px 6px -2px rgba(0,0,0,0.3);
+      }
+
+      /* Transição suave ao trocar tema — apenas nos elementos de layout */
+      body, .header, .tabs-wrapper, .tab-content, .form-section,
+      .stat, .modal-card, .form-control, input, select, textarea,
+      .config-item, .btn-icon, .multi-select-display, .multi-select-dropdown,
+      .multi-select-search, .multi-select-option, .multi-select-actions,
+      .chips-container, .dashboard-tab, .help-summary, .user-chip {
+        transition: background-color 0.25s ease, color 0.2s ease, border-color 0.2s ease;
+      }
+
+      /* === Overrides para cores fixas (não usam var()) === */
+
+      /* User chip */
+      body.dark-mode .user-chip { background: #273549; border-color: #334155; color: #e2e8f0; }
+      body.dark-mode .user-chip:hover { background: #1e293b; }
+
+      /* Stats */
+      body.dark-mode .stat { background: linear-gradient(135deg, #1e293b 0%, #273549 100%); border-color: #334155; }
+      body.dark-mode .stat-value,
+      body.dark-mode .stat h3 { color: #e2e8f0; }
+      body.dark-mode .stat-label,
+      body.dark-mode .stat p { color: #94a3b8; }
+      body.dark-mode .stat-trend.up { background: #064e3b; color: #6ee7b7; }
+      body.dark-mode .stat-trend.down { background: #450a0a; color: #fca5a5; }
+      body.dark-mode .stat-trend.neutral { background: #1e293b; color: #94a3b8; }
+
+      /* Badges */
+      body.dark-mode .badge.ok,
+      body.dark-mode .badge.success { background: #064e3b; color: #6ee7b7; }
+      body.dark-mode .badge.warn,
+      body.dark-mode .badge.warning { background: #451a03; color: #fcd34d; }
+      body.dark-mode .badge.crit,
+      body.dark-mode .badge.error { background: #450a0a; color: #fca5a5; }
+      body.dark-mode .badge.secondary { background: #334155; color: #94a3b8; }
+
+      /* Tabela e gráficos */
+      body.dark-mode .list tr.selected { background: #0d3331; }
+      body.dark-mode .chart-bar-track,
+      body.dark-mode .timeline-bar { background: #334155; }
+
+      /* Header e modais */
+      body.dark-mode .header { box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+      body.dark-mode .modal-backdrop { background: rgba(0,0,0,0.75); }
+
+      /* Config items (lista de Erros, Setores, Solicitantes) */
+      body.dark-mode .config-item { background: #1e293b; border-color: #334155; }
+
+      /* Botões de ação nas listas */
+      body.dark-mode .btn-icon { background: #273549; border-color: #334155; color: #e2e8f0; }
+      body.dark-mode .btn-icon:hover { background: #334155; }
+      body.dark-mode .btn-icon.delete:hover { background: #450a0a; border-color: #ef4444; color: #fca5a5; }
+      body.dark-mode .btn-icon.edit:hover { background: #0c1a2e; border-color: #3b82f6; color: #93c5fd; }
+
+      /* Multi-select dropdown */
+      body.dark-mode .multi-select-display { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+      body.dark-mode .multi-select-display .placeholder { color: #64748b; }
+      body.dark-mode .multi-select-dropdown { background: #1e293b; border-color: #334155; }
+      body.dark-mode .multi-select-search { background: #1e293b; border-color: #334155; }
+      body.dark-mode .multi-select-search input { background: #273549; border-color: #334155; color: #e2e8f0; }
+      body.dark-mode .multi-select-option { color: #e2e8f0; }
+      body.dark-mode .multi-select-option:hover { background: #273549; }
+      body.dark-mode .multi-select-option.selected { background: #0d3331; color: #6ee7b7; }
+      body.dark-mode .multi-select-actions { background: #1e293b; border-color: #334155; }
+      body.dark-mode .multi-select-actions .btn-select-all { background: #0d3331; color: #6ee7b7; }
+      body.dark-mode .multi-select-actions .btn-clear { background: #450a0a; color: #fca5a5; }
+
+      /* Chips container */
+      body.dark-mode .chips-container { background: #1e293b; border-color: #334155; }
+      body.dark-mode .chips-container.empty { background: #273549; border-color: #334155; }
+
+      /* Dashboard sub-tabs */
+      body.dark-mode .dashboard-tab { background: #273549; color: #94a3b8; border-color: #334155; }
+      body.dark-mode .dashboard-tab:hover { background: #334155; }
+      body.dark-mode .dashboard-tab.active { background: #1e293b; color: #4db6ac; }
+
+      /* Ajuda: accordions */
+      body.dark-mode .help-summary { background: #273549; color: #e2e8f0; }
+
+      /* Filtros ativos */
+      body.dark-mode .filtros-ativos-container { background: #1e293b; border-color: #334155; }
+
+      /* === Loading screen === */
+      body.dark-mode .loading-overlay { background: rgba(15, 23, 42, 0.97) !important; }
+      body.dark-mode .loading-content { background: #1e293b !important; border-color: #334155 !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important; }
+      body.dark-mode .loading-text { color: #e2e8f0 !important; }
+      body.dark-mode .loading-dots span { background: #4db6ac !important; }
+      /* Logo: remove white frame via multiply blend (white pixels desaparecem no fundo escuro) */
+      body.dark-mode .spinner-icon { mix-blend-mode: multiply; filter: contrast(1.2) brightness(1.1); }
+      body.dark-mode .logo img { mix-blend-mode: multiply; }
+
+      /* === Tabela Resposta — cabeçalhos (inline styles) === */
+      body.dark-mode #openErrorsTable th[style*="#e0f2f1"] {
+        background: #0d3331 !important;
+        color: #4db6ac !important;
+      }
+      body.dark-mode #openErrorsTable th[style*="#fff3e0"] {
+        background: #2d1a00 !important;
+        color: #fb923c !important;
+      }
+
+      /* === Tabela Resposta — células de linha (inline styles JS) === */
+      /* Células solicitação (verde claro / lilás conf.médica) */
+      body.dark-mode #openErrorsTable td[style*="background:#f1f8f7"],
+      body.dark-mode #openErrorsTable td[style*="background: #f1f8f7"] {
+        background: #0d1f1e !important;
+      }
+      body.dark-mode #openErrorsTable td[style*="background:#f3e5f5"],
+      body.dark-mode #openErrorsTable td[style*="background: #f3e5f5"] {
+        background: #1a0d2e !important;
+      }
+      /* Células resposta (laranja claro) */
+      body.dark-mode #openErrorsTable td[style*="background:#fff8f0"],
+      body.dark-mode #openErrorsTable td[style*="background: #fff8f0"] {
+        background: #2d1400 !important;
+      }
+
+      /* === Aba Ajuda — cards de perfil com inline styles === */
+      body.dark-mode #tab-ajuda [style*="background:#fef3c7"],
+      body.dark-mode #tab-ajuda [style*="background: #fef3c7"] {
+        background: #2d1f00 !important;
+        border-color: #78350f !important;
+        color: #fcd34d !important;
+      }
+      body.dark-mode #tab-ajuda [style*="background:#fef3c7"] > div,
+      body.dark-mode #tab-ajuda [style*="background: #fef3c7"] > div {
+        color: #fcd34d !important;
+      }
+      body.dark-mode #tab-ajuda [style*="background:#ede9fe"],
+      body.dark-mode #tab-ajuda [style*="background: #ede9fe"] {
+        background: #1e0a3c !important;
+        border-color: #5b21b6 !important;
+        color: #c4b5fd !important;
+      }
+      body.dark-mode #tab-ajuda [style*="background:#ede9fe"] > div,
+      body.dark-mode #tab-ajuda [style*="background: #ede9fe"] > div {
+        color: #c4b5fd !important;
+      }
+      body.dark-mode #tab-ajuda [style*="background:#dbeafe"],
+      body.dark-mode #tab-ajuda [style*="background: #dbeafe"] {
+        background: #0c1e3d !important;
+        border-color: #1e40af !important;
+        color: #93c5fd !important;
+      }
+      body.dark-mode #tab-ajuda [style*="background:#dbeafe"] > div,
+      body.dark-mode #tab-ajuda [style*="background: #dbeafe"] > div {
+        color: #93c5fd !important;
+      }
+      body.dark-mode #tab-ajuda [style*="background:#f0fdf4"],
+      body.dark-mode #tab-ajuda [style*="background: #f0fdf4"] {
+        background: #052e16 !important;
+        border-color: #065f46 !important;
+        color: #6ee7b7 !important;
+      }
+      body.dark-mode #tab-ajuda [style*="background:#f0fdf4"] > div,
+      body.dark-mode #tab-ajuda [style*="background: #f0fdf4"] > div {
+        color: #6ee7b7 !important;
+      }
+
+      /* === Aba Ajuda — card Suporte Técnico === */
+      body.dark-mode #tab-ajuda [style*="background: linear-gradient(135deg, #f8fafc"],
+      body.dark-mode #tab-ajuda [style*="background:linear-gradient(135deg, #f8fafc"] {
+        background: #1e293b !important;
+        border-left-color: #4db6ac !important;
+      }
+      body.dark-mode #tab-ajuda [style*="color: #1e293b"],
+      body.dark-mode #tab-ajuda [style*="color:#1e293b"] { color: #e2e8f0 !important; }
+      body.dark-mode #tab-ajuda [style*="color: #475569"],
+      body.dark-mode #tab-ajuda [style*="color:#475569"] { color: #94a3b8 !important; }
+
+      /* === Aba Ajuda — chips de fluxo (inline styles) === */
+      body.dark-mode #tab-ajuda span[style*="background:#dbeafe"] { background: #0c1e3d !important; color: #93c5fd !important; }
+      body.dark-mode #tab-ajuda span[style*="background:#fef3c7"] { background: #2d1f00 !important; color: #fcd34d !important; }
+      body.dark-mode #tab-ajuda span[style*="background:#ede9fe"] { background: #1e0a3c !important; color: #c4b5fd !important; }
+      body.dark-mode #tab-ajuda span[style*="background:#d1fae5"] { background: #052e16 !important; color: #6ee7b7 !important; }
+      body.dark-mode #tab-ajuda span[style*="background:#fee2e2"] { background: #450a0a !important; color: #fca5a5 !important; }
+      body.dark-mode #tab-ajuda span[style*="background:#e0f2fe"] { background: #0c2140 !important; color: #7dd3fc !important; }
+
+      /* === Aba Ajuda — help-detail e texto === */
+      body.dark-mode .help-detail { color: #cbd5e1; }
+
+      /* === Aba Ajuda — tabela da API (inline styles) === */
+      body.dark-mode #tab-ajuda table { border-collapse: collapse; }
+      body.dark-mode #tab-ajuda table tr[style*="#f1f5f9"] { background: #273549 !important; }
+      body.dark-mode #tab-ajuda table tr[style*="#fafafa"] { background: #1a2535 !important; }
+      body.dark-mode #tab-ajuda table th[style*="#e2e8f0"],
+      body.dark-mode #tab-ajuda table td[style*="#e2e8f0"] { border-color: #334155 !important; }
+      body.dark-mode #tab-ajuda table tr[style*="#e2e8f0"] { border-color: #334155 !important; }
+      body.dark-mode #tab-ajuda table td[style*="color:#1e293b"],
+      body.dark-mode #tab-ajuda table td[style*="color: #1e293b"] { color: #e2e8f0 !important; }
+      body.dark-mode #tab-ajuda table td[style*="color:#64748b"],
+      body.dark-mode #tab-ajuda table td[style*="color: #64748b"] { color: #94a3b8 !important; }
+      body.dark-mode #tab-ajuda table th { background: #273549 !important; color: #e2e8f0 !important; border-color: #334155 !important; }
+      body.dark-mode #tab-ajuda table td { border-color: #334155 !important; }
+      body.dark-mode #tab-ajuda code { background: #0f172a; color: #6ee7b7; }
+
+      /* Autofill do browser */
+      body.dark-mode input:-webkit-autofill,
+      body.dark-mode input:-webkit-autofill:hover,
+      body.dark-mode input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0px 1000px #1e293b inset;
+        -webkit-text-fill-color: #e2e8f0;
+      }
+
+      /* Botão dark mode toggle — fixo no canto inferior esquerdo */
+      #darkModeToggle {
+        position: fixed;
+        bottom: 36px; /* Acima do rodapé (footer ~28px) */
+        left: 12px;
+        z-index: 9998;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        width: 38px;
+        height: 38px;
+        cursor: pointer;
+        font-size: 17px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      #darkModeToggle:hover {
+        background: var(--surface-2);
+        box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      }
+
+      /* ===== TOOLTIP GLOBAL (#appTooltip) ===== */
+      /* CSS aqui no bloco principal pois o elemento é criado pelo JS do main app */
+      #appTooltip {
+        display: none;
+        position: fixed;
+        z-index: 999999;
+        background: #1e293b;
+        color: #f1f5f9;
+        font-size: 0.76rem;
+        line-height: 1.45;
+        padding: 5px 10px;
+        border-radius: 6px;
+        max-width: 260px;
+        white-space: normal;
+        pointer-events: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        word-break: break-word;
+      }
+      #appTooltip::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+      }
+      #appTooltip.tip-above::after { top: 100%; border-top-color: #1e293b; }
+      #appTooltip.tip-below::after { bottom: 100%; border-bottom-color: #1e293b; }
+
 
 
       * { box-sizing: border-box; }
@@ -2332,6 +2599,13 @@
 
       /* Utility classes to replace inline styles */
       .info-text { font-size: 0.875rem; color: #666; margin-top: 0.25rem; }
+      .kpi-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; border: 1px solid; white-space: nowrap; cursor: default; }
+      .kpi-chip-med { background: #ede9fe; border-color: #c4b5fd; color: #5b21b6; }
+      .kpi-chip-val { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
+      .kpi-chip-zero { background: #f1f5f9; border-color: #cbd5e1; color: #64748b; }
+      body.dark-mode .kpi-chip-med { background: #1e0a3c; border-color: #7c3aed; color: #c4b5fd; }
+      body.dark-mode .kpi-chip-val { background: #2d1f00; border-color: #d97706; color: #fcd34d; }
+      body.dark-mode .kpi-chip-zero { background: #1e293b; border-color: #334155; color: #64748b; }
       .info-text-secondary { font-size: 0.875rem; color: var(--text-secondary); }
       .text-muted-sm { color: #6c757d; font-size: 0.75rem; }
       .text-muted-sm-bold { color: #dc3545; font-size: 0.75rem; font-weight: 600; }
@@ -2633,6 +2907,15 @@
 
   <body>
 
+    <!-- Dark mode: aplica antes do render para evitar flash -->
+    <script>
+      (function() {
+        if (localStorage.getItem('darkMode') === '1') {
+          document.body.classList.add('dark-mode');
+        }
+      })();
+    </script>
+
     <!-- Global Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
       <div class="loading-content">
@@ -2870,6 +3153,8 @@
           <div style="margin-bottom: 12px;">
             <h3 style="margin: 0;">📋 Solicitações do Setor</h3>
             <div id="respostaCountInfo" class="info-text"></div>
+            <!-- KPIs rápidos: conf. médica e dif. de valor -->
+            <div id="respostaKpis" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
           </div>
 
           <div class="d-flex justify-between align-center flex-wrap gap-1">
@@ -5253,9 +5538,39 @@
       bottom: 100%;
       border-bottom-color: #1e293b;
     }
+    /* === DARK MODE — Documentação Técnica === */
+    body.dark-mode { background: #0f172a; color: #e2e8f0; }
+    body.dark-mode .container { background: #1e293b; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+    body.dark-mode .nav { background: #1e293b; border-bottom-color: #334155; }
+    body.dark-mode .nav a { color: #4db6ac; }
+    body.dark-mode .nav a:hover { color: #80cbc4; }
+    body.dark-mode .content { background: #1e293b; }
+    body.dark-mode .section h3 { color: #cbd5e1; }
+    body.dark-mode .section p { color: #94a3b8; }
+    body.dark-mode .section li { color: #94a3b8; }
+    body.dark-mode .feature-card { background: linear-gradient(135deg, #273549 0%, #1e293b 100%); border-left-color: #4db6ac; }
+    body.dark-mode .feature-card h4 { color: #e2e8f0; }
+    body.dark-mode .feature-card p { color: #94a3b8; }
+    body.dark-mode table { border-color: #334155; }
+    body.dark-mode th { background: #273549; color: #e2e8f0; border-color: #334155; }
+    body.dark-mode td { background: #1e293b; color: #cbd5e1; border-color: #334155; }
+    body.dark-mode tr:hover td { background: #273549; }
+    body.dark-mode code { background: #0f172a; color: #6ee7b7; border-color: #334155; }
+    body.dark-mode pre { background: #0f172a; border-color: #334155; }
+    body.dark-mode .footer { background: #0f172a; border-top-color: #334155; }
+    body.dark-mode .badge { background: #273549; color: #4db6ac; }
+    #docDarkToggle {
+      position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+      background: #1e293b; border: 1px solid #334155; border-radius: 999px;
+      width: 40px; height: 40px; font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: background 0.2s;
+    }
+    body:not(.dark-mode) #docDarkToggle { background: #f8fafc; border-color: #e2e8f0; }
   </style>
 </head>
 <body>
+  <button id="docDarkToggle" title="Alternar modo escuro">🌙</button>
   <div class="container">
     <div class="header">
       <h1>📚 Documentação Técnica</h1>
@@ -5561,6 +5876,18 @@
       <p style="margin-top: 15px; font-size: 0.9rem; opacity: 0.7;">© 2024 - Todos os direitos reservados</p>
     </div>
   </div>
+  <script>
+    (function() {
+      var btn = document.getElementById('docDarkToggle');
+      var isDark = localStorage.getItem('docDarkMode') === '1';
+      if (isDark) { document.body.classList.add('dark-mode'); btn.textContent = '\u2600\uFE0F'; }
+      btn.addEventListener('click', function() {
+        isDark = document.body.classList.toggle('dark-mode');
+        localStorage.setItem('docDarkMode', isDark ? '1' : '0');
+        btn.textContent = isDark ? '\u2600\uFE0F' : '\uD83C\uDF19';
+      });
+    })();
+  ${'</'}script>
 </body>
 </html>`;
       }
@@ -5724,9 +6051,36 @@
       text-align: center;
       border-top: 1px solid #334155;
     }
+    /* === LIGHT MODE — API Doc (dark por padrão, light-mode sobrescreve) === */
+    body.light-mode { background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%); }
+    body.light-mode .container { background: #ffffff; }
+    body.light-mode .header { background: linear-gradient(135deg, #009688 0%, #00796b 100%); }
+    body.light-mode .nav { background: #f8fafc; border-bottom-color: #e2e8f0; }
+    body.light-mode .nav a { color: #009688; }
+    body.light-mode .section-title { color: #009688; border-bottom-color: #009688; }
+    body.light-mode .content { color: #333; }
+    body.light-mode .content p { color: #444; }
+    body.light-mode .endpoint-card { background: #f8fafc; border-color: #e2e8f0; }
+    body.light-mode .endpoint-header { background: #f1f5f9; }
+    body.light-mode .endpoint-header h3 { color: #1e293b; }
+    body.light-mode .endpoint-body { color: #475569; }
+    body.light-mode .params-table th { background: #e2e8f0; color: #1e293b; border-color: #cbd5e1; }
+    body.light-mode .params-table td { color: #475569; border-color: #e2e8f0; }
+    body.light-mode .params-table tr:hover { background: #f1f5f9; }
+    body.light-mode .response-example { background: #f8fafc; border-color: #e2e8f0; color: #334155; }
+    body.light-mode .footer { color: #475569; border-top-color: #e2e8f0; }
+    #docDarkToggle {
+      position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+      background: #1e293b; border: 1px solid #334155; border-radius: 999px;
+      width: 40px; height: 40px; font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4); transition: background 0.2s;
+    }
+    body.light-mode #docDarkToggle { background: #f8fafc; border-color: #e2e8f0; }
   </style>
 </head>
 <body>
+  <button id="docDarkToggle" title="Alternar modo claro/escuro">☀️</button>
   <div class="container">
     <div class="header">
       <h1>🔌 Documentação da API</h1>
@@ -6049,6 +6403,20 @@
       <p style="margin-top: 15px; font-size: 0.9rem;">© 2024 - Todos os direitos reservados</p>
     </div>
   </div>
+  <script>
+    (function() {
+      var btn = document.getElementById('docDarkToggle');
+      // API doc é escura por padrão. docDarkMode='0' → aplicar light-mode
+      var pref = localStorage.getItem('docDarkMode');
+      var isLight = pref === '0';
+      if (isLight) { document.body.classList.add('light-mode'); btn.textContent = '\uD83C\uDF19'; }
+      btn.addEventListener('click', function() {
+        isLight = document.body.classList.toggle('light-mode');
+        localStorage.setItem('docDarkMode', isLight ? '0' : '1');
+        btn.textContent = isLight ? '\uD83C\uDF19' : '\u2600\uFE0F';
+      });
+    })();
+  ${'</'}script>
 </body>
 </html>`;
       }
@@ -8795,6 +9163,23 @@
         const displayStart = totalItems > 0 ? startIndex + 1 : 0;
         countInfo.textContent = `Exibindo ${displayStart}-${endIndex} de ${totalItems} solicitação(ões) do seu setor`;
 
+        // === KPIs: Conf. Médica e Dif. de Valor (sobre todos os erros visíveis, sem paginação) ===
+        const kpisDiv = document.getElementById('respostaKpis');
+        if (kpisDiv) {
+          const totalVisiveis = filteredOpenErros.length;
+          const totalConfMedica = filteredOpenErros.filter(i => i.confirmacaoMedica === 'SIM').length;
+          const totalDifValor = filteredOpenErros.filter(i => i.diferencaNoValor === 'SIM' || i.diferencaNoValor === 'Sim').length;
+          const pctConfMedica = totalVisiveis > 0 ? Math.round(totalConfMedica / totalVisiveis * 100) : 0;
+          const pctDifValor = totalVisiveis > 0 ? Math.round(totalDifValor / totalVisiveis * 100) : 0;
+          kpisDiv.innerHTML = `
+            <span class="kpi-chip ${totalConfMedica > 0 ? 'kpi-chip-med' : 'kpi-chip-zero'}" title="Erros que requerem confirmação médica (sobre os ${totalVisiveis} visíveis)">
+              💊 Conf. Médica: ${totalConfMedica} (${pctConfMedica}%)
+            </span>
+            <span class="kpi-chip ${totalDifValor > 0 ? 'kpi-chip-val' : 'kpi-chip-zero'}" title="Erros com diferença de valor (sobre os ${totalVisiveis} visíveis)">
+              💰 Dif. de Valor: ${totalDifValor} (${pctDifValor}%)
+            </span>`;
+        }
+
         // Update visual filter tags area
         const filtrosContainer = document.getElementById('respostaFiltrosAtivos');
         const hasFilters = filterRequisicao || filterSolicitantes.length > 0 || filterSetores.length > 0 || filterStatus.length > 0 || filterDiferencaValor.length > 0 || filterConfMedica.length > 0;
@@ -10017,6 +10402,14 @@
         const collaborators = new Set();
         const solicitantes = new Set();
         const setores = new Set();
+
+        // Pré-popula tipos de erro a partir da configuração (inclui tipos sem registros ainda)
+        if (config && config.erros) {
+          config.erros.forEach(e => {
+            const nome = typeof e === 'object' ? e.nome : e;
+            if (nome) errorTypes.add(nome);
+          });
+        }
 
         (records || []).forEach(record => {
           if (record.erro) errorTypes.add(record.erro);
@@ -14186,6 +14579,24 @@
 
 
 
+  <!-- DARK MODE: Função de toggle e inicialização do ícone -->
+  <script>
+    function toggleDarkMode() {
+      const isDark = document.body.classList.toggle('dark-mode');
+      localStorage.setItem('darkMode', isDark ? '1' : '0');
+      const btn = document.getElementById('darkModeToggle');
+      if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+    }
+
+    // Sincroniza ícone do botão com o estado atual
+    document.addEventListener('DOMContentLoaded', function() {
+      const btn = document.getElementById('darkModeToggle');
+      if (btn && localStorage.getItem('darkMode') === '1') {
+        btn.textContent = '☀️';
+      }
+    });
+  </script>
+
   <!-- RODAPÉ DO SISTEMA -->
   <div id="system-footer" style="
     position: fixed;
@@ -14204,6 +14615,9 @@
   ">
     Solicitação Conserto &nbsp;·&nbsp; Deploy <?= appVersion ?> &nbsp;·&nbsp; Versão <?= appEnv ?>
   </div>
+
+  <!-- Botão dark mode — fixo no canto inferior esquerdo -->
+  <button id="darkModeToggle" type="button" onclick="toggleDarkMode()" title="Alternar modo escuro">🌙</button>
 
   </body>
 

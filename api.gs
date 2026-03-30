@@ -381,13 +381,14 @@ function checkRateLimit_(email) {
     const cache = CacheService.getUserCache();
     const key = "rl_w_" + email.replace(/[^a-zA-Z0-9]/g, "_");
     const count = parseInt(cache.get(key) || "0", 10);
-    if (count >= 30) {
+    if (count >= 15) {
       throw new Error("Muitas requisições. Aguarde 1 minuto e tente novamente.");
     }
     cache.put(key, String(count + 1), 60);
   } catch (e) {
     if (e.message && e.message.indexOf("Muitas requisições") !== -1) throw e;
-    // Se getUserCache falhar (ambiente sem suporte), continua normalmente
+    // CacheService indisponível: registra aviso mas não bloqueia a operação
+    Logger.log("AVISO: checkRateLimit_ — CacheService falhou: " + e);
   }
 }
 
@@ -553,9 +554,7 @@ function getOpenErros(limit) {
       debugId: debugId,
       openErros: openErros,
       _debug: {
-        userEmail: userEmail,
         usuarioPerfil: usuario ? usuario.perfil : null,
-        usuarioSetores: usuario ? usuario.setores : null,
         errosSheetRows: errosCount,
         solicitacoesSheetRows: solicitacoesCount,
         returnedCount: openErros.length,
@@ -1105,6 +1104,9 @@ function submitResponse(payload) {
   const debugId = Utilities.getUuid();
   safeLogDebug_("submitResponse", "start", { debugId: debugId });
   ensureSheets_();
+  if (!payload || typeof payload !== "object") {
+    return { ok: false, errors: ["Payload inválido."], debugId: debugId };
+  }
   const config = getConfigData_();
   payload.dataHoraCorrecao = new Date().toISOString();
   safeLogDebug_("submitResponse", "payload", payload);
@@ -1397,33 +1399,43 @@ function updateSolicitacao(payload) {
  * @sideeffect Adiciona registro na planilha correspondente
  * @sideeffect Invalida cache de configurações
  */
+// Tipos de configuração permitidos (whitelist explícita)
+const VALID_CONFIG_TYPES_ = ["solicitante", "setor", "erro"];
+
 function addConfigItem(type, value) {
   const debugId = Utilities.getUuid();
   safeLogDebug_("addConfigItem", "start", { debugId: debugId });
   ensureSheets_();
+  checkRateLimit_(getEmailValidado_());
+
+  // Validar tipo contra whitelist
+  if (VALID_CONFIG_TYPES_.indexOf(String(type || "")) === -1) {
+    return { ok: false, errors: ["Tipo inválido."], debugId: debugId };
+  }
+
   const trimmed = String(value || "").trim();
   if (!trimmed) {
     return { ok: false, errors: ["Informe um valor válido."], debugId: debugId };
   }
-  safeLogDebug_("addConfigItem", "payload", { type: type, value: trimmed });
+  safeLogDebug_("addConfigItem", "payload", { type: type });
 
   let sheetName = "";
   if (type === "solicitante") sheetName = CONFIG.SHEETS.SOLICITANTES;
   if (type === "setor") sheetName = CONFIG.SHEETS.SETORES;
   if (type === "erro") sheetName = CONFIG.SHEETS.ERROS_CADASTRO;
-  if (!sheetName) {
-    return { ok: false, errors: ["Tipo inválido."], debugId: debugId };
-  }
 
   const sheet = getSheet_(sheetName);
   const values = sheet.getDataRange().getValues();
+  // Comparação case-insensitive para evitar duplicatas como "Erro" e "erro"
+  const trimmedLower = trimmed.toLowerCase();
   for (let i = 1; i < values.length; i++) {
-    if (values[i][0] === trimmed) {
+    if (String(values[i][0] || "").trim().toLowerCase() === trimmedLower) {
       return { ok: false, errors: ["Item já cadastrado."], debugId: debugId };
     }
   }
   sheet.appendRow([trimmed]);
-  invalidateConfigCache_(); // Clear cache after adding item
+  if (type === "erro") sortErrosCadastro_();
+  invalidateConfigCache_();
   return { ok: true, debugId: debugId };
 }
 
@@ -1431,6 +1443,7 @@ function deleteConfigItem(type, value) {
   const debugId = Utilities.getUuid();
   safeLogDebug_("deleteConfigItem", "start", { debugId: debugId });
   ensureSheets_();
+  checkRateLimit_(getEmailValidado_());
   const trimmed = String(value || "").trim();
   if (!trimmed) {
     return { ok: false, errors: ["Valor inválido."], debugId: debugId };
@@ -1470,12 +1483,18 @@ function updateErrorClassification(nomeErro, classificacao) {
   const debugId = Utilities.getUuid();
   safeLogDebug_("updateErrorClassification", "start", { debugId: debugId });
   ensureSheets_();
+  checkRateLimit_(getEmailValidado_());
+
+  const VALID_CLASSIFICATIONS_ = ["NA", "Leve", "Grave", "Gravíssimo"];
 
   const trimmedNome = String(nomeErro || "").trim();
   const trimmedClass = String(classificacao || "").trim();
 
   if (!trimmedNome) {
     return { ok: false, errors: ["Nome do erro inválido."], debugId: debugId };
+  }
+  if (!trimmedClass || VALID_CLASSIFICATIONS_.indexOf(trimmedClass) === -1) {
+    return { ok: false, errors: ["Classificação inválida. Use: NA, Leve, Grave ou Gravíssimo."], debugId: debugId };
   }
 
   safeLogDebug_("updateErrorClassification", "payload", {
@@ -1499,9 +1518,29 @@ function updateErrorClassification(nomeErro, classificacao) {
   }
 
   sheet.getRange(rowToUpdate, 2).setValue(trimmedClass);
+  sortErrosCadastro_();
   invalidateConfigCache_(); // Clear cache after updating classification
   safeLogDebug_("updateErrorClassification", "updated", { row: rowToUpdate });
   return { ok: true, debugId: debugId };
+}
+
+function sortErrosCadastro_() {
+  const sheet = getSheet_(CONFIG.SHEETS.ERROS_CADASTRO);
+  const dataRange = sheet.getDataRange();
+  const allValues = dataRange.getValues();
+  if (allValues.length <= 2) return;
+  const header = allValues[0];
+  const dataRows = allValues.slice(1);
+  const classOrder = { 'NA': 0, 'Leve': 1, 'Grave': 2, 'Gravíssimo': 3 };
+  dataRows.sort(function(a, b) {
+    const ca = classOrder[String(a[1] || '').trim()];
+    const cb = classOrder[String(b[1] || '').trim()];
+    const orderA = ca !== undefined ? ca : 99;
+    const orderB = cb !== undefined ? cb : 99;
+    if (orderA !== orderB) return orderA - orderB;
+    return String(a[0] || '').localeCompare(String(b[0] || ''), 'pt-BR', { sensitivity: 'base' });
+  });
+  dataRange.setValues([header].concat(dataRows));
 }
 
 // ============================================================================
@@ -1551,6 +1590,7 @@ function addUsuario(payload) {
   }
 
   sheet.appendRow([email, nome, perfil, setores]);
+  invalidateUsuarioCache_(email);
   auditLog_("CREATE", "usuarios", "email=" + email, null, null, null);
   return { ok: true, debugId: debugId };
 }
@@ -1587,10 +1627,11 @@ function updateUsuario(payload) {
 
   const oldRow = values[rowIndex - 1];
   sheet.getRange(rowIndex, 1, 1, 4).setValues([[email, nome, perfil, setores]]);
+  invalidateUsuarioCache_(email);
   auditLog_("UPDATE", "usuarios", "email=" + email, "nome", oldRow[1], nome);
   auditLog_("UPDATE", "usuarios", "email=" + email, "perfil", oldRow[2], perfil);
   auditLog_("UPDATE", "usuarios", "email=" + email, "setores", oldRow[3], setores);
-  safeLogDebug_("updateUsuario", "updated", { email: email, debugId: debugId });
+  safeLogDebug_("updateUsuario", "updated", { debugId: debugId });
   return { ok: true, debugId: debugId };
 }
 
@@ -1605,8 +1646,9 @@ function deleteUsuario(payload) {
   for (let i = 1; i < values.length; i++) {
     if (values[i][0] === email) {
       sheet.deleteRow(i + 1);
+      invalidateUsuarioCache_(email);
       auditLog_("DELETE", "usuarios", "email=" + email, null, null, null);
-      safeLogDebug_("deleteUsuario", "deleted", { email: email, debugId: debugId });
+      safeLogDebug_("deleteUsuario", "deleted", { debugId: debugId });
       return { ok: true, debugId: debugId };
     }
   }
@@ -2458,20 +2500,18 @@ function getDashboardData_(records) {
 }
 
 function usuarioPodeVerSetor_(usuario, setorLocal) {
-  // Se não houver usuário, negar acesso
   if (!usuario) return false;
 
-  // Se setorLocal estiver vazio, permitir (dados antigos sem setor)
-  if (!setorLocal || setorLocal === "") return true;
-
-  // Verificar perfil (case-insensitive)
   const perfil = (usuario.perfil || "").toUpperCase();
   if (perfil === "ADMIN" || perfil === "CONFERENTE") return true;
 
-  // Verificar se tem acesso a todos os setores
-  if (usuario.setores && usuario.setores.indexOf("*") !== -1) return true;
+  // Registros sem setor: apenas usuários com acesso total (*) podem ver.
+  // Evita que usuários com setor restrito vejam registros sem setor como bypass.
+  if (!setorLocal || setorLocal === "") {
+    return !!(usuario.setores && usuario.setores.indexOf("*") !== -1);
+  }
 
-  // Verificar se o setor específico está na lista do usuário
+  if (usuario.setores && usuario.setores.indexOf("*") !== -1) return true;
   if (usuario.setores && usuario.setores.indexOf(setorLocal) !== -1) return true;
 
   return false;

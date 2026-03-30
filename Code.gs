@@ -74,10 +74,11 @@ const CONFIG = {
     CRITICAL_MINUTES: 30,
     TIMEZONE: "America/Sao_Paulo"
   },
-  DEBUG_ENABLED: true,
-  APP_VERSION: "v223",
+  APP_VERSION: "v234-PROD",
   APP_ENV: "PROD"
 };
+// DEBUG_ENABLED automático: ativo em DEV, desativado em PROD
+CONFIG.DEBUG_ENABLED = CONFIG.APP_ENV === "DEV";
 
 // ============================================================================
 // FUNÇÕES DE INICIALIZAÇÃO
@@ -106,7 +107,7 @@ function doGet() {
   const tpl = HtmlService.createTemplateFromFile("ui");
   tpl.logoUrl = LOGO_URL || "";
   tpl.appVersion = CONFIG.APP_VERSION || "v???";
-  tpl.appEnv = CONFIG.APP_ENV || "PROD";
+  tpl.appEnv = CONFIG.APP_ENV || "DEV";
 
   try {
     tpl.userEmail = Session.getActiveUser().getEmail() || "usuario@exemplo.com";
@@ -147,12 +148,51 @@ function include_(filename) {
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu("App Solicitações")
+    .addItem("Configurar Propriedades (rodar 1x)", "setupPropriedades_")
+    .addSeparator()
     .addItem("Setup/Reset Planilha", "resetPlanilha_")
     .addItem("Formatar Planilhas", "formatarPlanilhas_")
     .addSeparator()
     .addItem("Gerar Dados de Teste (2000+)", "gerarDadosTeste_")
     .addItem("Limpar Dados de Teste", "limparDadosTeste_")
     .addToUi();
+}
+
+/**
+ * Salva o SPREADSHEET_ID no PropertiesService do script.
+ * Rodar UMA VEZ após o primeiro deploy em cada ambiente (DEV e PROD).
+ * Após rodar, o ID não precisa mais ficar exposto no código-fonte.
+ */
+function setupPropriedades_() {
+  const ui = SpreadsheetApp.getUi();
+  const props = PropertiesService.getScriptProperties();
+
+  // Verifica se já está configurado
+  const atual = props.getProperty("SPREADSHEET_ID");
+  if (atual) {
+    const resp = ui.alert(
+      "Propriedades já configuradas",
+      "SPREADSHEET_ID já está salvo:\n" + atual + "\n\nDeseja sobrescrever com o valor do código (" + CONFIG.SPREADSHEET_ID + ")?",
+      ui.ButtonSet.YES_NO
+    );
+    if (resp !== ui.Button.YES) {
+      ui.alert("Operação cancelada. Propriedades mantidas.");
+      return;
+    }
+  }
+
+  if (!CONFIG.SPREADSHEET_ID) {
+    ui.alert("Erro: CONFIG.SPREADSHEET_ID está vazio no código. Nada foi salvo.");
+    return;
+  }
+
+  props.setProperty("SPREADSHEET_ID", CONFIG.SPREADSHEET_ID);
+  ui.alert(
+    "Propriedades configuradas!",
+    "SPREADSHEET_ID salvo no PropertiesService:\n" + CONFIG.SPREADSHEET_ID +
+    "\n\nO código agora lê o ID das propriedades — ele pode ser removido do CONFIG com segurança.",
+    ui.ButtonSet.OK
+  );
 }
 
 // ============================================================================
@@ -280,7 +320,10 @@ function gerarDadosTesteInterno_(quantidade) {
   const respostasData = [];
 
   const now = new Date();
-  const userEmail = Session.getActiveUser().getEmail() || 'teste@exemplo.com';
+  // Email genérico para dados de teste (LGPD: não gravar email real em registros de teste)
+  const testEmail = 'teste@neoformula.dev';
+  // Email real apenas para configurar o admin ao final
+  const adminEmail = Session.getActiveUser().getEmail() || 'admin@neoformula.dev';
 
   // Calcular quantas respostas gerar (2950 de 3000 = 98.33%)
   const qtdRespostas = Math.min(2950, quantidade);
@@ -306,7 +349,7 @@ function gerarDadosTesteInterno_(quantidade) {
       solicitante,
       dataHoraPedido,
       status,
-      userEmail,
+      testEmail,
       dataHoraPedido
     ]);
 
@@ -339,7 +382,7 @@ function gerarDadosTesteInterno_(quantidade) {
         solicitacaoId,
         1, // Sempre sequência 1
         responsavel,
-        userEmail,
+        testEmail,
         'SIM',
         diferencaValor,
         valorDif,
@@ -373,8 +416,8 @@ function gerarDadosTesteInterno_(quantidade) {
       .setValues(respostasData);
   }
 
-  // Garantir que o usuário atual tenha acesso ADMIN
-  configurarUsuarioAdmin_(userEmail, setores);
+  // Garantir que o usuário atual tenha acesso ADMIN (usa email real)
+  configurarUsuarioAdmin_(adminEmail, setores);
 
   return {
     solicitacoes: solicitacoesData.length,
@@ -732,11 +775,13 @@ function formatarSheetLista_(ss, sheetName, headerColor) {
     const dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
     dataRange.setFontSize(10);
 
-    // Cores alternadas
+    // Cores alternadas — batch setBackgrounds() em vez de N chamadas individuais
+    const bgMatrix = [];
     for (let i = 2; i <= lastRow; i++) {
-      const rowRange = sheet.getRange(i, 1, 1, lastCol);
-      rowRange.setBackground(i % 2 === 0 ? '#f5f5f5' : '#ffffff');
+      const cor = i % 2 === 0 ? '#f5f5f5' : '#ffffff';
+      bgMatrix.push(Array(lastCol).fill(cor));
     }
+    sheet.getRange(2, 1, lastRow - 1, lastCol).setBackgrounds(bgMatrix);
   }
 
   // Congelar e filtro

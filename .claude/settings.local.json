@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(clasp:*)",
+      "Bash(node:*)",
+      "Bash(awk:*)",
+      "Bash(grep:*)",
+      "Bash(python fix_encoding.py:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(ls:*)",
+      "Read(//c/Users/Usuario/OneDrive/Documents/GitHub/App_Solicitacao_Conserto/**)",
+      "Bash(git tag:*)",
+      "Bash(if [ -f .gitignore ])",
+      "Bash(then cat .gitignore)",
+      "Bash(else echo \"# .gitignore não existe\")",
+      "Bash(fi)",
+      "Bash(certutil -encode:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(del:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(for id in AKfycby7p5Hx9NBm3ZgvNJ-I7-ibvLzI5ofYxFEqaAtgaMVZaYYjV9SKbhyMzCVHNzOKedOsYQ AKfycbwdPscuLwfWWtXIe-5JciGzvltlVfXiYXedVrCgZSEJZqgMcuc3boTAdDYroM5yCqJG3Q AKfycbyt-lxx4Gq0n1m6U5gRfQOCbPf5k3EMNqr_jSW92-PedRCAyNPTWJuXGOQRjg2RGIVIKg AKfycbysYmingxVx3haCF2HTIYUL-6EW9hzNdZ6LoInrdAY-27ByuRUpFKzXBN7gfefA0-9Cvw AKfycbzvd2o83HdCpur-yTOZAylKSr3F_7hD_SYLM757o4X0rEaQoksHTlsZryPjnmLl7y5RWA AKfycbyWH1tt5Md2vzDJ3L7sAmzUpCGxpu_F0ytlSNAW6zGFw8D6EJyfRydWjtmPhYN5CfZk-g AKfycbyRkyh5wwV0yHG_kipdnjh0feBAD5wdKpMB_K25Co7ddcxIZSOnXOFIolFtNJbGLqahvg AKfycbwHt6twOZVN_PK5AG7KVMhJSHc2gOScku1bw8Oy-1LYM7AoowJLrA2MR0i34yBH56t8Uw AKfycbyEDGpD2ZfV5MPK8BlMmDev3c2B5IxkNcK9mxQanD6wwFUh6VBzHgG1kOSaKZzM2MaDyg AKfycbx7u48n2wWivuRWPOr2HS8mpyqEzcsYrfC-elKXrjZKmCM0nzmL2OtL-xQKMwhjMrNJDQ AKfycbx1oLfsKq_9aLAOwTpkodyArqmVBmfcBs6MSIms5EYwS8x3XjJFg-BXAldxV5fMr2W_eA AKfycbz7XW2RdBkka9382ZGDbn8ckBg7KBLf6AH7zDrCKY6ZCUoHa6xEDqusM90Dszl_ns5mQw AKfycbwDBxKxMCEGC0sX8r4CFhWPJSNoSAzkWw4R_YyRZISJeye5AsdzG7dTSnRqhSiYLBEiWw)",
+      "Bash(do clasp undeploy $id)",
+      "Bash(done)"
+    ]
+  }
+}
