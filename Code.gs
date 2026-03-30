@@ -54,7 +54,7 @@ const LOGO_URL = "https://neoformula.com.br/cdn/shop/files/Logotipo-NeoFormula-M
  * @property {boolean} DEBUG_ENABLED - Flag para ativar logs de debug
  */
 const CONFIG = {
-  SPREADSHEET_ID: "1h4bCllbefqsmsjXpMSSRXVR6avdeXgDS3uGA3NercH8",
+  SPREADSHEET_ID: "", // Configurado via PropertiesService — execute "Configurar Propriedades" no menu
   SHEETS: {
     SOLICITACOES: "Solicitacoes",
     ERROS: "Erros",
@@ -74,7 +74,7 @@ const CONFIG = {
     CRITICAL_MINUTES: 30,
     TIMEZONE: "America/Sao_Paulo"
   },
-  APP_VERSION: "v234-PROD",
+  APP_VERSION: "v235-PROD",
   APP_ENV: "PROD"
 };
 // DEBUG_ENABLED automático: ativo em DEV, desativado em PROD
