@@ -264,19 +264,23 @@ function getSlaStatus_(requestDatetime, correcaoDatetime) {
 const PROFILE_PERM_DEFAULTS_ = {
   ADMIN: {
     tabs: ['resposta', 'solicitacao', 'dashboard', 'config', 'auditoria', 'ajuda'],
-    actions: ['submitRequest', 'respond', 'editSolicitation', 'delete', 'manageUsers', 'manageConfig', 'archive', 'viewAudit']
+    actions: ['submitRequest', 'respond', 'editSolicitation', 'delete', 'manageUsers', 'manageConfig', 'archive', 'viewAudit'],
+    dashTabs: ['colaboradores', 'solicitantes', 'ranking', 'erros']
   },
   CONFERENTE: {
     tabs: ['resposta', 'solicitacao', 'dashboard', 'config', 'ajuda'],
-    actions: ['submitRequest', 'respond', 'editSolicitation', 'delete']
+    actions: ['submitRequest', 'respond', 'editSolicitation', 'delete'],
+    dashTabs: ['colaboradores', 'solicitantes', 'ranking', 'erros']
   },
   RESPOSTA: {
     tabs: ['resposta', 'dashboard', 'ajuda'],
-    actions: ['submitRequest', 'respond']
+    actions: ['submitRequest', 'respond'],
+    dashTabs: ['colaboradores', 'solicitantes', 'ranking', 'erros']
   },
   ESPECTADOR: {
     tabs: ['dashboard', 'ajuda'],
-    actions: []
+    actions: [],
+    dashTabs: ['colaboradores', 'solicitantes', 'ranking', 'erros']
   }
 };
 
@@ -308,6 +312,10 @@ function getUsuarioContexto_(email) {
       }
       if (!permissoes || !permissoes.tabs || !permissoes.actions) {
         permissoes = PROFILE_PERM_DEFAULTS_[perfil] || PROFILE_PERM_DEFAULTS_.ESPECTADOR;
+      }
+      // Compatibilidade: usuários sem dashTabs recebem padrão do perfil
+      if (!permissoes.dashTabs) {
+        permissoes.dashTabs = (PROFILE_PERM_DEFAULTS_[perfil] || PROFILE_PERM_DEFAULTS_.ESPECTADOR).dashTabs;
       }
       result = {
         email: values[i][0],

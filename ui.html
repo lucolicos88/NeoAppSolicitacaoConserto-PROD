@@ -3354,7 +3354,7 @@
                 ⚠️ Erros
               </button>
             </div>
-            <div class="d-flex gap-10">
+            <div class="d-flex gap-10" style="align-items:center;">
               <button type="button" class="btn secondary" onclick="refreshDashboard()" id="btnRefreshDashboard" title="Atualizar dados do dashboard">
                 🔄 Atualizar
               </button>
@@ -7484,23 +7484,35 @@
         { id: 'viewAudit',        label: 'Visualizar auditoria' }
       ];
 
+      // Subabas do dashboard configuráveis por usuário
+      const PERM_DASH_TABS_ = [
+        { id: 'colaboradores', label: '👥 Colaboradores' },
+        { id: 'solicitantes',  label: '🏪 Solicitantes' },
+        { id: 'ranking',       label: '🏆 Ranking' },
+        { id: 'erros',         label: '⚠️ Erros' }
+      ];
+
       // Permissões padrão por perfil — espelha backend PROFILE_PERM_DEFAULTS_
       const PROFILE_PERM_DEFAULTS_UI_ = {
         ADMIN: {
           tabs: ['resposta', 'solicitacao', 'dashboard', 'config', 'auditoria', 'ajuda'],
-          actions: ['submitRequest', 'respond', 'editSolicitation', 'delete', 'manageUsers', 'manageConfig', 'archive', 'viewAudit']
+          actions: ['submitRequest', 'respond', 'editSolicitation', 'delete', 'manageUsers', 'manageConfig', 'archive', 'viewAudit'],
+          dashTabs: ['colaboradores', 'solicitantes', 'ranking', 'erros']
         },
         CONFERENTE: {
           tabs: ['resposta', 'solicitacao', 'dashboard', 'config', 'ajuda'],
-          actions: ['submitRequest', 'respond', 'editSolicitation', 'delete']
+          actions: ['submitRequest', 'respond', 'editSolicitation', 'delete'],
+          dashTabs: ['colaboradores', 'solicitantes', 'ranking', 'erros']
         },
         RESPOSTA: {
           tabs: ['resposta', 'dashboard', 'ajuda'],
-          actions: ['submitRequest', 'respond']
+          actions: ['submitRequest', 'respond'],
+          dashTabs: ['colaboradores', 'solicitantes', 'ranking', 'erros']
         },
         ESPECTADOR: {
           tabs: ['dashboard', 'ajuda'],
-          actions: []
+          actions: [],
+          dashTabs: ['colaboradores', 'solicitantes', 'ranking', 'erros']
         }
       };
 
@@ -7523,6 +7535,7 @@
         // Usa permissões customizadas se fornecidas, senão padrão do perfil
         const perms = (customPermissoes && customPermissoes.tabs && customPermissoes.actions)
           ? customPermissoes : defaults;
+        const permDashTabs = (perms.dashTabs) ? perms.dashTabs : defaults.dashTabs;
 
         const profileLabel = p ? (p.icon + ' <strong>' + p.label + '</strong>') : perfil;
         const profileDesc = p ? p.desc : '';
@@ -7551,6 +7564,17 @@
           html += '<label for="pact_' + action.id + '">' + action.label + '</label>';
           html += '</div>';
         });
+        html += '</div>';
+
+        // Coluna: Subabas do Dashboard
+        html += '<div><div class="perm-check-section-lbl">Subabas do dashboard</div>';
+        PERM_DASH_TABS_.forEach(function(dt) {
+          const checked = permDashTabs.indexOf(dt.id) !== -1 ? ' checked' : '';
+          html += '<div class="perm-check-row">';
+          html += '<input type="checkbox" id="pdash_' + dt.id + '" name="perm_dash" value="' + dt.id + '"' + checked + '>';
+          html += '<label for="pdash_' + dt.id + '">' + dt.label + '</label>';
+          html += '</div>';
+        });
         html += '</div></div>';
 
         // Botão para restaurar padrões do perfil
@@ -7562,7 +7586,7 @@
         toggleSetoresPorPerfil();
       }
 
-      // Lê checkboxes do painel e retorna objeto {tabs:[...], actions:[...]}
+      // Lê checkboxes do painel e retorna objeto {tabs:[...], actions:[...], dashTabs:[...]}
       function getPermissoesFromForm_() {
         var tabs = [];
         document.querySelectorAll('#permDetail input[name="perm_tab"]:checked').forEach(function(cb) {
@@ -7572,7 +7596,13 @@
         document.querySelectorAll('#permDetail input[name="perm_action"]:checked').forEach(function(cb) {
           actions.push(cb.value);
         });
-        return { tabs: tabs, actions: actions };
+        var dashTabs = [];
+        document.querySelectorAll('#permDetail input[name="perm_dash"]:checked').forEach(function(cb) {
+          dashTabs.push(cb.value);
+        });
+        // Garante ao menos uma subaba visível
+        if (dashTabs.length === 0) dashTabs = ['colaboradores'];
+        return { tabs: tabs, actions: actions, dashTabs: dashTabs };
       }
 
       // Inicializa o seletor de perfil com ADMIN selecionado
@@ -9177,17 +9207,19 @@
 
       function applyAccessControl(usuario) {
         // Aceita objeto usuario ou string perfil (compatibilidade)
-        var perfil, permTabs;
+        var perfil, permTabs, permDashTabs;
         if (typeof usuario === 'string') {
           perfil = usuario;
           permTabs = null;
+          permDashTabs = null;
         } else {
           perfil = usuario ? usuario.perfil : 'ESPECTADOR';
           permTabs = usuario && usuario.permissoes && usuario.permissoes.tabs ? usuario.permissoes.tabs : null;
+          permDashTabs = usuario && usuario.permissoes && usuario.permissoes.dashTabs ? usuario.permissoes.dashTabs : null;
         }
-        if (!permTabs) {
-          permTabs = (PROFILE_PERM_DEFAULTS_UI_[perfil] || PROFILE_PERM_DEFAULTS_UI_.ESPECTADOR).tabs;
-        }
+        const defaults = PROFILE_PERM_DEFAULTS_UI_[perfil] || PROFILE_PERM_DEFAULTS_UI_.ESPECTADOR;
+        if (!permTabs) permTabs = defaults.tabs;
+        if (!permDashTabs) permDashTabs = defaults.dashTabs;
 
         const tabEls = {
           solicitacao: document.querySelector('.tab[data-tab="solicitacao"]'),
@@ -9216,9 +9248,29 @@
           }
         }
 
+        // Apply dashboard sub-tab visibility
+        applyDashTabsFromPerms_(permDashTabs);
+
         // ESPECTADOR: disable all form inputs (leitura apenas)
         if (perfil === 'ESPECTADOR') {
           disableAllInputs();
+        }
+      }
+
+      // Aplica visibilidade das subabas do dashboard a partir do array de permissões
+      function applyDashTabsFromPerms_(permDashTabs) {
+        const allDashIds = ['colaboradores', 'solicitantes', 'ranking', 'erros'];
+        const visible = (permDashTabs && permDashTabs.length > 0) ? permDashTabs : allDashIds;
+        allDashIds.forEach(function(id) {
+          const btn = document.getElementById('tab-btn-' + id);
+          if (btn) btn.style.display = visible.indexOf(id) !== -1 ? '' : 'none';
+        });
+        // Se a aba ativa do dashboard ficou oculta, trocar para a primeira visível
+        const activeBtn = document.querySelector('.dashboard-tab.active');
+        const activeId = activeBtn ? activeBtn.id.replace('tab-btn-', '') : null;
+        if (activeId && visible.indexOf(activeId) === -1) {
+          const firstVisible = allDashIds.find(function(id) { return visible.indexOf(id) !== -1; });
+          if (firstVisible) switchDashboardTab(firstVisible);
         }
       }
 
@@ -11500,6 +11552,33 @@
         const alertas = filteredRecords.filter(r => r.slaStatus === 'ALERTA').length;
         const percAtendidas = totalErros > 0 ? Math.round((corrigidos / totalErros) * 100) : 0;
 
+        // Variação de valor
+        let comVariacao = 0, totalVariacaoValor = 0;
+        filteredRecords.forEach(r => {
+          const valorDif = parseFloat(r.diferencaValorResposta || r.diferencaValor || 0);
+          const temDiferenca = r.diferencaNoValor === 'SIM' || r.diferencaNoValor === 'Sim' || valorDif !== 0;
+          if (temDiferenca) { comVariacao++; if (valorDif !== 0) totalVariacaoValor += Math.abs(valorDif); }
+        });
+        const variacaoText = totalVariacaoValor > 0
+          ? `${comVariacao} - R$ ${totalVariacaoValor.toFixed(2).replace('.', ',')}` : String(comVariacao);
+
+        // Confirmação médica
+        const confMedica = filteredRecords.filter(r => r.confirmacaoMedica === 'SIM').length;
+        const confMedicaPct = totalErros > 0 ? Math.round((confMedica / totalErros) * 100) : 0;
+        const confMedicaText = confMedica > 0 ? `${confMedica} (${confMedicaPct}%)` : '0';
+
+        // SLA metrics
+        const slaOkCount = filteredRecords.filter(r => r.slaStatus === 'OK').length;
+        const slaSlaTotal = totalErros;
+        const slaDentroPercent = slaSlaTotal > 0 ? Math.round((slaOkCount / slaSlaTotal) * 100) : 0;
+        const slaForaPercent = slaSlaTotal > 0 ? Math.round(((alertas + criticos) / slaSlaTotal) * 100) : 0;
+        const configSla = (typeof config !== 'undefined' && config && config.limiares) || {};
+        const metaSla = configSla.slaAlerta || 60;
+        let statusGeral = '🟢 Excelente';
+        if (slaDentroPercent < 70) statusGeral = '🔴 Crítico';
+        else if (slaDentroPercent < 85) statusGeral = '🟠 Atenção';
+        else if (slaDentroPercent < 95) statusGeral = '🟡 Bom';
+
         // Calculate time metrics
         let totalTempo = 0, countTempo = 0, tempoMin = Infinity, tempoMax = 0;
         filteredRecords.forEach(r => {
@@ -11606,6 +11685,37 @@
               </div>
             </div>
 
+            <!-- KPIs ROW 3 - Additional Metrics + SLA -->
+            <div style="margin-bottom: 8px;">
+              <h3 style="margin: 0 0 5px 0; font-size: 11px; color: #333; border-bottom: 1px solid #009688; padding-bottom: 3px;">Métricas Adicionais e SLA</h3>
+              <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;">
+                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 12px; font-weight: bold; color: #7C3AED;">${variacaoText}</div>
+                  <div style="font-size: 7px; color: #64748b;">Dif. Valor R$</div>
+                </div>
+                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 12px; font-weight: bold; color: #1565C0;">${confMedicaText}</div>
+                  <div style="font-size: 7px; color: #64748b;">Conf. Médica</div>
+                </div>
+                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 12px; font-weight: bold; color: #10B981;">${slaDentroPercent}%</div>
+                  <div style="font-size: 7px; color: #64748b;">Dentro SLA</div>
+                </div>
+                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 12px; font-weight: bold; color: #EF4444;">${slaForaPercent}%</div>
+                  <div style="font-size: 7px; color: #64748b;">Fora do SLA</div>
+                </div>
+                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 12px; font-weight: bold; color: #F59E0B;">${metaSla} min</div>
+                  <div style="font-size: 7px; color: #64748b;">Meta SLA</div>
+                </div>
+                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 10px; font-weight: bold; color: #333;">${statusGeral}</div>
+                  <div style="font-size: 7px; color: #64748b;">Status Geral</div>
+                </div>
+              </div>
+            </div>
+
             <!-- TIMELINE CHART -->
             <div style="margin-bottom: 8px;">
               <h3 style="margin: 0 0 5px 0; font-size: 11px; color: #333; border-bottom: 1px solid #009688; padding-bottom: 3px;">Timeline de Erros</h3>
@@ -11614,25 +11724,33 @@
               </div>
             </div>
 
-            <!-- CHARTS GRID - 4 charts in 2x2 grid, compact -->
+            <!-- CHARTS GRID - 6 charts in 3x2 grid, compact -->
             <div style="margin-bottom: 0;">
               <h3 style="margin: 0 0 5px 0; font-size: 11px; color: #333; border-bottom: 1px solid #009688; padding-bottom: 3px;">Análise Gráfica</h3>
-              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
                 <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
                   <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 3px;">Tipos de Erros</div>
-                  <img src="${captureChart(isColab ? 'chartTiposColab' : 'chartTiposSol') || ''}" style="max-width: 100%; height: 170px; object-fit: contain;" />
+                  <img src="${captureChart(isColab ? 'chartTiposColab' : 'chartTiposSol') || ''}" style="max-width: 100%; height: 140px; object-fit: contain;" />
                 </div>
                 <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
                   <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 3px;">Erros por Setor</div>
-                  <img src="${captureChart(isColab ? 'chartSetorColab' : 'chartSetorSol') || ''}" style="max-width: 100%; height: 170px; object-fit: contain;" />
+                  <img src="${captureChart(isColab ? 'chartSetorColab' : 'chartSetorSol') || ''}" style="max-width: 100%; height: 140px; object-fit: contain;" />
                 </div>
                 <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
                   <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 3px;">Classificação</div>
-                  <img src="${captureChart(isColab ? 'chartClassificacaoColab' : 'chartClassificacaoSol') || ''}" style="max-width: 100%; height: 170px; object-fit: contain;" />
+                  <img src="${captureChart(isColab ? 'chartClassificacaoColab' : 'chartClassificacaoSol') || ''}" style="max-width: 100%; height: 140px; object-fit: contain;" />
                 </div>
                 <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
                   <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 3px;">Status SLA</div>
-                  <img src="${captureChart(isColab ? 'chartSLAColab' : 'chartSLASol') || ''}" style="max-width: 100%; height: 170px; object-fit: contain;" />
+                  <img src="${captureChart(isColab ? 'chartSLAColab' : 'chartSLASol') || ''}" style="max-width: 100%; height: 140px; object-fit: contain;" />
+                </div>
+                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
+                  <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 3px;">Tempo de Resposta</div>
+                  <img src="${captureChart(isColab ? 'chartTempoColab' : 'chartTempoSol') || ''}" style="max-width: 100%; height: 140px; object-fit: contain;" />
+                </div>
+                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
+                  <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 3px;">Performance SLA</div>
+                  <img src="${captureChart(isColab ? 'chartPerformanceSlaColab' : 'chartPerformanceSlaSol') || ''}" style="max-width: 100%; height: 140px; object-fit: contain;" />
                 </div>
               </div>
             </div>
@@ -11861,18 +11979,24 @@
       // Generate PDF for Erros Analysis View
       function generateErrosPDF(records, filters, logoUrl, captureChart) {
         const totalErros = records.length;
-        const corrigidos = records.filter(r => r.dataHoraCorrecao).length;
-        const pendentes = totalErros - corrigidos;
-        const criticos = records.filter(r => r.slaStatus === 'CRITICO').length;
+        // Alterações técnicas são contadas separadamente
+        const alteracoesTecnicas = records.filter(r => isAlteracaoTecnica(r.erro)).length;
+        const corrigidos = records.filter(r => !isAlteracaoTecnica(r.erro) && r.dataHoraCorrecao).length;
+        const pendentes = records.filter(r => !isAlteracaoTecnica(r.erro) && !r.dataHoraCorrecao).length;
+        const criticos = records.filter(r => !isAlteracaoTecnica(r.erro) && r.slaStatus === 'CRITICO').length;
 
         // Build tipo de erro stats
         const tiposMap = {};
         records.forEach(r => {
           const tipo = r.erro || 'Não especificado';
-          if (!tiposMap[tipo]) tiposMap[tipo] = 0;
-          tiposMap[tipo]++;
+          if (!tiposMap[tipo]) tiposMap[tipo] = { total: 0, corrigidos: 0, pendentes: 0 };
+          tiposMap[tipo].total++;
+          if (!isAlteracaoTecnica(tipo)) {
+            if (r.dataHoraCorrecao) tiposMap[tipo].corrigidos++;
+            else tiposMap[tipo].pendentes++;
+          }
         });
-        const topTipos = Object.entries(tiposMap).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        const topTipos = Object.entries(tiposMap).sort((a, b) => b[1].total - a[1].total).slice(0, 10);
 
         // Build setor stats
         const setorMap = {};
@@ -11901,7 +12025,7 @@
                 <span><strong>Setor:</strong> ${filters.setor || 'Todos'}</span>
               </div>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 15px;">
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 15px;">
               <div style="background: linear-gradient(135deg, #009688 0%, #00897b 100%); padding: 10px; border-radius: 4px; text-align: center; color: white;">
                 <div style="font-size: 22px; font-weight: bold;">${totalErros}</div>
                 <div style="font-size: 8px;">Total de Erros</div>
@@ -11918,6 +12042,10 @@
                 <div style="font-size: 22px; font-weight: bold;">${criticos}</div>
                 <div style="font-size: 8px;">SLA Crítico</div>
               </div>
+              <div style="background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%); padding: 10px; border-radius: 4px; text-align: center; color: white;">
+                <div style="font-size: 22px; font-weight: bold;">${alteracoesTecnicas}</div>
+                <div style="font-size: 8px;">Alt. Técnicas</div>
+              </div>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
               <div>
@@ -11931,10 +12059,10 @@
                     </tr>
                   </thead>
                   <tbody>
-                    ${topTipos.map(([tipo, count], i) => `<tr style="background: ${i % 2 === 0 ? '#fff' : '#f8fafc'};">
+                    ${topTipos.map(([tipo, data], i) => `<tr style="background: ${i % 2 === 0 ? '#fff' : '#f8fafc'};">
                       <td style="padding: 5px 4px; border: 1px solid #e2e8f0;">${tipo}</td>
-                      <td style="padding: 5px 4px; border: 1px solid #e2e8f0; text-align: center; font-weight: bold;">${count}</td>
-                      <td style="padding: 5px 4px; border: 1px solid #e2e8f0; text-align: center;">${(count / totalErros * 100).toFixed(1)}%</td>
+                      <td style="padding: 5px 4px; border: 1px solid #e2e8f0; text-align: center; font-weight: bold;">${data.total}</td>
+                      <td style="padding: 5px 4px; border: 1px solid #e2e8f0; text-align: center;">${(data.total / totalErros * 100).toFixed(1)}%</td>
                     </tr>`).join('')}
                   </tbody>
                 </table>
@@ -11960,17 +12088,59 @@
               </div>
             </div>
             <h3 style="margin: 0 0 8px 0; font-size: 12px; color: #333; border-bottom: 2px solid #009688; padding-bottom: 4px;">Gráficos de Análise</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
               <div style="background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
                 <div style="font-size: 10px; font-weight: 600; color: #009688; margin-bottom: 5px;">Tipos de Erros</div>
-                <img src="${captureChart('chartErrosTipos') || ''}" style="max-width: 100%; height: 200px; object-fit: contain;" />
+                <img src="${captureChart('chartErrosTipos') || ''}" style="max-width: 100%; height: 180px; object-fit: contain;" />
               </div>
               <div style="background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
                 <div style="font-size: 10px; font-weight: 600; color: #009688; margin-bottom: 5px;">Classificação</div>
-                <img src="${captureChart('chartErrosClassificacao') || ''}" style="max-width: 100%; height: 200px; object-fit: contain;" />
+                <img src="${captureChart('chartErrosClassificacao') || ''}" style="max-width: 100%; height: 180px; object-fit: contain;" />
+              </div>
+              <div style="background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; font-weight: 600; color: #009688; margin-bottom: 5px;">Erros por Dia da Semana</div>
+                <img src="${captureChart('chartErrosDiaSemana') || ''}" style="max-width: 100%; height: 180px; object-fit: contain;" />
+              </div>
+              <div style="background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; font-weight: 600; color: #009688; margin-bottom: 5px;">Evolução de Erros</div>
+                <img src="${captureChart('chartErrosEvolucao') || ''}" style="max-width: 100%; height: 180px; object-fit: contain;" />
               </div>
             </div>
-            <div style="margin-top: 25px; padding-top: 15px; border-top: 2px solid #e2e8f0; text-align: center;">
+
+            <!-- ERROS DETAIL TABLE -->
+            <div style="page-break-before: always; padding-top: 10px;">
+              <h3 style="margin: 0 0 8px 0; font-size: 12px; color: #333; border-bottom: 2px solid #009688; padding-bottom: 4px;">Detalhamento por Tipo de Erro</h3>
+              <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
+                <thead>
+                  <tr style="background: linear-gradient(135deg, #009688 0%, #00796b 100%); color: white;">
+                    <th style="padding: 7px 5px; border: 1px solid #00796b; text-align: left;">Tipo de Erro</th>
+                    <th style="padding: 7px 5px; border: 1px solid #00796b; text-align: center; width: 60px;">Total</th>
+                    <th style="padding: 7px 5px; border: 1px solid #00796b; text-align: center; width: 60px;">Corrigidos</th>
+                    <th style="padding: 7px 5px; border: 1px solid #00796b; text-align: center; width: 60px;">Pendentes</th>
+                    <th style="padding: 7px 5px; border: 1px solid #00796b; text-align: center; width: 55px;">% do Total</th>
+                    <th style="padding: 7px 5px; border: 1px solid #00796b; text-align: center; width: 65px;">Taxa Correção</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${Object.entries(tiposMap).sort((a, b) => b[1].total - a[1].total).map(([tipo, data], i) => {
+                    const bgColor = i % 2 === 0 ? '#ffffff' : '#f8fafc';
+                    const pct = totalErros > 0 ? (data.total / totalErros * 100).toFixed(1) : 0;
+                    const taxaCorrecao = (data.corrigidos + data.pendentes) > 0
+                      ? Math.round(data.corrigidos / (data.corrigidos + data.pendentes) * 100) + '%' : '-';
+                    return `<tr style="background: ${bgColor};">
+                      <td style="padding: 5px 4px; border: 1px solid #e2e8f0;">${tipo}</td>
+                      <td style="padding: 5px 4px; border: 1px solid #e2e8f0; text-align: center; font-weight: bold;">${data.total}</td>
+                      <td style="padding: 5px 4px; border: 1px solid #e2e8f0; text-align: center; color: #10B981; font-weight: 600;">${data.corrigidos}</td>
+                      <td style="padding: 5px 4px; border: 1px solid #e2e8f0; text-align: center; color: #F59E0B; font-weight: 600;">${data.pendentes}</td>
+                      <td style="padding: 5px 4px; border: 1px solid #e2e8f0; text-align: center;">${pct}%</td>
+                      <td style="padding: 5px 4px; border: 1px solid #e2e8f0; text-align: center;">${taxaCorrecao}</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #e2e8f0; text-align: center;">
               <p style="font-size: 9px; color: #94a3b8; margin: 0;">Sistema de Solicitação de Conserto | Relatório de Análise de Erros</p>
             </div>
           </div>
