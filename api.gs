@@ -1589,7 +1589,8 @@ function addUsuario(payload) {
     }
   }
 
-  sheet.appendRow([email, nome, perfil, setores]);
+  const permissoesJson = payload.permissoes ? JSON.stringify(payload.permissoes) : '';
+  sheet.appendRow([email, nome, perfil, setores, permissoesJson]);
   invalidateUsuarioCache_(email);
   auditLog_("CREATE", "usuarios", "email=" + email, null, null, null);
   return { ok: true, debugId: debugId };
@@ -1626,7 +1627,9 @@ function updateUsuario(payload) {
   }
 
   const oldRow = values[rowIndex - 1];
-  sheet.getRange(rowIndex, 1, 1, 4).setValues([[email, nome, perfil, setores]]);
+  // Preserva permissões existentes se o payload não enviar novas
+  const permissoesJson = payload.permissoes ? JSON.stringify(payload.permissoes) : (oldRow[4] || '');
+  sheet.getRange(rowIndex, 1, 1, 5).setValues([[email, nome, perfil, setores, permissoesJson]]);
   invalidateUsuarioCache_(email);
   auditLog_("UPDATE", "usuarios", "email=" + email, "nome", oldRow[1], nome);
   auditLog_("UPDATE", "usuarios", "email=" + email, "perfil", oldRow[2], perfil);
@@ -1659,6 +1662,101 @@ function limparCache() {
   CacheService.getScriptCache().removeAll([]);
   safeLogDebug_("limparCache", "cache cleared");
   return { ok: true };
+}
+
+// Tabelas permitidas para importação PROD→DEV
+const IMPORT_ALLOWED_SHEETS_ = [
+  "Solicitacoes", "Erros", "Respostas",
+  "Solicitantes", "Setores_Local", "Erros_Cadastro",
+  "Colaboradores", "Limiares_SLA", "Usuarios"
+];
+
+function importarDadosProd(payload) {
+  const debugId = Utilities.getUuid();
+  safeLogDebug_("importarDadosProd", "start", { debugId: debugId });
+
+  // Disponível apenas em DEV
+  if (CONFIG.APP_ENV !== "DEV") {
+    return { ok: false, errors: ["Importação disponível apenas no ambiente DEV."], debugId: debugId };
+  }
+
+  // Somente ADMIN
+  const userEmail = Session.getActiveUser().getEmail() || "";
+  const usuario = getUsuarioContexto_(userEmail);
+  if (usuario.perfil !== "ADMIN") {
+    return { ok: false, errors: ["Apenas administradores podem importar dados."], debugId: debugId };
+  }
+
+  const tabelas = Array.isArray(payload.tabelas) ? payload.tabelas : [];
+  if (!tabelas.length) {
+    return { ok: false, errors: ["Selecione pelo menos uma tabela."], debugId: debugId };
+  }
+
+  // Valida que todas as tabelas são permitidas
+  const invalidas = tabelas.filter(function(t) { return IMPORT_ALLOWED_SHEETS_.indexOf(t) === -1; });
+  if (invalidas.length) {
+    return { ok: false, errors: ["Tabela(s) não permitida(s): " + invalidas.join(", ")], debugId: debugId };
+  }
+
+  // Abre planilha PROD
+  const prodId = CONFIG.PROD_SPREADSHEET_ID;
+  if (!prodId) {
+    return { ok: false, errors: ["PROD_SPREADSHEET_ID não configurado."], debugId: debugId };
+  }
+
+  let prodSS;
+  try {
+    prodSS = SpreadsheetApp.openById(prodId);
+  } catch(e) {
+    return { ok: false, errors: ["Não foi possível abrir a planilha PROD: " + String(e)], debugId: debugId };
+  }
+
+  const devSS = getSpreadsheet_();
+  const resultados = [];
+  const erros = [];
+
+  tabelas.forEach(function(nomeAba) {
+    try {
+      const prodSheet = prodSS.getSheetByName(nomeAba);
+      if (!prodSheet) {
+        erros.push(nomeAba + ": aba não encontrada na PROD");
+        return;
+      }
+      const devSheet = devSS.getSheetByName(nomeAba);
+      if (!devSheet) {
+        erros.push(nomeAba + ": aba não encontrada no DEV");
+        return;
+      }
+
+      const data = prodSheet.getDataRange().getValues();
+      if (!data || data.length === 0) {
+        erros.push(nomeAba + ": aba vazia na PROD");
+        return;
+      }
+
+      devSheet.clearContents();
+      devSheet.getRange(1, 1, data.length, data[0].length).setValues(data);
+      resultados.push({ aba: nomeAba, linhas: data.length - 1 }); // -1 header
+    } catch(e) {
+      erros.push(nomeAba + ": " + String(e));
+    }
+  });
+
+  // Invalida todos os caches após importação
+  invalidateConfigCache_();
+  tabelas.forEach(function(t) {
+    if (t === "Usuarios") {
+      // Invalida cache de todos os usuários não é trivial — remove a entrada de sheets_ok para forçar reload
+    }
+  });
+  try {
+    CacheService.getScriptCache().remove("app_sheets_ok_v1");
+  } catch(e) {}
+
+  auditLog_("IMPORT", "sistema", "import_prod_to_dev", "tabelas", null, tabelas.join(","));
+  safeLogDebug_("importarDadosProd", "done", { debugId: debugId, resultados: resultados.length, erros: erros.length });
+
+  return { ok: true, resultados: resultados, erros: erros, debugId: debugId };
 }
 
 function salvarPastaBackup(payload) {
@@ -2538,11 +2636,17 @@ function getUsuarios_() {
   const list = [];
   for (let i = 1; i < values.length; i++) {
     if (!values[i][0]) continue;
+    let permissoes = null;
+    const rawPerms = values[i][4];
+    if (rawPerms) {
+      try { permissoes = JSON.parse(rawPerms); } catch(e) {}
+    }
     list.push({
       email: values[i][0],
       nome: values[i][1],
       perfil: values[i][2],
-      setores: values[i][3]
+      setores: values[i][3],
+      permissoes: permissoes  // null = usa padrão do perfil no frontend
     });
   }
   return list;

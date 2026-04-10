@@ -793,6 +793,94 @@
 
       }
 
+      /* ===== PROFILE SELECTOR ===== */
+      .profile-selector-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-top: 6px;
+      }
+      .profile-card {
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 8px 10px;
+        cursor: pointer;
+        transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+        background: var(--surface);
+        text-align: center;
+      }
+      .profile-card:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+      .profile-card.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,150,136,0.18); }
+      .profile-card.selected.pc-admin   { border-color:#dc2626; box-shadow:0 0 0 3px rgba(220,38,38,0.15); background:#fff5f5; }
+      .profile-card.selected.pc-conf    { border-color:#7c3aed; box-shadow:0 0 0 3px rgba(124,58,237,0.15); background:#faf5ff; }
+      .profile-card.selected.pc-resp    { border-color:#059669; box-shadow:0 0 0 3px rgba(5,150,105,0.15); background:#f0fdf4; }
+      .profile-card.selected.pc-espect  { border-color:#64748b; box-shadow:0 0 0 3px rgba(100,116,139,0.15); background:#f8fafc; }
+      .pc-icon { font-size: 1.5rem; margin-bottom: 4px; }
+      .pc-title { font-weight: 700; font-size: 0.8rem; margin-bottom: 3px; }
+      .pc-title.pc-admin  { color:#dc2626; }
+      .pc-title.pc-conf   { color:#7c3aed; }
+      .pc-title.pc-resp   { color:#059669; }
+      .pc-title.pc-espect { color:#64748b; }
+      .pc-desc { font-size: 0.68rem; color: #64748b; margin-bottom: 8px; min-height: 28px; line-height: 1.3; }
+      .pc-counts { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
+      .pc-count { font-size: 0.65rem; padding: 2px 7px; border-radius: 99px; font-weight: 600; white-space: nowrap; }
+      .pc-count-ok  { background: #d1fae5; color: #065f46; }
+      .pc-count-par { background: #fef3c7; color: #92400e; }
+      .pc-count-no  { background: #f1f5f9; color: #94a3b8; }
+
+      /* ===== PERMISSION DETAIL PANEL ===== */
+      .perm-detail {
+        display: none;
+        margin-top: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px 14px;
+        background: var(--surface);
+        animation: fadeIn 0.15s ease;
+      }
+      .perm-detail.visible { display: block; }
+      .perm-detail-header { font-weight: 700; font-size: 0.78rem; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+      .perm-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+      .perm-section-lbl { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin-bottom: 6px; }
+      .perm-row { display: flex; align-items: center; gap: 6px; font-size: 0.77rem; padding: 2px 0; }
+      .perm-row .pi { font-size: 0.85rem; flex-shrink: 0; }
+      .perm-row .pl { color: #1e293b; }
+      .perm-row .pl.denied { color: #cbd5e1; }
+
+      /* ===== ENHANCED USER CARDS ===== */
+      .user-card-perm-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+      .user-perm-chip {
+        display: inline-flex; align-items: center; gap: 3px;
+        font-size: 0.63rem; font-weight: 600; padding: 2px 7px;
+        border-radius: 99px; border: 1px solid;
+      }
+      .upc-ok   { background:#d1fae5; border-color:#6ee7b7; color:#065f46; }
+      .upc-par  { background:#fef3c7; border-color:#fcd34d; color:#92400e; }
+      .upc-no   { background:#f1f5f9; border-color:#e2e8f0; color:#94a3b8; }
+
+      /* ===== PERMISSION CHECKBOX EDITOR ===== */
+      .perm-editor-header { font-weight: 700; font-size: 0.78rem; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+      .perm-editor-note { font-size: 0.7rem; color: #6b7280; margin-bottom: 10px; font-style: italic; }
+      .perm-check-section-lbl { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin-bottom: 6px; }
+      .perm-check-row { display: flex; align-items: center; gap: 8px; font-size: 0.77rem; padding: 3px 0; cursor: pointer; }
+      .perm-check-row input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
+      .perm-check-row label { cursor: pointer; user-select: none; color: #1e293b; }
+      .perm-reset-btn { margin-top: 8px; font-size: 0.72rem !important; padding: 4px 10px !important; }
+      body.dark-mode .perm-check-row label { color: #e2e8f0; }
+      body.dark-mode .perm-editor-note { color: #94a3b8; }
+
+      /* dark mode */
+      body.dark-mode .profile-card { background: #1e2d3d; border-color: #334155; }
+      body.dark-mode .profile-card:hover { border-color: var(--primary); }
+      body.dark-mode .profile-card.selected.pc-admin  { background:#2d1515; }
+      body.dark-mode .profile-card.selected.pc-conf   { background:#1e1530; }
+      body.dark-mode .profile-card.selected.pc-resp   { background:#0f2a1e; }
+      body.dark-mode .profile-card.selected.pc-espect { background:#1a2535; }
+      body.dark-mode .pc-desc { color:#94a3b8; }
+      body.dark-mode .perm-detail { background: #1e2d3d; border-color: #334155; }
+      body.dark-mode .perm-detail-header { border-color: #334155; }
+      body.dark-mode .perm-row .pl { color: #e2e8f0; }
+
       .section-header {
 
         display: flex;
@@ -3929,14 +4017,55 @@
                 <select id="userNome" class="form-control"></select>
               </div>
 
-              <div class="form-group required">
-                <label>Perfil</label>
-                <select id="userPerfil" class="form-control">
-                  <option value="ADMIN">Admin</option>
-                  <option value="CONFERENTE">Conferente</option>
-                  <option value="RESPOSTA">Resposta</option>
-                  <option value="ESPECTADOR">Espectador (Somente Leitura)</option>
-                </select>
+              <div class="form-group required" style="grid-column:1/-1">
+                <label>Perfil de Acesso</label>
+                <input type="hidden" id="userPerfil" value="ADMIN">
+                <div class="profile-selector-grid">
+
+                  <div class="profile-card pc-admin" data-perfil="ADMIN" onclick="selectPerfil('ADMIN')">
+                    <div class="pc-icon">🔑</div>
+                    <div class="pc-title pc-admin">Admin</div>
+                    <div class="pc-desc">Acesso total ao sistema</div>
+                    <div class="pc-counts">
+                      <span class="pc-count pc-count-ok">5 abas</span>
+                      <span class="pc-count pc-count-ok">8 ações</span>
+                    </div>
+                  </div>
+
+                  <div class="profile-card pc-conf" data-perfil="CONFERENTE" onclick="selectPerfil('CONFERENTE')">
+                    <div class="pc-icon">📋</div>
+                    <div class="pc-title pc-conf">Conferente</div>
+                    <div class="pc-desc">Vê e edita todos os setores</div>
+                    <div class="pc-counts">
+                      <span class="pc-count pc-count-ok">3 abas</span>
+                      <span class="pc-count pc-count-ok">4 ações</span>
+                    </div>
+                  </div>
+
+                  <div class="profile-card pc-resp" data-perfil="RESPOSTA" onclick="selectPerfil('RESPOSTA')">
+                    <div class="pc-icon">✅</div>
+                    <div class="pc-title pc-resp">Resposta</div>
+                    <div class="pc-desc">Responde no(s) setor(es) atribuído(s)</div>
+                    <div class="pc-counts">
+                      <span class="pc-count pc-count-ok">3 abas</span>
+                      <span class="pc-count pc-count-par">3 ações</span>
+                    </div>
+                  </div>
+
+                  <div class="profile-card pc-espect" data-perfil="ESPECTADOR" onclick="selectPerfil('ESPECTADOR')">
+                    <div class="pc-icon">👁️</div>
+                    <div class="pc-title pc-espect">Espectador</div>
+                    <div class="pc-desc">Somente visualização, sem edições</div>
+                    <div class="pc-counts">
+                      <span class="pc-count pc-count-ok">3 abas</span>
+                      <span class="pc-count pc-count-no">0 ações</span>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Painel de permissões detalhado -->
+                <div class="perm-detail" id="permDetail"></div>
               </div>
 
 
@@ -4289,6 +4418,59 @@
 
           </div>
 
+          <!-- Importação PROD→DEV — visível apenas no ambiente DEV -->
+          <div class="form-section" id="importacaoProdSection" style="display:none;">
+
+            <h3>📥 Importar dados da PROD</h3>
+
+            <p class="info-text-secondary">Copia os dados da planilha PROD para DEV. Útil para testar com dados reais. <strong>Sobrescreve os dados atuais do DEV</strong> nas tabelas selecionadas.</p>
+
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+
+              <div class="form-group" style="grid-column:1/-1;">
+                <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
+                  <button type="button" class="btn secondary" style="font-size:0.8rem;padding:5px 12px;" onclick="importSelectAll_()">Selecionar tudo</button>
+                  <button type="button" class="btn secondary" style="font-size:0.8rem;padding:5px 12px;" onclick="importClearAll_()">Limpar seleção</button>
+                </div>
+              </div>
+
+              <!-- Grupo: Dados transacionais -->
+              <div class="form-group">
+                <label style="font-size:0.75rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Dados transacionais</label>
+                <div class="perm-check-row"><input type="checkbox" id="imp_Solicitacoes" value="Solicitacoes" class="import-cb"><label for="imp_Solicitacoes">Solicitacoes</label></div>
+                <div class="perm-check-row"><input type="checkbox" id="imp_Erros" value="Erros" class="import-cb"><label for="imp_Erros">Erros</label></div>
+                <div class="perm-check-row"><input type="checkbox" id="imp_Respostas" value="Respostas" class="import-cb"><label for="imp_Respostas">Respostas</label></div>
+              </div>
+
+              <!-- Grupo: Configurações -->
+              <div class="form-group">
+                <label style="font-size:0.75rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Configurações</label>
+                <div class="perm-check-row"><input type="checkbox" id="imp_Solicitantes" value="Solicitantes" class="import-cb"><label for="imp_Solicitantes">Solicitantes</label></div>
+                <div class="perm-check-row"><input type="checkbox" id="imp_Setores_Local" value="Setores_Local" class="import-cb"><label for="imp_Setores_Local">Setores_Local</label></div>
+                <div class="perm-check-row"><input type="checkbox" id="imp_Erros_Cadastro" value="Erros_Cadastro" class="import-cb"><label for="imp_Erros_Cadastro">Erros_Cadastro</label></div>
+                <div class="perm-check-row"><input type="checkbox" id="imp_Colaboradores" value="Colaboradores" class="import-cb"><label for="imp_Colaboradores">Colaboradores</label></div>
+                <div class="perm-check-row"><input type="checkbox" id="imp_Limiares_SLA" value="Limiares_SLA" class="import-cb"><label for="imp_Limiares_SLA">Limiares_SLA</label></div>
+              </div>
+
+              <!-- Grupo: Usuários -->
+              <div class="form-group">
+                <label style="font-size:0.75rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Usuários</label>
+                <div class="perm-check-row"><input type="checkbox" id="imp_Usuarios" value="Usuarios" class="import-cb"><label for="imp_Usuarios">Usuarios</label></div>
+              </div>
+
+            </div>
+
+            <div class="form-group">
+              <p class="info-text">⚠️ Os dados selecionados no DEV serão <strong>substituídos completamente</strong> pelos dados da PROD. Esta ação não pode ser desfeita.</p>
+              <div class="actions">
+                <button type="button" class="btn secondary" onclick="importarDadosProd_()">📥 Importar selecionados</button>
+              </div>
+            </div>
+
+            <div id="importacaoStatus" class="help"></div>
+
+          </div>
+
 
         </div>
 
@@ -4561,288 +4743,692 @@
     <div class="tab-content" id="tab-ajuda">
       <div class="page-title">❓ Ajuda e Documentação</div>
 
-      <!-- ===== COMO FUNCIONA O APP ===== -->
-      <div class="form-section">
-        <h3>📋 Como Funciona o Sistema</h3>
-        <p>O <strong>App de Solicitação de Consertos NeoFormula</strong> gerencia e rastreia erros em requisições farmacêuticas, do registro até a correção.</p>
-
-        <p><strong>Fluxo principal:</strong></p>
-        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin:0.75rem 0 1rem 0;">
-          <span style="background:#dbeafe;color:#1e40af;padding:0.4rem 0.75rem;border-radius:20px;font-weight:600;font-size:0.85rem;">📝 Solicitante registra erro</span>
-          <span style="color:#9ca3af;font-size:1.2rem;">→</span>
-          <span style="background:#fef3c7;color:#92400e;padding:0.4rem 0.75rem;border-radius:20px;font-weight:600;font-size:0.85rem;">⏳ ABERTO</span>
-          <span style="color:#9ca3af;font-size:1.2rem;">→</span>
-          <span style="background:#ede9fe;color:#5b21b6;padding:0.4rem 0.75rem;border-radius:20px;font-weight:600;font-size:0.85rem;">🔧 Responsável responde</span>
-          <span style="color:#9ca3af;font-size:1.2rem;">→</span>
-          <span style="background:#fef3c7;color:#92400e;padding:0.4rem 0.75rem;border-radius:20px;font-weight:600;font-size:0.85rem;">⚙️ EM_CORRECAO</span>
-          <span style="color:#9ca3af;font-size:1.2rem;">→</span>
-          <span style="background:#d1fae5;color:#065f46;padding:0.4rem 0.75rem;border-radius:20px;font-weight:600;font-size:0.85rem;">✅ CORRIGIDO</span>
+      <!-- ===== ÍNDICE RÁPIDO ===== -->
+      <div class="form-section" style="background:linear-gradient(135deg,#f0fdfa 0%,#e6fffa 100%);border-left:4px solid #009688;">
+        <h3 style="margin-top:0;">🗺️ Navegação Rápida</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+          <button type="button" onclick="ajudaScrollTo('ajuda-fluxo')" style="background:#009688;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">📋 Como Funciona</button>
+          <button type="button" onclick="ajudaScrollTo('ajuda-perfis')" style="background:#5b21b6;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">👤 Perfis e Permissões</button>
+          <button type="button" onclick="ajudaScrollTo('ajuda-guia')" style="background:#1e40af;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">📖 Guia de Uso</button>
+          <button type="button" onclick="ajudaScrollTo('ajuda-config')" style="background:#0369a1;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">⚙️ Configurações</button>
+          <button type="button" onclick="ajudaScrollTo('ajuda-api')" style="background:#334155;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">🔌 Referência Técnica</button>
+          <button type="button" onclick="ajudaScrollTo('ajuda-seguranca')" style="background:#065f46;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">🔒 Segurança</button>
+          <button type="button" onclick="ajudaScrollTo('ajuda-suporte')" style="background:#92400e;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">📞 Suporte</button>
         </div>
-
-        <p><strong>SLA (Service Level Agreement):</strong> tempo máximo para resposta antes de virar alerta.</p>
-        <ul>
-          <li>Configural em <strong>Configurações &gt; Sistema &gt; Limiares de SLA</strong></li>
-          <li><span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:0.8rem;font-weight:600;">ALERTA</span> — solicitação próxima do prazo (padrão: 15 min)</li>
-          <li><span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-size:0.8rem;font-weight:600;">CRÍTICO</span> — prazo ultrapassado (padrão: 30 min)</li>
-        </ul>
       </div>
 
-      <!-- ===== PERFIS DE USUÁRIO ===== -->
-      <div class="form-section">
-        <h3>👤 Perfis de Usuário e Permissões</h3>
-        <p>Cada usuário tem um perfil que define o que pode fazer. Acesse <strong>Configurações &gt; Usuários</strong> para gerenciar.</p>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.75rem;margin-top:0.75rem;">
-          <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:0.75rem;">
-            <div style="font-weight:700;color:#92400e;margin-bottom:0.3rem;">🔑 ADMIN</div>
-            <div style="font-size:0.82rem;color:#78350f;">Acesso total: gerencia usuários, configurações, pode excluir solicitações e executar arquivamentos.</div>
-          </div>
-          <div style="background:#ede9fe;border:1px solid #ddd6fe;border-radius:8px;padding:0.75rem;">
-            <div style="font-weight:700;color:#5b21b6;margin-bottom:0.3rem;">📋 CONFERENTE</div>
-            <div style="font-size:0.82rem;color:#4c1d95;">Visualiza e edita todas as solicitações e respostas de todos os setores.</div>
-          </div>
-          <div style="background:#dbeafe;border:1px solid #bfdbfe;border-radius:8px;padding:0.75rem;">
-            <div style="font-weight:700;color:#1e40af;margin-bottom:0.3rem;">✅ RESPOSTA</div>
-            <div style="font-size:0.82rem;color:#1e3a8a;">Responde solicitações dos setores que lhe foram atribuídos. Não vê dados de outros setores.</div>
-          </div>
-          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:0.75rem;">
-            <div style="font-weight:700;color:#065f46;margin-bottom:0.3rem;">👁️ ESPECTADOR</div>
-            <div style="font-size:0.82rem;color:#064e3b;">Apenas visualização. Não pode registrar nem responder solicitações.</div>
+      <!-- ===== COMO FUNCIONA ===== -->
+      <div class="form-section" id="ajuda-fluxo">
+        <h3>📋 Como Funciona o Sistema</h3>
+        <p>O <strong>App de Solicitação de Consertos NeoFormula</strong> gerencia e rastreia erros em requisições farmacêuticas, do momento do registro até a correção confirmada. Todos os dados ficam armazenados no Google Sheets e qualquer usuário autorizado acessa pelo link — sem instalar nada.</p>
+
+        <p style="font-weight:700;margin-top:1rem;margin-bottom:0.5rem;">Fluxo completo de uma solicitação:</p>
+        <div style="overflow-x:auto;">
+          <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:nowrap;min-width:600px;margin-bottom:1rem;">
+            <div style="text-align:center;flex:1;">
+              <div style="background:#dbeafe;color:#1e40af;padding:0.5rem 0.75rem;border-radius:10px;font-weight:700;font-size:0.82rem;">📝 Solicitante<br>registra o erro</div>
+              <div style="font-size:0.7rem;color:#64748b;margin-top:4px;">Aba Solicitação</div>
+            </div>
+            <span style="color:#9ca3af;font-size:1.4rem;flex-shrink:0;">→</span>
+            <div style="text-align:center;flex:1;">
+              <div style="background:#fef3c7;color:#92400e;padding:0.5rem 0.75rem;border-radius:10px;font-weight:700;font-size:0.82rem;">⏳ Status<br>ABERTO</div>
+              <div style="font-size:0.7rem;color:#64748b;margin-top:4px;">SLA começa</div>
+            </div>
+            <span style="color:#9ca3af;font-size:1.4rem;flex-shrink:0;">→</span>
+            <div style="text-align:center;flex:1;">
+              <div style="background:#ede9fe;color:#5b21b6;padding:0.5rem 0.75rem;border-radius:10px;font-weight:700;font-size:0.82rem;">🔧 Responsável<br>responde o erro</div>
+              <div style="font-size:0.7rem;color:#64748b;margin-top:4px;">Aba Resposta</div>
+            </div>
+            <span style="color:#9ca3af;font-size:1.4rem;flex-shrink:0;">→</span>
+            <div style="text-align:center;flex:1;">
+              <div style="background:#fde68a;color:#92400e;padding:0.5rem 0.75rem;border-radius:10px;font-weight:700;font-size:0.82rem;">⚙️ Status<br>EM_CORRECAO</div>
+              <div style="font-size:0.7rem;color:#64748b;margin-top:4px;">Em andamento</div>
+            </div>
+            <span style="color:#9ca3af;font-size:1.4rem;flex-shrink:0;">→</span>
+            <div style="text-align:center;flex:1;">
+              <div style="background:#d1fae5;color:#065f46;padding:0.5rem 0.75rem;border-radius:10px;font-weight:700;font-size:0.82rem;">✅ Status<br>CORRIGIDO</div>
+              <div style="font-size:0.7rem;color:#64748b;margin-top:4px;">Concluído</div>
+            </div>
           </div>
         </div>
+
+        <p style="font-weight:700;margin-bottom:0.4rem;">O que é SLA?</p>
+        <p>SLA (Service Level Agreement) é o tempo máximo esperado para que um erro seja respondido. O sistema monitora automaticamente o tempo decorrido desde o registro e sinaliza visualmente quando o prazo está próximo ou foi ultrapassado.</p>
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin:0.5rem 0 0.75rem 0;">
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:0.5rem 1rem;font-size:0.82rem;">
+            <strong style="color:#065f46;">✅ OK</strong> — dentro do prazo
+          </div>
+          <div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:0.5rem 1rem;font-size:0.82rem;">
+            <strong style="color:#92400e;">⚠️ ALERTA</strong> — próximo do limite (padrão: 15 min)
+          </div>
+          <div style="background:#fff1f2;border:1px solid #fecaca;border-radius:8px;padding:0.5rem 1rem;font-size:0.82rem;">
+            <strong style="color:#991b1b;">🚨 CRÍTICO</strong> — prazo ultrapassado (padrão: 30 min)
+          </div>
+        </div>
+        <p style="font-size:0.82rem;color:#64748b;">Os limiares de alerta e crítico são configuráveis em <strong>Configurações → Sistema → Limiares de SLA</strong>.</p>
+      </div>
+
+      <!-- ===== PERFIS ===== -->
+      <div class="form-section" id="ajuda-perfis">
+        <h3>👤 Perfis de Usuário e Permissões</h3>
+        <p>Todo usuário cadastrado tem um <strong>perfil base</strong> que define suas permissões padrão. Desde a <strong>v237</strong> é possível também personalizar as permissões individualmente para cada usuário — sem mudar o perfil dele — através do editor de permissões em <strong>Configurações → Usuários</strong>.</p>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0.75rem;margin:1rem 0;">
+          <div style="background:#fff8e1;border:1.5px solid #fde68a;border-radius:10px;padding:1rem;">
+            <div style="font-size:1.3rem;margin-bottom:0.25rem;">🔑</div>
+            <div style="font-weight:700;color:#92400e;font-size:1rem;margin-bottom:0.4rem;">ADMIN</div>
+            <div style="font-size:0.82rem;color:#78350f;line-height:1.5;">
+              Acesso total ao sistema. Pode gerenciar usuários, configurações, cadastros, executar diagnósticos, arquivamentos e importação de dados. Vê dados de todos os setores. É o único perfil que pode acessar a aba Auditoria.
+            </div>
+          </div>
+          <div style="background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:10px;padding:1rem;">
+            <div style="font-size:1.3rem;margin-bottom:0.25rem;">📋</div>
+            <div style="font-weight:700;color:#5b21b6;font-size:1rem;margin-bottom:0.4rem;">CONFERENTE</div>
+            <div style="font-size:0.82rem;color:#4c1d95;line-height:1.5;">
+              Visualiza e edita todas as solicitações e respostas de todos os setores. Acessa as Configurações para consulta. Não gerencia usuários nem executa arquivamento. Ideal para supervisores e líderes de equipe.
+            </div>
+          </div>
+          <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:1rem;">
+            <div style="font-size:1.3rem;margin-bottom:0.25rem;">✅</div>
+            <div style="font-weight:700;color:#1e40af;font-size:1rem;margin-bottom:0.4rem;">RESPOSTA</div>
+            <div style="font-size:0.82rem;color:#1e3a8a;line-height:1.5;">
+              Registra novas solicitações e responde erros, mas <strong>apenas dos setores atribuídos</strong> a ele. Não vê dados de outros setores. Não acessa as Configurações. Ideal para colaboradores responsáveis por setores específicos.
+            </div>
+          </div>
+          <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:1rem;">
+            <div style="font-size:1.3rem;margin-bottom:0.25rem;">👁️</div>
+            <div style="font-weight:700;color:#065f46;font-size:1rem;margin-bottom:0.4rem;">ESPECTADOR</div>
+            <div style="font-size:0.82rem;color:#064e3b;line-height:1.5;">
+              Somente visualização: acessa o Dashboard e a aba Ajuda. Não pode registrar nem responder solicitações. Os formulários ficam desativados. Indicado para gestores que acompanham métricas sem interagir com os dados.
+            </div>
+          </div>
+        </div>
+
+        <details style="margin-top:0.5rem;">
+          <summary class="help-summary">🔧 Como funciona o editor de permissões individuais (novo em v237)</summary>
+          <div class="help-detail">
+            <p>Cada usuário pode ter permissões personalizadas que <strong>sobrescrevem</strong> os padrões do perfil dele. Isso permite, por exemplo, dar acesso à aba Auditoria para um CONFERENTE específico, ou remover a ação de Excluir para um ADMIN.</p>
+            <p><strong>Como editar:</strong></p>
+            <ol>
+              <li>Vá em <strong>Configurações → Usuários</strong></li>
+              <li>Clique em <strong>Editar</strong> no card do usuário desejado</li>
+              <li>Selecione o perfil base nos cards visuais — os checkboxes de permissão serão pré-preenchidos com os padrões daquele perfil</li>
+              <li>Marque ou desmarque livremente as <strong>Abas acessíveis</strong> e <strong>Ações disponíveis</strong></li>
+              <li>Para voltar ao padrão do perfil, clique em <strong>"↺ Restaurar padrões do perfil"</strong></li>
+              <li>Clique em <strong>Salvar usuário</strong></li>
+            </ol>
+            <p>No card de cada usuário cadastrado, os chips mostram a contagem real de permissões. Quando as permissões estão customizadas (diferentes do padrão do perfil), aparece o símbolo <strong>✎</strong> no chip.</p>
+            <p style="background:#fff8e1;border:1px solid #fde68a;border-radius:6px;padding:0.6rem 0.75rem;font-size:0.82rem;">⚠️ <strong>Segurança:</strong> As permissões do frontend controlam o que cada usuário <em>vê e acessa</em>. O backend ainda valida o perfil para operações críticas (exclusão, gerenciamento de usuários). Permissões customizadas não substituem as validações de servidor.</p>
+          </div>
+        </details>
       </div>
 
       <!-- ===== GUIA DE USO ===== -->
-      <div class="form-section">
-        <h3>📖 Guia de Uso do Sistema</h3>
+      <div class="form-section" id="ajuda-guia">
+        <h3>📖 Guia Detalhado de Uso</h3>
 
         <details open>
-          <summary class="help-summary">📝 Aba Solicitação — Registrar um Erro</summary>
+          <summary class="help-summary">📝 Aba Solicitação — Registrar um erro</summary>
           <div class="help-detail help-detail-solicitacao">
-            <p><strong>Como registrar uma solicitação:</strong></p>
+            <p>Use esta aba para registrar um novo erro encontrado em uma requisição farmacêutica. Apenas usuários com a ação <strong>Registrar solicitação</strong> habilitada têm acesso.</p>
+
+            <p><strong>Passo a passo:</strong></p>
             <ol>
-              <li>Preencha o número da <strong>Requisição</strong> (ex: 123456)</li>
-              <li>Selecione o <strong>Solicitante</strong> da lista</li>
-              <li>Escolha o <strong>Tipo de Erro</strong></li>
-              <li>Descreva o problema no campo <strong>Detalhamento</strong></li>
-              <li>Selecione o <strong>Setor/Local</strong> onde ocorreu o erro</li>
-              <li>Indique se há <strong>Diferença no Valor</strong> (SIM ou NÃO)</li>
-              <li>Indique se é necessário <strong>Confirmação Médica</strong> (SIM ou NÃO) — solicitações com SIM ficam destacadas em azul na aba Resposta</li>
-              <li>Clique em <strong>"Enviar Solicitação"</strong></li>
+              <li><strong>Requisição</strong> — Informe o número da requisição onde o erro foi encontrado (ex: <code>123456</code>). Máximo 30 caracteres.</li>
+              <li><strong>Solicitante</strong> — Selecione na lista a farmácia ou unidade que está solicitando a correção.</li>
+              <li><strong>Tipo de Erro</strong> — Escolha o tipo de erro da lista cadastrada. Cada erro tem uma classificação de gravidade: <span style="background:#f1f5f9;padding:1px 6px;border-radius:4px;font-size:0.8rem;">NA</span> <span style="background:#fef3c7;padding:1px 6px;border-radius:4px;font-size:0.8rem;">Leve</span> <span style="background:#fee2e2;padding:1px 6px;border-radius:4px;font-size:0.8rem;">Grave</span> <span style="background:#fce7f3;padding:1px 6px;border-radius:4px;font-size:0.8rem;">Gravíssimo</span>.</li>
+              <li><strong>Detalhamento</strong> — Descreva o problema com o máximo de detalhes possível. Máximo 2000 caracteres. Um bom detalhamento facilita a correção rápida.</li>
+              <li><strong>Setor/Local</strong> — Selecione onde o erro ocorreu. Somente usuários com acesso ao setor poderão ver esta solicitação.</li>
+              <li><strong>Diferença no Valor?</strong> — Indique SIM ou NÃO. Se SIM, o Dashboard exibirá este registro no indicador de Dif. Valor R$.</li>
+              <li><strong>Confirmação Médica?</strong> — Indique se é necessária confirmação médica. Se SIM, a linha aparecerá destacada em lilás na aba Resposta, chamando atenção da equipe.</li>
+              <li>Clique em <strong>"Enviar Solicitação"</strong>. O sistema gera automaticamente um ID único (ex: <code>SOL-20260410-001</code>) e registra a data/hora do pedido.</li>
             </ol>
-            <p><strong>💡 Dica:</strong> O sistema evita envios duplicados — se você clicar duas vezes rapidamente, apenas uma solicitação é registrada.</p>
-            <p><strong>Adicionar mais erros à mesma requisição:</strong> Use a opção "Adicionar erro à requisição existente" e informe o ID da solicitação.</p>
+
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:0.75rem;margin:0.75rem 0;">
+              <strong>💡 Adicionar mais erros à mesma requisição:</strong><br>
+              Uma mesma requisição pode ter múltiplos erros (sequências). Use a opção <strong>"Adicionar erro à requisição existente"</strong>, informe o ID da solicitação já criada, e um novo erro (sequência 2, 3...) será vinculado à mesma requisição.
+            </div>
+
+            <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:0.75rem;">
+              <strong>⚠️ Anti-duplicata:</strong> O botão de envio é bloqueado após o primeiro clique para evitar registros duplicados. Se o envio demorar, aguarde — não clique várias vezes.
+            </div>
           </div>
         </details>
 
         <details>
-          <summary class="help-summary">✅ Aba Resposta — Responder Solicitações</summary>
+          <summary class="help-summary">✅ Aba Resposta — Responder e acompanhar erros</summary>
           <div class="help-detail help-detail-resposta">
-            <p><strong>Como responder uma solicitação:</strong></p>
+            <p>Esta é a aba principal do dia a dia. Exibe todas as solicitações abertas ou em correção do(s) setor(es) do usuário logado. Usuários RESPOSTA veem apenas os erros do seu setor; ADMIN e CONFERENTE veem tudo.</p>
+
+            <p><strong>Como usar os filtros:</strong></p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0 0.75rem 0;font-size:0.82rem;">
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Status</strong><br>ABERTO, EM_CORRECAO, CORRIGIDO ou Todos</div>
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Setor</strong><br>Filtra por setor/local específico</div>
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Dif. Valor?</strong><br>Mostra só erros com diferença de valor</div>
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Conf. Médica?</strong><br>Mostra só erros que requerem conf. médica</div>
+            </div>
+
+            <p><strong>Registrar uma resposta:</strong></p>
             <ol>
-              <li>Use os <strong>filtros</strong> para encontrar a solicitação desejada (Status, Setor, Dif. Valor, Conf. Médica)</li>
-              <li>Clique em uma linha da tabela para selecioná-la</li>
-              <li>Selecione o <strong>Responsável pelo Erro</strong></li>
-              <li>Se "Diferença no Valor = SIM", preencha o valor da diferença</li>
-              <li>Adicione <strong>Observações</strong> (opcional)</li>
+              <li>Clique em uma linha da tabela para selecioná-la (ela ficará destacada)</li>
+              <li>O formulário de resposta do lado direito será preenchido automaticamente com os dados da solicitação</li>
+              <li>Selecione o <strong>Responsável pelo Erro</strong> na lista de colaboradores</li>
+              <li>Informe se <strong>Houve Diferença no Valor</strong> (SIM/NÃO). Se SIM, preencha o valor em R$</li>
+              <li>Adicione <strong>Observações</strong> se necessário (máx. 1000 caracteres)</li>
               <li>Clique em <strong>"Registrar Resposta"</strong></li>
             </ol>
-            <p><strong>Filtros disponíveis:</strong></p>
+
+            <p><strong>Editar uma resposta já registrada:</strong></p>
+            <ol>
+              <li>Clique no botão <strong>✏️ Editar</strong> na linha correspondente</li>
+              <li>O modal de edição abrirá. Dependendo do seu perfil você poderá editar os dados da solicitação (ADMIN/CONFERENTE) ou apenas a resposta (RESPOSTA)</li>
+              <li>Faça os ajustes e clique em <strong>Salvar</strong></li>
+            </ol>
+
+            <p><strong>Indicadores visuais na tabela:</strong></p>
             <ul>
-              <li><strong>Status:</strong> ABERTO, EM_CORRECAO, CORRIGIDO</li>
-              <li><strong>Setor:</strong> filtra pelo setor/local da ocorrência</li>
-              <li><strong>Dif. Valor?:</strong> mostra apenas com/sem diferença de valor</li>
-              <li><strong>Conf. Médica?:</strong> mostra apenas que requerem ou não confirmação médica</li>
+              <li>Linha com fundo <span style="background:#f3e5f5;padding:1px 6px;border-radius:4px;font-size:0.8rem;">lilás</span> — requer confirmação médica</li>
+              <li>Linha com fundo <span style="background:#f1f8f7;padding:1px 6px;border-radius:4px;font-size:0.8rem;">verde claro</span> — solicitação normal</li>
+              <li><span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:0.8rem;font-weight:600;">ALERTA</span> e <span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:0.8rem;font-weight:600;">CRÍTICO</span> — indicadores de SLA na coluna Tempo</li>
             </ul>
-            <p><strong>Indicadores visuais de SLA:</strong></p>
-            <ul>
-              <li><span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:0.8rem;font-weight:600;">ALERTA</span> — próximo do prazo configurado</li>
-              <li><span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-size:0.8rem;font-weight:600;">CRÍTICO</span> — prazo ultrapassado</li>
-              <li><span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:4px;font-size:0.8rem;font-weight:600;">CONF. MÉDICA</span> — linha destacada em azul claro</li>
-            </ul>
+
+            <p><strong>Excluir uma solicitação:</strong> o botão 🗑️ aparece apenas para quem tem a ação "Excluir solicitação" habilitada. A exclusão remove a solicitação e todos os seus erros/respostas vinculados e é irreversível.</p>
           </div>
         </details>
 
         <details>
           <summary class="help-summary">📊 Aba Dashboard — Análise e Relatórios</summary>
           <div class="help-detail help-detail-dashboard">
-            <p><strong>Funcionalidades do Dashboard:</strong></p>
+            <p>Painel de análise com KPIs, gráficos e relatórios. Disponível para todos os perfis, mas usuários RESPOSTA veem apenas dados do seu setor.</p>
+
+            <p><strong>Duas visões disponíveis:</strong></p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0 0.75rem 0;font-size:0.82rem;">
+              <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:0.6rem;">
+                <strong>👥 Visão Colaboradores</strong><br>
+                Analisa os erros por responsável. Permite identificar quem tem mais correções pendentes ou mais rápido no atendimento.
+              </div>
+              <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;padding:0.6rem;">
+                <strong>🏢 Visão Solicitantes</strong><br>
+                Analisa erros por farmácia/solicitante. Permite ver quais unidades geram mais erros e quais tipos são mais frequentes.
+              </div>
+            </div>
+
+            <p><strong>Filtros do Dashboard:</strong></p>
             <ul>
-              <li><strong>Visões:</strong> "Visão Colaboradores" (erros por responsável) ou "Visão Solicitantes" (erros por farmácia)</li>
-              <li><strong>Filtros:</strong> Data Inicial/Final, Tipo de Erro, Responsável</li>
-              <li><strong>Timeline:</strong> evolução de erros ao longo do tempo (7, 15, 30 dias, 3 meses, 1 ano)</li>
-              <li><strong>KPIs exibidos (por visão):</strong>
-                <ul>
-                  <li>Total de Erros, Corrigidos, Abertos, Críticos SLA</li>
-                  <li>Taxa de Atendimento (%)</li>
-                  <li><strong>Dif. Valor R$</strong> — erros com diferença de valor confirmada (e soma total em R$)</li>
-                  <li><strong>Conf. Médica</strong> — erros que requerem confirmação médica (e percentual do total)</li>
-                  <li>Tempo médio, mínimo e máximo de resolução</li>
-                  <li>SLA: % dentro do prazo e % fora do prazo</li>
-                </ul>
-              </li>
-              <li><strong>Gráficos:</strong>
-                <ul>
-                  <li>Erros por colaborador (barras horizontais)</li>
-                  <li>Tipos de erro mais frequentes (pizza)</li>
-                  <li>Erros por classificação: NA, Leve, Grave, Gravíssimo (rosca)</li>
-                </ul>
-              </li>
+              <li><strong>Data Inicial / Final</strong> — filtra pelo período de criação das solicitações</li>
+              <li><strong>Timeline</strong> — visualização rápida: 7 dias, 15 dias, 30 dias, 3 meses ou 1 ano</li>
+              <li><strong>Tipo de Erro</strong> — filtra por tipo específico</li>
+              <li><strong>Responsável / Solicitante</strong> — filtra por colaborador ou farmácia</li>
             </ul>
-            <p><strong>💡 Dica:</strong> Os dados do Dashboard são carregados via cache por 10 minutos para melhor performance com múltiplos usuários.</p>
+
+            <p><strong>KPIs exibidos:</strong></p>
+            <ul>
+              <li>Total de Erros / Corrigidos / Abertos / Críticos SLA</li>
+              <li>Taxa de Atendimento (%)</li>
+              <li>Dif. Valor R$ — quantidade e soma total das diferenças de valor</li>
+              <li>Conf. Médica — quantidade e percentual de erros que requerem confirmação</li>
+              <li>Tempo médio, mínimo e máximo de resolução</li>
+              <li>SLA: % dentro do prazo e % fora do prazo</li>
+            </ul>
+
+            <p><strong>Gráficos disponíveis:</strong></p>
+            <ul>
+              <li>Ranking de erros por colaborador (barras horizontais)</li>
+              <li>Tipos de erro mais frequentes (pizza)</li>
+              <li>Erros por classificação de gravidade: NA / Leve / Grave / Gravíssimo (rosca)</li>
+              <li>Timeline de erros ao longo do tempo (linha)</li>
+            </ul>
+
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:0.75rem;margin-top:0.75rem;">
+              <strong>💡 Performance:</strong> Os dados do Dashboard são cacheados por 10 minutos no servidor. Se você acabou de registrar uma solicitação e ela não aparece no Dashboard, aguarde alguns instantes e recarregue clicando em <strong>Atualizar Dados</strong>.
+            </div>
           </div>
         </details>
 
         <details>
-          <summary class="help-summary">⚙️ Aba Configurações — Administração</summary>
-          <div class="help-detail help-detail-config">
-            <p><strong>Seções disponíveis (apenas ADMIN):</strong></p>
+          <summary class="help-summary">🔍 Aba Auditoria — Rastreabilidade total (ADMIN)</summary>
+          <div class="help-detail">
+            <p>A aba Auditoria exibe o histórico completo de todas as ações de escrita realizadas no sistema. Disponível apenas para usuários com a ação <strong>Visualizar auditoria</strong> habilitada (por padrão, somente ADMIN).</p>
+            <p><strong>O que é registrado:</strong></p>
             <ul>
-              <li><strong>Tipos de Erro:</strong> adicione, edite ou remova. Cada erro tem classificação: NA, Leve, Grave, Gravíssimo.</li>
-              <li><strong>Setores/Local:</strong> gerencie os setores onde erros ocorrem.</li>
-              <li><strong>Solicitantes:</strong> cadastre as farmácias/solicitantes.</li>
-              <li><strong>Usuários:</strong> gerencie e-mails, nomes, perfis e setores de cada usuário.</li>
-              <li><strong>Sistema:</strong>
-                <ul>
-                  <li>🔍 <strong>Diagnóstico</strong> — verifica integridade das bases de dados</li>
-                  <li>🔧 <strong>Diagnosticar e Corrigir</strong> — diagnostica e corrige automaticamente problemas encontrados</li>
-                  <li>Limpar Cache, configurar SLA, pasta de backup</li>
-                  <li>Arquivamento mensal (move dados para planilha do Looker Studio)</li>
-                </ul>
-              </li>
+              <li>Criação, edição e exclusão de solicitações e respostas</li>
+              <li>Cadastro, atualização e remoção de usuários</li>
+              <li>Alterações nas configurações (tipos de erro, setores, solicitantes)</li>
+              <li>Arquivamentos de dados e importações PROD→DEV</li>
+            </ul>
+            <p>Cada registro inclui: <strong>data/hora, e-mail do usuário, tabela afetada, campo alterado, valor anterior e novo valor</strong>.</p>
+            <p style="font-size:0.82rem;color:#64748b;">Os logs de auditoria ficam gravados na aba <code>Auditoria</code> da planilha do Google Sheets, onde podem ser consultados e filtrados diretamente.</p>
+          </div>
+        </details>
+      </div>
+
+      <!-- ===== CONFIGURAÇÕES ===== -->
+      <div class="form-section" id="ajuda-config">
+        <h3>⚙️ Guia de Configurações</h3>
+        <p>A aba Configurações tem quatro seções acessíveis pelo menu horizontal. A visibilidade de cada seção depende das permissões do usuário.</p>
+
+        <details>
+          <summary class="help-summary">📂 Tipos de Erro, Setores e Solicitantes</summary>
+          <div class="help-detail">
+            <p>Estas três seções permitem gerenciar os cadastros que alimentam os dropdowns do sistema.</p>
+
+            <p><strong>Tipos de Erro (Erros_Cadastro):</strong></p>
+            <ul>
+              <li>Adicione um novo tipo: preencha o nome e clique em <strong>"+ Adicionar"</strong></li>
+              <li>Cada tipo tem uma <strong>classificação de gravidade</strong>: NA, Leve, Grave, Gravíssimo. Clique no badge de classificação para editá-la.</li>
+              <li>A lista é ordenada automaticamente por gravidade (NA → Leve → Grave → Gravíssimo) e depois alfabeticamente dentro de cada grupo.</li>
+              <li>Para remover um tipo, clique no ícone 🗑️. Atenção: tipos já utilizados em solicitações históricas continuarão aparecendo nos registros antigos.</li>
+            </ul>
+
+            <p><strong>Setores/Local (Setores_Local):</strong></p>
+            <ul>
+              <li>Cadastre os setores onde erros podem ocorrer. Os usuários RESPOSTA precisam estar vinculados a pelo menos um setor para receber solicitações.</li>
+              <li>Para liberar um usuário RESPOSTA para todos os setores, edite o usuário e marque o campo Setores como <strong>"*"</strong> (asterisco).</li>
+            </ul>
+
+            <p><strong>Solicitantes (Solicitantes):</strong></p>
+            <ul>
+              <li>Lista das farmácias ou unidades que podem solicitar correções. Aparecem no dropdown "Solicitante" da aba Solicitação.</li>
+            </ul>
+          </div>
+        </details>
+
+        <details>
+          <summary class="help-summary">👥 Gerenciar Usuários — Cadastro e Permissões</summary>
+          <div class="help-detail">
+            <p>Apenas administradores têm acesso a esta seção. Aqui você cadastra, edita e remove usuários do sistema, além de definir perfil, setores e permissões individuais.</p>
+
+            <p><strong>Cadastrar um novo usuário:</strong></p>
+            <ol>
+              <li>Informe o <strong>E-mail</strong> Google do usuário (ex: <code>colaborador@neoformula.com.br</code>)</li>
+              <li>Selecione o <strong>Nome</strong> na lista de colaboradores</li>
+              <li>Escolha o <strong>Perfil</strong> clicando em um dos quatro cards visuais (Admin, Conferente, Resposta, Espectador)</li>
+              <li>Ao selecionar o perfil, o painel de permissões aparece com checkboxes. As permissões são pré-preenchidas com os padrões do perfil escolhido. Você pode personalizá-las livremente.</li>
+              <li>Para perfis RESPOSTA e ESPECTADOR: selecione os <strong>Setores</strong> que este usuário poderá visualizar. Para ADMIN e CONFERENTE o campo é preenchido automaticamente com <code>*</code> (todos os setores).</li>
+              <li>Clique em <strong>"Salvar usuário"</strong></li>
+            </ol>
+
+            <p><strong>Cards de usuários cadastrados:</strong></p>
+            <p>Cada usuário cadastrado aparece como um card na parte inferior da tela. Os chips coloridos mostram:</p>
+            <ul>
+              <li><span style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:2px 8px;border-radius:99px;font-size:0.75rem;font-weight:600;">🗂 6/6 abas</span> — quantidade de abas acessíveis (verde = todas, amarelo = parcial)</li>
+              <li><span style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:2px 8px;border-radius:99px;font-size:0.75rem;font-weight:600;">⚡ 4/8 ações ✎</span> — ações disponíveis. O símbolo <strong>✎</strong> indica que as permissões foram customizadas</li>
+            </ul>
+
+            <p><strong>⚠️ Importante sobre e-mails:</strong> O acesso ao sistema é controlado pelo e-mail Google do usuário. Se o colaborador acessar com um e-mail diferente do cadastrado, ele não terá permissões e será tratado como ESPECTADOR.</p>
+          </div>
+        </details>
+
+        <details>
+          <summary class="help-summary">🖥️ Sistema — Diagnóstico, SLA, Backup e Importação</summary>
+          <div class="help-detail">
+
+            <p><strong>🩺 Diagnóstico do Sistema:</strong></p>
+            <ul>
+              <li><strong>Executar Diagnóstico</strong> — verifica a integridade das abas da planilha, configurações e conectividade. Exibe um painel visual com status de cada componente.</li>
+              <li><strong>Diagnosticar e Corrigir</strong> — além de diagnosticar, tenta corrigir automaticamente problemas encontrados (abas faltando, dados corrompidos etc.)</li>
+            </ul>
+
+            <p><strong>🔧 Utilitários:</strong></p>
+            <ul>
+              <li><strong>Limpar Cache</strong> — invalida o cache do servidor. Use quando dados parecem desatualizados após uma alteração manual na planilha.</li>
+              <li><strong>ID da Pasta de Backup</strong> — configure o ID do Google Drive para onde os arquivos de arquivamento serão salvos.</li>
+            </ul>
+
+            <p><strong>⏱️ Limiares de SLA:</strong></p>
+            <ul>
+              <li><strong>Minutos para Alerta</strong> — tempo após o qual a solicitação entra em estado ALERTA (padrão: 15 min)</li>
+              <li><strong>Minutos para Crítico</strong> — tempo após o qual entra em estado CRÍTICO (padrão: 30 min)</li>
+              <li>Clique em <strong>"Salvar SLA"</strong> para aplicar</li>
+            </ul>
+
+            <p><strong>📦 Arquivamento Mensal:</strong></p>
+            <p>Move os dados do período selecionado (mês/ano) para a planilha de backup do Looker Studio, removendo-os do app. Use para manter a base de dados ágil e com boa performance.</p>
+            <ul>
+              <li>Selecione o <strong>Mês</strong> e o <strong>Ano</strong> a arquivar</li>
+              <li>Clique em <strong>"📤 Arquivar Mês Selecionado"</strong></li>
+              <li>O sistema pede confirmação antes de executar. A ação <strong>não pode ser desfeita</strong></li>
+            </ul>
+
+            <p><strong>📥 Importar dados da PROD (visível apenas no DEV):</strong></p>
+            <p>Permite copiar dados da planilha de produção para o ambiente de desenvolvimento, facilitando testes com dados reais.</p>
+            <ul>
+              <li>Selecione as tabelas que deseja importar usando os checkboxes</li>
+              <li>Use <strong>"Selecionar tudo"</strong> ou <strong>"Limpar seleção"</strong> para gerenciar rapidamente</li>
+              <li>Clique em <strong>"📥 Importar selecionados"</strong></li>
+              <li>O sistema pede confirmação mostrando exatamente quais tabelas serão sobrescritas</li>
+              <li>Após a importação, o resultado exibe quantas linhas foram importadas por tabela</li>
+              <li>⚠️ Os dados do DEV são <strong>completamente substituídos</strong> nas tabelas selecionadas</li>
             </ul>
           </div>
         </details>
       </div>
 
-      <!-- ===== DOCUMENTAÇÃO DA API ===== -->
-      <div class="form-section">
-        <h3>🔌 API — Funções Disponíveis (Google Apps Script)</h3>
-        <p>O sistema expõe funções públicas via Google Apps Script que podem ser chamadas pelo frontend com <code>google.script.run</code>. Todas retornam <code>&#123; ok: boolean, data: any, errors: string[], debugId: string &#125;</code>.</p>
+      <!-- ===== REFERÊNCIA TÉCNICA ===== -->
+      <div class="form-section" id="ajuda-api">
+        <h3>🔌 Referência Técnica — API Backend</h3>
+        <p>O sistema usa Google Apps Script (V8) como backend. O frontend chama as funções via <code>google.script.run</code>. Todas retornam <code>&#123; ok: boolean, errors: string[], debugId: string, ...dados &#125;</code>.</p>
 
-        <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
-            <thead>
-              <tr style="background:#f1f5f9;">
-                <th style="padding:0.5rem 0.75rem;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap;">Função</th>
-                <th style="padding:0.5rem 0.75rem;text-align:left;border-bottom:2px solid #e2e8f0;">Parâmetros</th>
-                <th style="padding:0.5rem 0.75rem;text-align:left;border-bottom:2px solid #e2e8f0;">Retorno em <code>data</code></th>
-                <th style="padding:0.5rem 0.75rem;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap;">Perfil mínimo</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style="border-bottom:1px solid #e2e8f0;">
-                <td style="padding:0.5rem 0.75rem;font-weight:600;color:#1e293b;white-space:nowrap;"><code>getBootstrapData()</code></td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;">—</td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;">Usuário, config, listas, responsáveis, solicitações abertas</td>
-                <td style="padding:0.5rem 0.75rem;">ESPECTADOR</td>
-              </tr>
-              <tr style="border-bottom:1px solid #e2e8f0;background:#fafafa;">
-                <td style="padding:0.5rem 0.75rem;font-weight:600;color:#1e293b;white-space:nowrap;"><code>submitRequest(payload)</code></td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>&#123;requisicao, solicitante, erro, detalhamento, setorLocal, diferencaNoValor, confirmacaoMedica&#125;</code></td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>&#123;solicitacaoId, erroSeq&#125;</code></td>
-                <td style="padding:0.5rem 0.75rem;">Qualquer usuário autenticado</td>
-              </tr>
-              <tr style="border-bottom:1px solid #e2e8f0;">
-                <td style="padding:0.5rem 0.75rem;font-weight:600;color:#1e293b;white-space:nowrap;"><code>submitResponse(payload)</code></td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>&#123;solicitacaoId, erroSeq, nomeResponsavel, houveDiferencaValor, diferencaValorResposta, observacoes, isUpdate?&#125;</code></td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>&#123;respostaId&#125;</code></td>
-                <td style="padding:0.5rem 0.75rem;">RESPOSTA</td>
-              </tr>
-              <tr style="border-bottom:1px solid #e2e8f0;background:#fafafa;">
-                <td style="padding:0.5rem 0.75rem;font-weight:600;color:#1e293b;white-space:nowrap;"><code>getOpenErros()</code></td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;">—</td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;">Lista de erros abertos/em correção do setor do usuário com SLA calculado</td>
-                <td style="padding:0.5rem 0.75rem;">ESPECTADOR</td>
-              </tr>
-              <tr style="border-bottom:1px solid #e2e8f0;">
-                <td style="padding:0.5rem 0.75rem;font-weight:600;color:#1e293b;white-space:nowrap;"><code>getDashboardRecords(limit?)</code></td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>limit</code> (padrão: 3000)</td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;">Registros completos para dashboards. Cada registro inclui: <code>id</code>, <code>requisicao</code>, <code>solicitante</code>, <code>erro</code>, <code>detalhamento</code>, <code>setorLocal</code>, <code>diferencaNoValor</code>, <code>confirmacaoMedica</code>, <code>nomeResponsavel</code>, <code>diferencaValorResposta</code>, <code>dataHoraPedido</code>, <code>dataHoraCorrecao</code>, <code>slaStatus</code></td>
-                <td style="padding:0.5rem 0.75rem;">ESPECTADOR</td>
-              </tr>
-              <tr style="border-bottom:1px solid #e2e8f0;background:#fafafa;">
-                <td style="padding:0.5rem 0.75rem;font-weight:600;color:#1e293b;white-space:nowrap;"><code>deleteSolicitacao(id)</code></td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>solicitacaoId</code></td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>&#123;solicitacaoId&#125;</code></td>
-                <td style="padding:0.5rem 0.75rem;">ADMIN / CONFERENTE</td>
-              </tr>
-              <tr style="border-bottom:1px solid #e2e8f0;">
-                <td style="padding:0.5rem 0.75rem;font-weight:600;color:#1e293b;white-space:nowrap;"><code>healthCheck(autoFix?)</code></td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>autoFix: boolean</code></td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;">Status de todos os componentes + lista de correções aplicadas</td>
-                <td style="padding:0.5rem 0.75rem;">ADMIN</td>
-              </tr>
-              <tr style="border-bottom:1px solid #e2e8f0;background:#fafafa;">
-                <td style="padding:0.5rem 0.75rem;font-weight:600;color:#1e293b;white-space:nowrap;"><code>getConfigData()</code></td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;">—</td>
-                <td style="padding:0.5rem 0.75rem;color:#64748b;">Tipos de erro, setores, solicitantes, limiares de SLA</td>
-                <td style="padding:0.5rem 0.75rem;">Qualquer usuário autenticado</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p style="margin-top:0.75rem;font-size:0.82rem;color:#64748b;">Limite de taxa: máximo <strong>30 chamadas de escrita por minuto por usuário</strong> (submitRequest, submitResponse, deleteSolicitacao).</p>
-      </div>
+        <details>
+          <summary class="help-summary">📋 Funções de Dados (Solicitações, Respostas, Dashboard)</summary>
+          <div class="help-detail" style="padding:0;">
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+                <thead>
+                  <tr style="background:#f1f5f9;">
+                    <th style="padding:0.5rem 0.75rem;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap;">Função</th>
+                    <th style="padding:0.5rem 0.75rem;text-align:left;border-bottom:2px solid #e2e8f0;">Payload / Parâmetros</th>
+                    <th style="padding:0.5rem 0.75rem;text-align:left;border-bottom:2px solid #e2e8f0;">Retorno</th>
+                    <th style="padding:0.5rem 0.75rem;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap;">Acesso mínimo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>getBootstrapData()</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;">—</td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;">usuario (com permissoes), config, listas, responsáveis, configGeral, usuarios, openErros, dashboard</td>
+                    <td style="padding:0.5rem 0.75rem;">Qualquer</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;background:#fafafa;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>submitRequest(payload)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>requisicao, solicitante, erro, detalhamento, setorLocal, diferencaNoValor, confirmacaoMedica, dataHoraPedido</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>solicitacaoId, erroSeq</code></td>
+                    <td style="padding:0.5rem 0.75rem;">Qualquer</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>submitResponse(payload)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>solicitacaoId, erroSeq, nomeResponsavel, houveDiferencaValor, diferencaValorResposta, observacoes, dataHoraCorrecao, isUpdate?</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>respostaId</code></td>
+                    <td style="padding:0.5rem 0.75rem;">RESPOSTA</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;background:#fafafa;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>getOpenErros()</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;">—</td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;">Lista de erros ABERTO/EM_CORRECAO do setor do usuário, com slaStatus calculado</td>
+                    <td style="padding:0.5rem 0.75rem;">Qualquer</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>getDashboardRecords(limit?)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>limit</code> (padrão 3000)</td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;">Registros completos: id, requisicao, solicitante, erro, classificacao, setorLocal, diferencaNoValor, confirmacaoMedica, nomeResponsavel, diferencaValorResposta, dataHoraPedido, dataHoraCorrecao, slaStatus</td>
+                    <td style="padding:0.5rem 0.75rem;">Qualquer</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;background:#fafafa;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>deleteSolicitacao(payload)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>solicitacaoId</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>solicitacaoId</code></td>
+                    <td style="padding:0.5rem 0.75rem;">ação "delete"</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>updateSolicitacao(payload)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>solicitacaoId, erroSeq, requisicao, solicitante, erro, setorLocal, diferencaNoValor, detalhamento, responseData?</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>ok</code></td>
+                    <td style="padding:0.5rem 0.75rem;">ação "editSolicitation"</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
 
-      <!-- ===== DEBUG ===== -->
-      <div class="form-section">
-        <h3>🐛 Modo Debug (Desenvolvedores)</h3>
-        <ul>
-          <li><strong>Atalho:</strong> <kbd style="background:#334155;color:white;padding:2px 8px;border-radius:4px;">Ctrl+Shift+D</kbd> — ativa/desativa o painel de debug flutuante</li>
-          <li><strong>Painel:</strong> exibe logs em tempo real de cada operação do app</li>
-          <li><strong>Logs do servidor:</strong> gravados na aba <code>Logs_Debug</code> da planilha (máx. 1000 linhas — mais antigas são removidas automaticamente)</li>
-          <li><strong>Auditoria:</strong> toda ação de escrita (CREATE/UPDATE/DELETE) é registrada na aba <code>Auditoria</code></li>
-          <li><strong>💡 Dica:</strong> Desative o debug em uso normal para melhor performance</li>
-        </ul>
+        <details>
+          <summary class="help-summary">👥 Funções de Usuários e Configurações</summary>
+          <div class="help-detail" style="padding:0;">
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+                <thead>
+                  <tr style="background:#f1f5f9;">
+                    <th style="padding:0.5rem 0.75rem;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap;">Função</th>
+                    <th style="padding:0.5rem 0.75rem;text-align:left;border-bottom:2px solid #e2e8f0;">Payload</th>
+                    <th style="padding:0.5rem 0.75rem;text-align:left;border-bottom:2px solid #e2e8f0;">Retorno</th>
+                    <th style="padding:0.5rem 0.75rem;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap;">Acesso</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>getUsuarios()</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;">—</td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;">Lista: email, nome, perfil, setores, permissoes (JSON)</td>
+                    <td style="padding:0.5rem 0.75rem;">ADMIN</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;background:#fafafa;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>addUsuario(payload)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>email, nome, perfil, setores, permissoes&#123;tabs, actions&#125;</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>ok</code></td>
+                    <td style="padding:0.5rem 0.75rem;">ADMIN</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>updateUsuario(payload)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>email, nome, perfil, setores, permissoes&#123;tabs, actions&#125;</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>ok</code></td>
+                    <td style="padding:0.5rem 0.75rem;">ADMIN</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;background:#fafafa;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>deleteUsuario(payload)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>email</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>ok</code></td>
+                    <td style="padding:0.5rem 0.75rem;">ADMIN</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>addConfigItem(payload)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>type: "solicitante"|"setor"|"erro", value</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>ok</code></td>
+                    <td style="padding:0.5rem 0.75rem;">ADMIN</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;background:#fafafa;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>deleteConfigItem(payload)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>type, value</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>ok</code></td>
+                    <td style="padding:0.5rem 0.75rem;">ADMIN</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>updateErrorClassification(payload)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>nome, classificacao: "NA"|"Leve"|"Grave"|"Gravíssimo"</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>ok</code></td>
+                    <td style="padding:0.5rem 0.75rem;">ADMIN</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;background:#fafafa;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>atualizarLimiares(payload)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>minutosAlerta, minutosCritico</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>ok</code></td>
+                    <td style="padding:0.5rem 0.75rem;">ADMIN</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>importarDadosProd(payload)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>tabelas: string[]</code> — nomes das abas a importar</td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>resultados[&#123;aba, linhas&#125;], erros[]</code></td>
+                    <td style="padding:0.5rem 0.75rem;">ADMIN (DEV only)</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;background:#fafafa;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>healthCheck(payload)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>autoFix: boolean</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;">status de componentes + correções aplicadas</td>
+                    <td style="padding:0.5rem 0.75rem;">ADMIN</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>limparCache()</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;">—</td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>ok</code></td>
+                    <td style="padding:0.5rem 0.75rem;">ADMIN</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid #e2e8f0;background:#fafafa;">
+                    <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>executarArquivamentoMensal(payload)</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>mes, ano</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>arquivados, backupFile</code></td>
+                    <td style="padding:0.5rem 0.75rem;">ADMIN</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p style="margin-top:0.75rem;font-size:0.8rem;color:#64748b;">⏱️ <strong>Rate limit:</strong> máximo <strong>15 chamadas de escrita por minuto</strong> por usuário (submitRequest, submitResponse, deleteSolicitacao e endpoints de configuração). Exceder este limite retorna erro temporário.</p>
+          </div>
+        </details>
+
+        <details>
+          <summary class="help-summary">🗄️ Schema das Planilhas (Google Sheets)</summary>
+          <div class="help-detail">
+            <p>Os dados são lidos por <strong>índice de coluna</strong> no backend. Nunca reordene ou insira colunas no meio — adicione sempre ao final.</p>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;font-size:0.8rem;">
+              <div>
+                <strong>Solicitacoes</strong>
+                <pre style="background:#0f172a;color:#6ee7b7;padding:0.6rem;border-radius:6px;font-size:0.75rem;margin:0.3rem 0;">[0] id_solicitacao
+[1] requisicao
+[2] solicitante
+[3] data_hora_pedido
+[4] status
+[5] criado_por_email
+[6] criado_em</pre>
+              </div>
+              <div>
+                <strong>Erros</strong>
+                <pre style="background:#0f172a;color:#6ee7b7;padding:0.6rem;border-radius:6px;font-size:0.75rem;margin:0.3rem 0;">[0] id_solicitacao
+[1] sequencia_erro
+[2] erro
+[3] detalhamento
+[4] setor_local
+[5] diferenca_valor
+[6] criado_em
+[7] confirmacao_medica</pre>
+              </div>
+              <div>
+                <strong>Respostas</strong>
+                <pre style="background:#0f172a;color:#6ee7b7;padding:0.6rem;border-radius:6px;font-size:0.75rem;margin:0.3rem 0;">[0] id_resposta
+[1] id_solicitacao
+[2] sequencia_erro
+[3] nome_responsavel
+[4] email_responsavel
+[5] erro_corrigido
+[6] houve_diferenca_valor
+[7] diferenca_valor_resposta
+[8] observacoes
+[9] data_hora_correcao
+[10] criado_em</pre>
+              </div>
+              <div>
+                <strong>Usuarios</strong>
+                <pre style="background:#0f172a;color:#6ee7b7;padding:0.6rem;border-radius:6px;font-size:0.75rem;margin:0.3rem 0;">[0] email
+[1] nome
+[2] perfil
+[3] setores
+[4] permissoes ← v237
+    JSON {tabs:[...], actions:[...]}</pre>
+              </div>
+            </div>
+
+            <p style="margin-top:0.75rem;font-size:0.8rem;color:#64748b;">Tabelas de configuração (<code>Solicitantes</code>, <code>Setores_Local</code>, <code>Erros_Cadastro</code>): coluna <code>[0]</code> = valor, <code>[1]</code> = classificação (apenas Erros_Cadastro).</p>
+          </div>
+        </details>
+
+        <details>
+          <summary class="help-summary">⚡ Arquitetura e Performance</summary>
+          <div class="help-detail">
+            <p><strong>Stack tecnológica:</strong></p>
+            <ul>
+              <li><strong>Backend:</strong> Google Apps Script V8 — arquivos <code>.gs</code> organizados por responsabilidade</li>
+              <li><strong>Frontend:</strong> SPA vanilla (HTML + CSS + JS inline, sem frameworks, sem npm)</li>
+              <li><strong>Banco de dados:</strong> Google Sheets (abas = tabelas, colunas por índice numérico)</li>
+              <li><strong>Deploy:</strong> Google Web App via CLASP — URL fixa com <code>--deploymentId</code></li>
+            </ul>
+
+            <p><strong>Organização dos arquivos .gs:</strong></p>
+            <ul>
+              <li><code>Code.gs</code> — CONFIG global, doGet, onOpen, funções de inicialização e setup</li>
+              <li><code>api.gs</code> — funções públicas chamadas pelo frontend (submitRequest, getOpenErros, etc.)</li>
+              <li><code>db.gs</code> — operações de banco (getSpreadsheet_, ensureSheets_, deleteSolicitacao_, updateResposta_)</li>
+              <li><code>logic.gs</code> — validações, cálculo de SLA, getUsuarioContexto_, PROFILE_PERM_DEFAULTS_</li>
+              <li><code>audit.gs</code> — auditLog_, logDebug_, maskEmail_, sanitizePayloadForLog_</li>
+            </ul>
+
+            <p><strong>Otimizações de performance implementadas:</strong></p>
+            <ul>
+              <li><strong>Memoização de SpreadsheetApp</strong> — <code>getSpreadsheet_()</code> abre a planilha apenas uma vez por execução GAS</li>
+              <li><strong>Cache de sheets</strong> — <code>ensureSheets_()</code> cacheado por 5 min no <code>CacheService.getScriptCache()</code></li>
+              <li><strong>Cache de usuário</strong> — <code>getUsuarioContexto_()</code> cacheado por 5 min por e-mail</li>
+              <li><strong>Cache de configurações</strong> — <code>getConfigData()</code> cacheado por 10 min</li>
+              <li><strong>Batch de escrita</strong> — <code>setValues()</code> em vez de N chamadas <code>setValue()</code> individuais</li>
+              <li><strong>Batch de exclusão</strong> — filter+rewrite em vez de N chamadas <code>deleteRow()</code></li>
+            </ul>
+
+            <p><strong>SPREADSHEET_ID:</strong> armazenado exclusivamente no <code>PropertiesService.getScriptProperties()</code> — nunca em código versionado. Execute o menu <strong>"Configurar Propriedades (rodar 1x)"</strong> no Google Apps Script após o primeiro deploy ou ao trocar a planilha.</p>
+          </div>
+        </details>
       </div>
 
       <!-- ===== SEGURANÇA ===== -->
-      <div class="form-section">
+      <div class="form-section" id="ajuda-seguranca">
         <h3>🔒 Segurança e Privacidade (LGPD)</h3>
-        <ul>
-          <li>✅ Autenticação via <strong>Google OAuth 2.0</strong> — somente usuários do domínio/lista autorizada</li>
-          <li>✅ <strong>Rate limiting</strong> — máx. 30 chamadas de escrita por minuto por usuário</li>
-          <li>✅ <strong>Controle por setor</strong> — usuário RESPOSTA vê apenas dados do seu setor</li>
-          <li>✅ <strong>Audit log completo</strong> — toda ação registra usuário, tabela, campo, valor anterior/novo, data/hora</li>
-          <li>✅ <strong>LockService</strong> — proteção contra gravações simultâneas e IDs duplicados</li>
-          <li>✅ Dados armazenados no <strong>Google Sheets</strong> — sujeito à política de privacidade do Google Workspace</li>
-          <li>✅ Informações sensíveis (e-mails, requisições) protegidas por permissões de perfil</li>
-        </ul>
-      </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;font-size:0.83rem;">
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:0.75rem;">
+            <strong style="color:#065f46;">🔐 Autenticação</strong>
+            <p style="margin:0.4rem 0 0 0;color:#064e3b;">Google OAuth 2.0 — apenas usuários cadastrados na aba Usuarios têm permissões. Acesso não cadastrado é tratado como ESPECTADOR.</p>
+          </div>
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:0.75rem;">
+            <strong style="color:#1e40af;">⏱️ Rate Limiting</strong>
+            <p style="margin:0.4rem 0 0 0;color:#1e3a8a;">Máximo 15 chamadas de escrita por minuto por usuário via CacheService. Exceder retorna erro sem bloquear operações de leitura.</p>
+          </div>
+          <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:0.75rem;">
+            <strong style="color:#5b21b6;">🏢 Controle por Setor</strong>
+            <p style="margin:0.4rem 0 0 0;color:#4c1d95;">Usuários RESPOSTA veem apenas registros do seu setor. Registros sem setor são visíveis somente para ADMIN e CONFERENTE.</p>
+          </div>
+          <div style="background:#fff8e1;border:1px solid #fde68a;border-radius:8px;padding:0.75rem;">
+            <strong style="color:#92400e;">📋 Audit Log</strong>
+            <p style="margin:0.4rem 0 0 0;color:#78350f;">Todo CREATE/UPDATE/DELETE registra: usuário, tabela, campo, valor anterior, novo valor e timestamp. Imutável via interface.</p>
+          </div>
+          <div style="background:#fff1f2;border:1px solid #fecaca;border-radius:8px;padding:0.75rem;">
+            <strong style="color:#991b1b;">🛡️ LGPD — Proteção de Dados</strong>
+            <p style="margin:0.4rem 0 0 0;color:#7f1d1d;">E-mails são mascarados nos logs de debug (<code>jo***@empresa.com</code>). Dados sensíveis (nome, requisição, e-mail) são removidos dos payloads de log. DEBUG desativado automaticamente em PROD.</p>
+          </div>
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:0.75rem;">
+            <strong style="color:#065f46;">🔒 Concorrência</strong>
+            <p style="margin:0.4rem 0 0 0;color:#064e3b;">LockService bloqueia gravações simultâneas para evitar IDs duplicados e conflitos de dados.</p>
+          </div>
+        </div>
 
-      <div class="form-section">
-        <h3>📚 Documentação Técnica</h3>
-        <p style="margin-bottom: 12px;">Acesse a documentação completa do sistema:</p>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button type="button" class="btn" onclick="abrirDocumentacao()" style="display: inline-flex; align-items: center; gap: 8px;">
-            📖 Abrir Documentação Completa
-          </button>
-          <button type="button" class="btn secondary" onclick="abrirDocumentacaoAPI()" style="display: inline-flex; align-items: center; gap: 8px;">
-            🔌 Documentação da API
-          </button>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:0.75rem;margin-top:0.75rem;font-size:0.82rem;">
+          <strong>🐛 Modo Debug (Desenvolvedores):</strong>
+          <ul style="margin:0.4rem 0 0 0;">
+            <li><kbd style="background:#334155;color:white;padding:2px 7px;border-radius:4px;">Ctrl+Shift+D</kbd> — ativa/desativa o painel de debug flutuante em tempo real</li>
+            <li>Logs do servidor gravados em <code>Logs_Debug</code> na planilha (máx. 1000 linhas, mais antigas removidas automaticamente)</li>
+            <li>Dados sensíveis são mascarados nos logs mesmo com debug ativo</li>
+            <li>DEBUG é <strong>automático</strong>: ativado no ambiente DEV, desativado no PROD</li>
+          </ul>
         </div>
       </div>
 
-      <div class="form-section">
+      <!-- ===== SUPORTE ===== -->
+      <div class="form-section" id="ajuda-suporte">
         <h3>📞 Suporte Técnico</h3>
-        <p style="margin-bottom: 12px;">Em caso de dúvidas ou problemas técnicos, entre em contato:</p>
-        <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 16px 20px; border-radius: 12px; border-left: 4px solid #009688;">
-          <p style="margin: 0 0 8px 0; font-weight: 600; color: #1e293b; font-size: 15px;">👨‍💻 TI Neoformula - Lucas Engenheiro</p>
-          <p style="margin: 0 0 6px 0; color: #475569;">
-            <span style="display: inline-flex; align-items: center; gap: 8px;">
-              <span style="background: #009688; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">📧 E-mail</span>
-              <a href="mailto:ti.neoformula@gmail.com" style="color: #009688; text-decoration: none; font-weight: 500;">ti.neoformula@gmail.com</a>
+        <p style="margin-bottom:0.75rem;">Em caso de dúvidas ou problemas técnicos, entre em contato com o time de TI:</p>
+        <div style="background:linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%);padding:1.25rem 1.5rem;border-radius:12px;border-left:4px solid #009688;">
+          <p style="margin:0 0 0.6rem 0;font-weight:700;color:#1e293b;font-size:1rem;">👨‍💻 TI Neoformula — Lucas Engenheiro</p>
+          <p style="margin:0 0 0.4rem 0;color:#475569;">
+            <span style="display:inline-flex;align-items:center;gap:8px;">
+              <span style="background:#009688;color:white;padding:2px 8px;border-radius:4px;font-size:0.75rem;">📧 E-mail</span>
+              <a href="mailto:ti.neoformula@gmail.com" style="color:#009688;text-decoration:none;font-weight:600;">ti.neoformula@gmail.com</a>
             </span>
           </p>
-          <p style="margin: 0; color: #475569;">
-            <span style="display: inline-flex; align-items: center; gap: 8px;">
-              <span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">📞 Ramal</span>
-              <span style="font-weight: 500;">9929</span>
+          <p style="margin:0;color:#475569;">
+            <span style="display:inline-flex;align-items:center;gap:8px;">
+              <span style="background:#3b82f6;color:white;padding:2px 8px;border-radius:4px;font-size:0.75rem;">📞 Ramal</span>
+              <span style="font-weight:600;">9929</span>
             </span>
           </p>
         </div>
-        <p style="margin-top: 16px;"><strong>Versão:</strong> 2.8.52 - Debug Flutuante, Filtros Multi-Seleção e Documentação</p>
-        <p><small>🤖 Sistema desenvolvido com Claude Code</small></p>
+
+        <div style="margin-top:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+          <button type="button" class="btn secondary" onclick="abrirDocumentacao()" style="display:inline-flex;align-items:center;gap:8px;">
+            📖 Documentação Técnica Completa
+          </button>
+          <button type="button" class="btn secondary" onclick="abrirDocumentacaoAPI()" style="display:inline-flex;align-items:center;gap:8px;">
+            🔌 Referência da API
+          </button>
+        </div>
+
+        <p style="margin-top:1.25rem;font-size:0.82rem;color:#94a3b8;">
+          Versão atual: <strong><?= appVersion ?></strong> · Ambiente: <strong><?= appEnv ?></strong><br>
+          <small>🤖 Sistema desenvolvido com Claude Code (Anthropic)</small>
+        </p>
       </div>
     </div>
 
@@ -5169,6 +5755,10 @@
 
 
 
+      // Variáveis de ambiente injetadas pelo servidor via scriptlet GAS
+      const appEnv = '<?= appEnv ?>';
+      const appVersion = '<?= appVersion ?>';
+
       let openErros = [];
       let allOpenErros = []; // Store all errors for filtering
       let config = null; // Global config for accessing error classifications
@@ -5313,6 +5903,13 @@
       // ==========================================
 
       // Função para abrir documentação completa
+      // Scroll suave para seção da aba Ajuda (evita navegação fora do iframe)
+      function ajudaScrollTo(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
       function abrirDocumentacao() {
         const docHtml = gerarDocumentacaoHTML();
         const docWindow = window.open('', '_blank');
@@ -6772,19 +7369,214 @@
 
       const userSetoresDropdown = document.getElementById('userSetoresDropdown');
 
+      // userPerfil agora é hidden input; o evento de mudança é disparado por selectPerfil()
       const userPerfilSelect = document.getElementById('userPerfil');
 
       const userNomeSelect = document.getElementById('userNome');
 
-      if (userPerfilSelect) {
+      // Mapa de permissões por perfil — fonte única de verdade para UI
+      const PERFIL_PERMISSIONS = {
+        ADMIN: {
+          icon: '🔑', label: 'Admin', cls: 'pc-admin',
+          desc: 'Acesso total: gerencia usuários, configurações e pode excluir qualquer registro.',
+          tabs: [
+            { nome: 'Resposta Conserto', ok: true },
+            { nome: 'Dashboard', ok: true },
+            { nome: 'Configurações', ok: true },
+            { nome: 'Auditoria', ok: true },
+            { nome: 'Ajuda', ok: true }
+          ],
+          actions: [
+            { nome: 'Registrar solicitação', ok: true },
+            { nome: 'Responder erro', ok: true },
+            { nome: 'Editar solicitação', ok: true },
+            { nome: 'Excluir solicitação', ok: true },
+            { nome: 'Gerenciar usuários', ok: true },
+            { nome: 'Gerenciar configurações', ok: true },
+            { nome: 'Arquivar dados', ok: true },
+            { nome: 'Visualizar auditoria', ok: true }
+          ]
+        },
+        CONFERENTE: {
+          icon: '📋', label: 'Conferente', cls: 'pc-conf',
+          desc: 'Visualiza e edita todas as solicitações e respostas de todos os setores.',
+          tabs: [
+            { nome: 'Resposta Conserto', ok: true },
+            { nome: 'Dashboard', ok: true },
+            { nome: 'Configurações', ok: false },
+            { nome: 'Auditoria', ok: false },
+            { nome: 'Ajuda', ok: true }
+          ],
+          actions: [
+            { nome: 'Registrar solicitação', ok: true },
+            { nome: 'Responder erro', ok: true },
+            { nome: 'Editar solicitação', ok: true },
+            { nome: 'Excluir solicitação', ok: true },
+            { nome: 'Gerenciar usuários', ok: false },
+            { nome: 'Gerenciar configurações', ok: false },
+            { nome: 'Arquivar dados', ok: false },
+            { nome: 'Visualizar auditoria', ok: false }
+          ]
+        },
+        RESPOSTA: {
+          icon: '✅', label: 'Resposta', cls: 'pc-resp',
+          desc: 'Responde solicitações apenas dos setores atribuídos. Não acessa dados de outros setores.',
+          tabs: [
+            { nome: 'Resposta Conserto', ok: true },
+            { nome: 'Dashboard', ok: true },
+            { nome: 'Configurações', ok: false },
+            { nome: 'Auditoria', ok: false },
+            { nome: 'Ajuda', ok: true }
+          ],
+          actions: [
+            { nome: 'Registrar solicitação', ok: true },
+            { nome: 'Responder erro (só seu setor)', ok: 'partial' },
+            { nome: 'Editar solicitação', ok: false },
+            { nome: 'Excluir solicitação', ok: false },
+            { nome: 'Gerenciar usuários', ok: false },
+            { nome: 'Gerenciar configurações', ok: false },
+            { nome: 'Arquivar dados', ok: false },
+            { nome: 'Visualizar auditoria', ok: false }
+          ]
+        },
+        ESPECTADOR: {
+          icon: '👁️', label: 'Espectador', cls: 'pc-espect',
+          desc: 'Somente visualização. Não pode registrar nem responder solicitações.',
+          tabs: [
+            { nome: 'Resposta Conserto', ok: true },
+            { nome: 'Dashboard', ok: true },
+            { nome: 'Configurações', ok: false },
+            { nome: 'Auditoria', ok: false },
+            { nome: 'Ajuda', ok: true }
+          ],
+          actions: [
+            { nome: 'Registrar solicitação', ok: false },
+            { nome: 'Responder erro', ok: false },
+            { nome: 'Editar solicitação', ok: false },
+            { nome: 'Excluir solicitação', ok: false },
+            { nome: 'Gerenciar usuários', ok: false },
+            { nome: 'Gerenciar configurações', ok: false },
+            { nome: 'Arquivar dados', ok: false },
+            { nome: 'Visualizar auditoria', ok: false }
+          ]
+        }
+      };
 
-        userPerfilSelect.addEventListener('change', () => {
+      // Abas disponíveis para configuração de permissões
+      const PERM_TABS_ = [
+        { id: 'resposta',    label: 'Resposta Conserto' },
+        { id: 'solicitacao', label: 'Solicitações' },
+        { id: 'dashboard',   label: 'Dashboard' },
+        { id: 'config',      label: 'Configurações' },
+        { id: 'auditoria',   label: 'Auditoria' },
+        { id: 'ajuda',       label: 'Ajuda' }
+      ];
 
-          toggleSetoresPorPerfil();
+      // Ações disponíveis para configuração de permissões
+      const PERM_ACTIONS_ = [
+        { id: 'submitRequest',    label: 'Registrar solicitação' },
+        { id: 'respond',          label: 'Responder erro' },
+        { id: 'editSolicitation', label: 'Editar solicitação' },
+        { id: 'delete',           label: 'Excluir solicitação' },
+        { id: 'manageUsers',      label: 'Gerenciar usuários' },
+        { id: 'manageConfig',     label: 'Gerenciar configurações' },
+        { id: 'archive',          label: 'Arquivar dados' },
+        { id: 'viewAudit',        label: 'Visualizar auditoria' }
+      ];
 
+      // Permissões padrão por perfil — espelha backend PROFILE_PERM_DEFAULTS_
+      const PROFILE_PERM_DEFAULTS_UI_ = {
+        ADMIN: {
+          tabs: ['resposta', 'solicitacao', 'dashboard', 'config', 'auditoria', 'ajuda'],
+          actions: ['submitRequest', 'respond', 'editSolicitation', 'delete', 'manageUsers', 'manageConfig', 'archive', 'viewAudit']
+        },
+        CONFERENTE: {
+          tabs: ['resposta', 'solicitacao', 'dashboard', 'config', 'ajuda'],
+          actions: ['submitRequest', 'respond', 'editSolicitation', 'delete']
+        },
+        RESPOSTA: {
+          tabs: ['resposta', 'dashboard', 'ajuda'],
+          actions: ['submitRequest', 'respond']
+        },
+        ESPECTADOR: {
+          tabs: ['dashboard', 'ajuda'],
+          actions: []
+        }
+      };
+
+      // Seleciona visualmente um perfil e renderiza painel de permissões editável
+      // customPermissoes: objeto {tabs:[...], actions:[...]} para pré-carregar (ao editar usuário)
+      function selectPerfil(perfil, customPermissoes) {
+        const input = document.getElementById('userPerfil');
+        if (input) input.value = perfil;
+
+        // Atualiza destaque dos cards
+        document.querySelectorAll('.profile-card').forEach(function(card) {
+          card.classList.toggle('selected', card.dataset.perfil === perfil);
         });
 
+        const panel = document.getElementById('permDetail');
+        if (!panel) { toggleSetoresPorPerfil(); return; }
+
+        const p = PERFIL_PERMISSIONS[perfil];
+        const defaults = PROFILE_PERM_DEFAULTS_UI_[perfil] || PROFILE_PERM_DEFAULTS_UI_.ESPECTADOR;
+        // Usa permissões customizadas se fornecidas, senão padrão do perfil
+        const perms = (customPermissoes && customPermissoes.tabs && customPermissoes.actions)
+          ? customPermissoes : defaults;
+
+        const profileLabel = p ? (p.icon + ' <strong>' + p.label + '</strong>') : perfil;
+        const profileDesc = p ? p.desc : '';
+
+        let html = '<div class="perm-editor-header">' + profileLabel + ' — ' + profileDesc + '</div>';
+        html += '<div class="perm-editor-note">Personalize as permissões deste usuário. Por padrão usam as permissões do perfil selecionado.</div>';
+        html += '<div class="perm-cols">';
+
+        // Coluna: Abas acessíveis
+        html += '<div><div class="perm-check-section-lbl">Abas acessíveis</div>';
+        PERM_TABS_.forEach(function(tab) {
+          const checked = perms.tabs.indexOf(tab.id) !== -1 ? ' checked' : '';
+          html += '<div class="perm-check-row">';
+          html += '<input type="checkbox" id="ptab_' + tab.id + '" name="perm_tab" value="' + tab.id + '"' + checked + '>';
+          html += '<label for="ptab_' + tab.id + '">' + tab.label + '</label>';
+          html += '</div>';
+        });
+        html += '</div>';
+
+        // Coluna: Ações disponíveis
+        html += '<div><div class="perm-check-section-lbl">Ações disponíveis</div>';
+        PERM_ACTIONS_.forEach(function(action) {
+          const checked = perms.actions.indexOf(action.id) !== -1 ? ' checked' : '';
+          html += '<div class="perm-check-row">';
+          html += '<input type="checkbox" id="pact_' + action.id + '" name="perm_action" value="' + action.id + '"' + checked + '>';
+          html += '<label for="pact_' + action.id + '">' + action.label + '</label>';
+          html += '</div>';
+        });
+        html += '</div></div>';
+
+        // Botão para restaurar padrões do perfil
+        html += '<button type="button" class="btn secondary perm-reset-btn" onclick="selectPerfil(document.getElementById(\'userPerfil\').value)">↺ Restaurar padrões do perfil</button>';
+
+        panel.innerHTML = html;
+        panel.classList.add('visible');
+
+        toggleSetoresPorPerfil();
       }
+
+      // Lê checkboxes do painel e retorna objeto {tabs:[...], actions:[...]}
+      function getPermissoesFromForm_() {
+        var tabs = [];
+        document.querySelectorAll('#permDetail input[name="perm_tab"]:checked').forEach(function(cb) {
+          tabs.push(cb.value);
+        });
+        var actions = [];
+        document.querySelectorAll('#permDetail input[name="perm_action"]:checked').forEach(function(cb) {
+          actions.push(cb.value);
+        });
+        return { tabs: tabs, actions: actions };
+      }
+
+      // Inicializa o seletor de perfil com ADMIN selecionado
+      selectPerfil('ADMIN');
 
 
 
@@ -7347,7 +8139,8 @@
           email: document.getElementById('userEmailInput').value,
           nome: document.getElementById('userNome').value,
           perfil: document.getElementById('userPerfil').value,
-          setores: document.getElementById('userSetoresValue').value
+          setores: document.getElementById('userSetoresValue').value,
+          permissoes: getPermissoesFromForm_()
         };
 
         // ADMIN e CONFERENTE têm acesso a todos os setores
@@ -7704,6 +8497,87 @@
                 showModal('Erro', 'Falha no arquivamento: ' + error);
               })
               .executarArquivamentoMensal({ mes: mes, ano: ano });
+          }
+        );
+      }
+
+      function importSelectAll_() {
+        document.querySelectorAll('.import-cb').forEach(function(cb) { cb.checked = true; });
+      }
+
+      function importClearAll_() {
+        document.querySelectorAll('.import-cb').forEach(function(cb) { cb.checked = false; });
+      }
+
+      function importarDadosProd_() {
+        var tabelas = [];
+        document.querySelectorAll('.import-cb:checked').forEach(function(cb) {
+          tabelas.push(cb.value);
+        });
+
+        if (!tabelas.length) {
+          showModal('Atenção', 'Selecione pelo menos uma tabela para importar.');
+          return;
+        }
+
+        var listaHtml = tabelas.map(function(t) { return '• ' + t; }).join('<br>');
+
+        showConfirm(
+          'Confirmar Importação PROD → DEV',
+          '⚠️ Esta ação irá <strong>substituir completamente</strong> os dados das seguintes tabelas no DEV:<br><br>' +
+          listaHtml +
+          '<br><br>Os dados serão copiados da planilha PROD. Esta ação <strong>não pode ser desfeita</strong>.<br><br>Deseja continuar?',
+          function(confirmed) {
+            if (!confirmed) return;
+
+            var statusDiv = document.getElementById('importacaoStatus');
+            statusDiv.textContent = '⏳ Importando dados da PROD... Isso pode levar alguns segundos.';
+            statusDiv.style.color = '#666';
+
+            logUI('importarDadosProd.start', { tabelas: tabelas });
+            showLoading('Importando dados da PROD...');
+
+            google.script.run
+              .withSuccessHandler(function(res) {
+                hideLoading();
+                logUI('importarDadosProd.response', res);
+
+                var linhas = '';
+                if (res.resultados && res.resultados.length) {
+                  linhas = res.resultados.map(function(r) {
+                    return '✅ ' + r.aba + ': ' + r.linhas + ' linha(s)';
+                  }).join('<br>');
+                }
+                var avisos = '';
+                if (res.erros && res.erros.length) {
+                  avisos = '<br><br>⚠️ Avisos:<br>' + res.erros.map(function(e) { return '• ' + e; }).join('<br>');
+                }
+
+                if (!res.ok) {
+                  statusDiv.textContent = '❌ ' + (res.errors ? res.errors.join(', ') : 'Erro na importação');
+                  statusDiv.style.color = '#c00';
+                  showModal('Erro', res.errors ? res.errors.join('<br>') : 'Falha na importação.');
+                  return;
+                }
+
+                statusDiv.textContent = '✅ Importação concluída: ' + (res.resultados || []).length + ' tabela(s) importada(s)';
+                statusDiv.style.color = '#090';
+
+                showModal('Importação concluída',
+                  '<strong>Tabelas importadas com sucesso:</strong><br><br>' +
+                  linhas + avisos
+                );
+                refreshData();
+              })
+              .withFailureHandler(function(error) {
+                hideLoading();
+                logUI('importarDadosProd.error', error);
+                var statusDiv = document.getElementById('importacaoStatus');
+                statusDiv.textContent = '❌ Falha na importação';
+                statusDiv.style.color = '#c00';
+                showModal('Erro', 'Falha na importação: ' + error);
+              })
+              .importarDadosProd({ tabelas: tabelas });
           }
         );
       }
@@ -8296,13 +9170,26 @@
           badges.appendChild(badge);
         }
 
-        // Control tab visibility based on user profile
-        applyAccessControl(usuario.perfil);
+        // Control tab visibility based on user permissions
+        applyAccessControl(usuario);
 
       }
 
-      function applyAccessControl(perfil) {
-        const tabs = {
+      function applyAccessControl(usuario) {
+        // Aceita objeto usuario ou string perfil (compatibilidade)
+        var perfil, permTabs;
+        if (typeof usuario === 'string') {
+          perfil = usuario;
+          permTabs = null;
+        } else {
+          perfil = usuario ? usuario.perfil : 'ESPECTADOR';
+          permTabs = usuario && usuario.permissoes && usuario.permissoes.tabs ? usuario.permissoes.tabs : null;
+        }
+        if (!permTabs) {
+          permTabs = (PROFILE_PERM_DEFAULTS_UI_[perfil] || PROFILE_PERM_DEFAULTS_UI_.ESPECTADOR).tabs;
+        }
+
+        const tabEls = {
           solicitacao: document.querySelector('.tab[data-tab="solicitacao"]'),
           resposta: document.querySelector('.tab[data-tab="resposta"]'),
           dashboard: document.querySelector('.tab[data-tab="dashboard"]'),
@@ -8311,52 +9198,26 @@
           ajuda: document.querySelector('.tab[data-tab="ajuda"]')
         };
 
-        const tabContents = {
-          solicitacao: document.getElementById('tab-solicitacao'),
-          resposta: document.getElementById('tab-resposta'),
-          dashboard: document.getElementById('tab-dashboard'),
-          config: document.getElementById('tab-config'),
-          auditoria: document.getElementById('tab-auditoria'),
-          ajuda: document.getElementById('tab-ajuda')
-        };
-
         // Hide all tabs first
-        Object.values(tabs).forEach(tab => { if (tab) tab.style.display = 'none'; });
+        Object.keys(tabEls).forEach(function(k) { if (tabEls[k]) tabEls[k].style.display = 'none'; });
 
-        // Show tabs based on profile
-        if (perfil === 'ADMIN') {
-          // ADMIN: All tabs
-          Object.values(tabs).forEach(tab => { if (tab) tab.style.display = 'block'; });
-        } else if (perfil === 'CONFERENTE') {
-          // CONFERENTE: All tabs except Auditoria
-          tabs.solicitacao.style.display = 'block';
-          tabs.resposta.style.display = 'block';
-          tabs.dashboard.style.display = 'block';
-          tabs.config.style.display = 'block';
-          tabs.ajuda.style.display = 'block';
-        } else if (perfil === 'RESPOSTA') {
-          // RESPOSTA: Only Resposta, Dashboard, Ajuda
-          tabs.resposta.style.display = 'block';
-          tabs.dashboard.style.display = 'block';
-          tabs.ajuda.style.display = 'block';
+        // Show tabs based on permissoes
+        permTabs.forEach(function(tabId) {
+          if (tabEls[tabId]) tabEls[tabId].style.display = 'block';
+        });
 
-          // Redirect to Resposta tab if on a restricted tab
-          const currentTab = document.querySelector('.tab.active');
-          if (currentTab && (currentTab.dataset.tab === 'solicitacao' || currentTab.dataset.tab === 'config' || currentTab.dataset.tab === 'auditoria')) {
-            tabs.resposta.click();
+        // Redirect if current active tab became hidden
+        const currentTab = document.querySelector('.tab.active');
+        if (currentTab) {
+          const currentTabId = currentTab.dataset.tab;
+          if (permTabs.indexOf(currentTabId) === -1) {
+            const firstAvail = permTabs[0];
+            if (firstAvail && tabEls[firstAvail]) tabEls[firstAvail].click();
           }
-        } else if (perfil === 'ESPECTADOR') {
-          // ESPECTADOR: Only Dashboard, Ajuda (read-only)
-          tabs.dashboard.style.display = 'block';
-          tabs.ajuda.style.display = 'block';
+        }
 
-          // Redirect to Dashboard if on a restricted tab
-          const currentTab = document.querySelector('.tab.active');
-          if (currentTab && currentTab.dataset.tab !== 'dashboard' && currentTab.dataset.tab !== 'ajuda') {
-            tabs.dashboard.click();
-          }
-
-          // Disable all form inputs for ESPECTADOR
+        // ESPECTADOR: disable all form inputs (leitura apenas)
+        if (perfil === 'ESPECTADOR') {
           disableAllInputs();
         }
       }
@@ -8395,101 +9256,109 @@
         const currentEmail = document.getElementById('userEmail').textContent || '';
 
         lista.forEach((user) => {
+          const p = PERFIL_PERMISSIONS[user.perfil] || null;
+          const isMe = user.email === currentEmail;
 
-          const card = document.createElement('div');
-
-          card.className = 'user-card ' + roleCardClass_(user.perfil);
-
+          // --- header ---
           const header = document.createElement('div');
-
           header.className = 'user-card-header';
 
-          const email = document.createElement('div');
+          const emailEl = document.createElement('div');
+          emailEl.className = 'user-card-email';
+          emailEl.textContent = user.email || '-';
 
-          email.className = 'user-card-email';
+          const meLabel = document.createElement('span');
+          meLabel.className = 'user-badge-setor';
+          meLabel.textContent = isMe ? 'Você' : 'Usuário';
+          header.appendChild(emailEl);
+          header.appendChild(meLabel);
 
-          email.textContent = user.email || '-';
-
-          const label = document.createElement('span');
-
-          label.className = 'user-badge-setor';
-
-          label.textContent = (user.email === currentEmail) ? 'Você' : 'Usuário';
-
-          header.appendChild(email);
-
-          header.appendChild(label);
-
+          // --- name + role badge ---
           const name = document.createElement('div');
-
           name.className = 'user-card-name';
-
           name.textContent = user.nome || '-';
 
           const badges = document.createElement('div');
-
           badges.className = 'user-card-badges';
 
           const role = document.createElement('span');
-
           role.className = 'user-badge ' + roleBadgeClass_(user.perfil);
-
-          role.textContent = user.perfil ? roleLabel_(user.perfil) : '-';
-
+          role.textContent = p ? (p.icon + ' ' + p.label) : (user.perfil || '-');
           badges.appendChild(role);
 
+          // Setores
           const setores = parseSetores_(user.setores);
+          setores.forEach(function(setor) {
+            const chip = document.createElement('span');
+            chip.className = 'user-badge-setor';
+            chip.textContent = setor === '*' ? 'Todos os setores' : setor;
+            badges.appendChild(chip);
+          });
 
-          if (setores.length) {
+          // --- permission summary chips ---
+          const permRow = document.createElement('div');
+          permRow.className = 'user-card-perm-row';
 
-            setores.forEach((setor) => {
+          // Permissões: usa as do usuário se disponíveis, senão padrão do perfil
+          const userPerms = user.permissoes && user.permissoes.tabs
+            ? user.permissoes
+            : (PROFILE_PERM_DEFAULTS_UI_[user.perfil] || PROFILE_PERM_DEFAULTS_UI_.ESPECTADOR);
 
-              const chip = document.createElement('span');
+          const totalTabs = PERM_TABS_.length;
+          const tabsOk = userPerms.tabs.length;
+          const tabChip = document.createElement('span');
+          const isDefault = !user.permissoes || !user.permissoes.tabs;
+          tabChip.className = 'user-perm-chip ' + (tabsOk === totalTabs ? 'upc-ok' : tabsOk > 0 ? 'upc-par' : 'upc-no');
+          tabChip.title = PERM_TABS_.map(function(t) {
+            return (userPerms.tabs.indexOf(t.id) !== -1 ? '✅' : '❌') + ' ' + t.label;
+          }).join('\n');
+          tabChip.textContent = '🗂 ' + tabsOk + '/' + totalTabs + ' abas' + (isDefault ? '' : ' ✎');
+          permRow.appendChild(tabChip);
 
-              chip.className = 'user-badge-setor';
+          const totalActs = PERM_ACTIONS_.length;
+          const actsOk = userPerms.actions.length;
+          const actChip = document.createElement('span');
+          actChip.className = 'user-perm-chip ' + (actsOk === totalActs ? 'upc-ok' : actsOk > 0 ? 'upc-par' : 'upc-no');
+          actChip.title = PERM_ACTIONS_.map(function(a) {
+            return (userPerms.actions.indexOf(a.id) !== -1 ? '✅' : '❌') + ' ' + a.label;
+          }).join('\n');
+          actChip.textContent = '⚡ ' + actsOk + '/' + totalActs + ' ações' + (isDefault ? '' : ' ✎');
+          permRow.appendChild(actChip);
 
-              chip.textContent = setor === '*' ? 'Todos os setores' : setor;
-
-              badges.appendChild(chip);
-
-            });
-
+          if (p) {
+            const descChip = document.createElement('span');
+            descChip.className = 'user-perm-chip upc-no';
+            descChip.style.fontWeight = '400';
+            descChip.textContent = p.desc;
+            permRow.appendChild(descChip);
           }
 
-          const actions = document.createElement('div');
-
-          actions.className = 'actions';
+          // --- actions ---
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className = 'actions';
 
           const btnEdit = document.createElement('button');
-
           btnEdit.className = 'btn secondary';
-
           btnEdit.textContent = 'Editar';
-
-          btnEdit.addEventListener('click', () => startEditUsuario(user));
+          btnEdit.addEventListener('click', function() { startEditUsuario(user); });
 
           const btnDelete = document.createElement('button');
-
           btnDelete.className = 'btn secondary';
-
           btnDelete.textContent = 'Excluir';
+          btnDelete.addEventListener('click', function() { deleteUsuario(user.email); });
 
-          btnDelete.addEventListener('click', () => deleteUsuario(user.email));
+          actionsDiv.appendChild(btnEdit);
+          actionsDiv.appendChild(btnDelete);
 
-          actions.appendChild(btnEdit);
-
-          actions.appendChild(btnDelete);
-
+          // --- assemble card ---
+          const card = document.createElement('div');
+          card.className = 'user-card ' + roleCardClass_(user.perfil);
           card.appendChild(header);
-
           card.appendChild(name);
-
           card.appendChild(badges);
-
-          card.appendChild(actions);
-
+          card.appendChild(permRow);
+          card.appendChild(actionsDiv);
           container.appendChild(card);
-
         });
 
       }
@@ -8504,7 +9373,7 @@
 
         document.getElementById('userNome').value = user.nome || '';
 
-        document.getElementById('userPerfil').value = user.perfil || '';
+        selectPerfil(user.perfil || 'ESPECTADOR', user.permissoes || null);
 
         const setores = parseSetores_(user.setores);
 
@@ -8536,7 +9405,7 @@
 
         document.getElementById('userNome').value = '';
 
-        document.getElementById('userPerfil').value = 'ADMIN';
+        selectPerfil('ADMIN');
 
         const optionsContainer = document.getElementById('userSetoresOptions');
 
@@ -8656,7 +9525,11 @@
 
       function fillSistema(config, configGeral) {
 
-
+        // Seção de importação PROD→DEV só aparece no ambiente DEV
+        var importSection = document.getElementById('importacaoProdSection');
+        if (importSection) {
+          importSection.style.display = (appEnv === 'DEV') ? 'block' : 'none';
+        }
 
         if (config && config.thresholds) {
 
@@ -8872,13 +9745,14 @@
 
 
       function toggleSetoresPorPerfil() {
-        if (!userPerfilSelect) return;
+        const perfilInput = document.getElementById('userPerfil');
+        if (!perfilInput) return;
 
         const displayContainer = document.getElementById('userSetoresDisplay');
         const container = document.getElementById('userSetoresContainer');
 
         // ADMIN e CONFERENTE têm acesso a todos os setores automaticamente
-        if (userPerfilSelect.value === 'ADMIN' || userPerfilSelect.value === 'CONFERENTE') {
+        if (perfilInput.value === 'ADMIN' || perfilInput.value === 'CONFERENTE') {
           // Desabilitar seleção
           if (displayContainer) {
             displayContainer.style.opacity = '0.5';
@@ -8924,7 +9798,8 @@
           }
         }
 
-        logUI('toggleSetoresPorPerfil', { perfil: userPerfilSelect.value, enabled: userPerfilSelect.value !== 'ADMIN' && userPerfilSelect.value !== 'CONFERENTE' });
+        const _p = document.getElementById('userPerfil');
+        logUI('toggleSetoresPorPerfil', { perfil: _p ? _p.value : '', enabled: _p && _p.value !== 'ADMIN' && _p.value !== 'CONFERENTE' });
       }
 
       function filterUserSetoresOptions() {
@@ -9260,8 +10135,8 @@
             ? `<button type="button" class="btn-edit" data-action="edit" data-index="${startIndex + index}">✏️ Editar</button>`
             : '-';
 
-          // Show delete button only for ADMIN and CONFERENTE
-          const deleteButton = (currentUser && (currentUser.perfil === 'ADMIN' || currentUser.perfil === 'CONFERENTE'))
+          // Show delete button based on permissions
+          const deleteButton = (currentUser && currentUser.permissoes && currentUser.permissoes.actions.indexOf('delete') !== -1)
             ? `<button type="button" class="btn-delete" data-action="delete" data-id="${escapeHtml(item.solicitacaoId)}" data-req="${escapeHtml(item.requisicao)}">🗑️ Excluir</button>`
             : '';
 
@@ -9764,10 +10639,10 @@
         const backdrop = document.getElementById('editSolicitacaoModalBackdrop');
         editingSolicitacao = record;
 
-        // Determine permissions based on profile
-        const perfil = currentUser ? currentUser.perfil : '';
-        const canEditSolicitation = perfil === 'ADMIN' || perfil === 'Admin' || perfil === 'CONFERENTE' || perfil === 'Conferente';
-        const canEditResponse = perfil === 'ADMIN' || perfil === 'Admin' || perfil === 'CONFERENTE' || perfil === 'Conferente' || perfil === 'RESPOSTA' || perfil === 'Resposta';
+        // Determine permissions based on user actions
+        const userActions = currentUser && currentUser.permissoes ? currentUser.permissoes.actions : [];
+        const canEditSolicitation = userActions.indexOf('editSolicitation') !== -1;
+        const canEditResponse = userActions.indexOf('respond') !== -1 || userActions.indexOf('editSolicitation') !== -1;
         const hasResponse = record.responsavel || record.dataHoraCorrecao;
 
         // Update modal title based on profile
@@ -9914,10 +10789,10 @@
           return;
         }
 
-        // Determine permissions based on profile
-        const perfil = currentUser ? currentUser.perfil : '';
-        const canEditSolicitation = perfil === 'ADMIN' || perfil === 'Admin' || perfil === 'CONFERENTE' || perfil === 'Conferente';
-        const canEditResponse = perfil === 'ADMIN' || perfil === 'Admin' || perfil === 'CONFERENTE' || perfil === 'Conferente' || perfil === 'RESPOSTA' || perfil === 'Resposta';
+        // Determine permissions based on user actions
+        const userActions2 = currentUser && currentUser.permissoes ? currentUser.permissoes.actions : [];
+        const canEditSolicitation = userActions2.indexOf('editSolicitation') !== -1;
+        const canEditResponse = userActions2.indexOf('respond') !== -1 || userActions2.indexOf('editSolicitation') !== -1;
 
         const payload = {
           solicitacaoId: editingSolicitacao.solicitacaoId,
@@ -10018,18 +10893,13 @@
         );
       }
 
-      // Decide which modal to open based on user profile
-      // Profiles: ADMIN, CONFERENTE, RESPOSTA, ESPECTADOR
+      // Decide which modal to open based on user permissions
       function openModalForRecord(record) {
-        const userPerfil = currentUser && currentUser.perfil ? currentUser.perfil.toUpperCase() : '';
-
-        // ADMIN and CONFERENTE can edit solicitation AND response
-        // RESPOSTA can edit only response (solicitation is readonly)
-        // ESPECTADOR is view-only (uses response modal for read-only view)
-        if (userPerfil === 'ADMIN' || userPerfil === 'CONFERENTE' || userPerfil === 'RESPOSTA') {
+        const acts = currentUser && currentUser.permissoes ? currentUser.permissoes.actions : [];
+        const canDoAnything = acts.indexOf('editSolicitation') !== -1 || acts.indexOf('respond') !== -1;
+        if (canDoAnything) {
           openEditSolicitacaoModal(record);
         } else {
-          // ESPECTADOR uses the response modal (read-only view)
           openRespostaModal(record);
         }
       }

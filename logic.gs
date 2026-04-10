@@ -260,6 +260,26 @@ function getSlaStatus_(requestDatetime, correcaoDatetime) {
   return "OK";
 }
 
+// Permissões padrão por perfil — espelhado no frontend como PROFILE_PERM_DEFAULTS_UI_
+const PROFILE_PERM_DEFAULTS_ = {
+  ADMIN: {
+    tabs: ['resposta', 'solicitacao', 'dashboard', 'config', 'auditoria', 'ajuda'],
+    actions: ['submitRequest', 'respond', 'editSolicitation', 'delete', 'manageUsers', 'manageConfig', 'archive', 'viewAudit']
+  },
+  CONFERENTE: {
+    tabs: ['resposta', 'solicitacao', 'dashboard', 'config', 'ajuda'],
+    actions: ['submitRequest', 'respond', 'editSolicitation', 'delete']
+  },
+  RESPOSTA: {
+    tabs: ['resposta', 'dashboard', 'ajuda'],
+    actions: ['submitRequest', 'respond']
+  },
+  ESPECTADOR: {
+    tabs: ['dashboard', 'ajuda'],
+    actions: []
+  }
+};
+
 // Gera chave de cache segura a partir do email
 function usuarioCacheKey_(email) {
   return "uctx_" + email.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 60);
@@ -279,18 +299,35 @@ function getUsuarioContexto_(email) {
   let result = null;
   for (let i = 1; i < values.length; i++) {
     if (values[i][0] === email) {
+      const perfil = values[i][2] || 'ESPECTADOR';
+      // Lê permissões customizadas da coluna [4]; fallback para padrão do perfil
+      let permissoes = null;
+      const rawPerms = values[i][4];
+      if (rawPerms) {
+        try { permissoes = JSON.parse(rawPerms); } catch(e) {}
+      }
+      if (!permissoes || !permissoes.tabs || !permissoes.actions) {
+        permissoes = PROFILE_PERM_DEFAULTS_[perfil] || PROFILE_PERM_DEFAULTS_.ESPECTADOR;
+      }
       result = {
         email: values[i][0],
         nome: values[i][1],
-        perfil: values[i][2],
-        setores: parseSetores_(values[i][3])
+        perfil: perfil,
+        setores: parseSetores_(values[i][3]),
+        permissoes: permissoes
       };
       break;
     }
   }
   if (!result) {
     logDebug_("getUsuarioContexto_", "usuario_nao_encontrado", {});
-    result = { email: email, nome: "", perfil: "ESPECTADOR", setores: [] };
+    result = {
+      email: email,
+      nome: "",
+      perfil: "ESPECTADOR",
+      setores: [],
+      permissoes: PROFILE_PERM_DEFAULTS_.ESPECTADOR
+    };
   }
 
   try { cache.put(cacheKey, JSON.stringify(result), 300); } catch(e) { /* ignore */ }
