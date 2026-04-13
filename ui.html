@@ -4753,7 +4753,6 @@
           <button type="button" onclick="ajudaScrollTo('ajuda-config')" style="background:#0369a1;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">⚙️ Configurações</button>
           <button type="button" onclick="ajudaScrollTo('ajuda-api')" style="background:#334155;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">🔌 Referência Técnica</button>
           <button type="button" onclick="ajudaScrollTo('ajuda-seguranca')" style="background:#065f46;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">🔒 Segurança</button>
-          <button type="button" onclick="ajudaScrollTo('ajuda-historico')" style="background:#0f766e;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">🕓 Versões</button>
           <button type="button" onclick="ajudaScrollTo('ajuda-suporte')" style="background:#92400e;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">📞 Suporte</button>
         </div>
       </div>
@@ -5398,70 +5397,6 @@
         </div>
       </div>
 
-      <!-- ===== HISTÓRICO DE VERSÕES ===== -->
-      <div class="form-section" id="ajuda-historico">
-        <h3>🕓 Histórico de Versões</h3>
-        <div style="display:flex;flex-direction:column;gap:0.5rem;">
-
-          <div style="display:flex;gap:0.75rem;align-items:flex-start;">
-            <span style="background:#009688;color:white;padding:2px 9px;border-radius:12px;font-size:0.75rem;font-weight:700;white-space:nowrap;min-width:44px;text-align:center;">v243</span>
-            <div style="font-size:0.83rem;color:#374151;">
-              <strong>Formatar Planilhas — quebra de texto</strong><br>
-              <span style="color:#6b7280;">Células de dados recebem <code>setWrap(true)</code> ao formatar. Conteúdo longo não estoura mais para outras colunas.</span>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:0.75rem;align-items:flex-start;">
-            <span style="background:#009688;color:white;padding:2px 9px;border-radius:12px;font-size:0.75rem;font-weight:700;white-space:nowrap;min-width:44px;text-align:center;">v242</span>
-            <div style="font-size:0.83rem;color:#374151;">
-              <strong>Formatar Planilhas — novas colunas</strong><br>
-              <span style="color:#6b7280;">Coluna <code>[7] confirmacao_medica</code> adicionada na aba Erros. Coluna <code>[4] permissoes</code> (JSON) adicionada na aba Usuarios. Índices explícitos em todas as abas.</span>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:0.75rem;align-items:flex-start;">
-            <span style="background:#009688;color:white;padding:2px 9px;border-radius:12px;font-size:0.75rem;font-weight:700;white-space:nowrap;min-width:44px;text-align:center;">v241</span>
-            <div style="font-size:0.83rem;color:#374151;">
-              <strong>Visibilidade de subabas do dashboard por usuário</strong><br>
-              <span style="color:#6b7280;">Campo <code>dashTabs</code> adicionado em permissões (col [4] Usuarios). Editor de permissões ganha 3ª coluna: <em>Subabas do dashboard</em>. Preferência salva na planilha, aplicada ao carregar o app.</span>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:0.75rem;align-items:flex-start;">
-            <span style="background:#009688;color:white;padding:2px 9px;border-radius:12px;font-size:0.75rem;font-weight:700;white-space:nowrap;min-width:44px;text-align:center;">v240</span>
-            <div style="font-size:0.83rem;color:#374151;">
-              <strong>PDFs do Dashboard completos</strong><br>
-              <span style="color:#6b7280;">Relatórios Colaboradores/Solicitantes: KPIs Dif. Valor R$, Conf. Médica, Dentro/Fora SLA%, Meta SLA, Status Geral + gráficos Tempo Resposta e Performance SLA. Relatório Erros: KPI Alt. Técnicas + gráficos Dia da Semana e Evolução + tabela de detalhamento por tipo.</span>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:0.75rem;align-items:flex-start;">
-            <span style="background:#64748b;color:white;padding:2px 9px;border-radius:12px;font-size:0.75rem;font-weight:700;white-space:nowrap;min-width:44px;text-align:center;">v239</span>
-            <div style="font-size:0.83rem;color:#374151;">
-              <strong>Aba Ajuda reescrita + fix de navegação</strong><br>
-              <span style="color:#6b7280;">Guia completo com 7 seções, navegação rápida por pills. Correção: links de navegação abriam janela em branco fora do app (bug do iframe GAS).</span>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:0.75rem;align-items:flex-start;">
-            <span style="background:#64748b;color:white;padding:2px 9px;border-radius:12px;font-size:0.75rem;font-weight:700;white-space:nowrap;min-width:44px;text-align:center;">v238</span>
-            <div style="font-size:0.83rem;color:#374151;">
-              <strong>Importação PROD → DEV</strong><br>
-              <span style="color:#6b7280;">Funcionalidade exclusiva do ambiente DEV em Configurações → Sistema. Permite copiar dados da planilha PROD para DEV selecionando as tabelas desejadas (apenas ADMIN).</span>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:0.75rem;align-items:flex-start;">
-            <span style="background:#64748b;color:white;padding:2px 9px;border-radius:12px;font-size:0.75rem;font-weight:700;white-space:nowrap;min-width:44px;text-align:center;">v237</span>
-            <div style="font-size:0.83rem;color:#374151;">
-              <strong>Permissões individuais por usuário</strong><br>
-              <span style="color:#6b7280;">Editor de permissões com checkboxes de abas e ações por usuário, independente do perfil base. Permissões salvas em JSON na planilha Usuarios.</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
       <!-- ===== SUPORTE ===== -->
       <div class="form-section" id="ajuda-suporte">
         <h3>📞 Suporte Técnico</h3>
@@ -5488,6 +5423,9 @@
           </button>
           <button type="button" class="btn secondary" onclick="abrirDocumentacaoAPI()" style="display:inline-flex;align-items:center;gap:8px;">
             🔌 Referência da API
+          </button>
+          <button type="button" class="btn secondary" onclick="abrirHistoricoVersoes()" style="display:inline-flex;align-items:center;gap:8px;">
+            🕓 Histórico de Versões
           </button>
         </div>
 
@@ -5989,6 +5927,149 @@
         const docWindow = window.open('', '_blank');
         docWindow.document.write(docHtml);
         docWindow.document.close();
+      }
+
+      // Função para abrir histórico de versões
+      function abrirHistoricoVersoes() {
+        const docHtml = gerarHistoricoVersoesHTML();
+        const docWindow = window.open('', '_blank');
+        docWindow.document.write(docHtml);
+        docWindow.document.close();
+      }
+
+      function gerarHistoricoVersoesHTML() {
+        const versoes = [
+          {
+            v: 'v244', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'Aba Ajuda — página de Histórico de Versões',
+            desc: 'Histórico de versões movido para página própria (nova aba). Schema Usuarios atualizado com dashTabs. Texto do editor de permissões atualizado para 3 colunas.'
+          },
+          {
+            v: 'v243', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Formatar Planilhas — quebra de texto',
+            desc: 'Células de dados recebem setWrap(true) ao formatar. Conteúdo longo não estoura mais para outras colunas em nenhuma aba.'
+          },
+          {
+            v: 'v242', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Formatar Planilhas — novas colunas',
+            desc: 'Coluna [7] confirmacao_medica adicionada na aba Erros. Coluna [4] permissoes (JSON) adicionada na aba Usuarios. Índices explícitos [0]..[n] em todas as abas.'
+          },
+          {
+            v: 'v241', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'Visibilidade de subabas do dashboard por usuário',
+            desc: 'Campo dashTabs adicionado em permissoes (col [4] Usuarios). Editor de permissões ganha 3ª coluna: Subabas do dashboard (Colaboradores, Solicitantes, Ranking, Erros). Preferência salva na planilha e aplicada ao carregar o app. Painel ⚙️ no header do dashboard removido.'
+          },
+          {
+            v: 'v240', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'PDFs do Dashboard completos',
+            desc: 'Relatórios Colaboradores/Solicitantes: adicionados KPIs Dif. Valor R$, Conf. Médica, Dentro/Fora SLA%, Meta SLA, Status Geral; gráficos Tempo de Resposta e Performance SLA; grade expandida para 3×2. Relatório Erros: KPI Alt. Técnicas (5º card), gráficos Erros por Dia da Semana e Evolução de Erros, tabela de detalhamento por tipo com colunas Corrigidos, Pendentes e Taxa de Correção.'
+          },
+          {
+            v: 'v239', data: 'Mar/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'Aba Ajuda — reescrita completa',
+            desc: 'Guia detalhado com 7 seções: Como Funciona, Perfis e Permissões, Guia de Uso, Configurações, Referência Técnica, Segurança e Suporte. Navegação rápida com pills. Fix: links de navegação abriam janela em branco fora do app (bug do iframe GAS) — substituídos por scrollIntoView().'
+          },
+          {
+            v: 'v238', data: 'Mar/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'Importação PROD → DEV',
+            desc: 'Nova funcionalidade em Configurações → Sistema, visível apenas no ambiente DEV. Permite selecionar tabelas da planilha PROD e copiar os dados para DEV. Protegida por: verificação APP_ENV=DEV, perfil ADMIN e whitelist de sheets permitidas.'
+          },
+          {
+            v: 'v237', data: 'Mar/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'Permissões individuais por usuário',
+            desc: 'Cada usuário pode ter permissões customizadas independente do perfil base. Editor com checkboxes de Abas acessíveis e Ações disponíveis. Permissões salvas como JSON na col [4] da planilha Usuarios. Chips no card do usuário mostram contagem real com marcador ✎ quando customizadas.'
+          },
+          {
+            v: 'v213', data: '2025', tipo: 'feat', cor: '#7c3aed',
+            titulo: 'Campo Confirmação Médica',
+            desc: 'Campo confirmacao_medica adicionado na planilha Erros (índice [7]). Linhas com confirmação médica necessária exibidas com destaque lilás na aba Resposta. KPI Conf. Médica adicionado ao Dashboard.'
+          }
+        ];
+
+        const tipoLabel = { feat: 'Nova funcionalidade', fix: 'Correção', refactor: 'Refatoração', perf: 'Performance' };
+        const tipoCor   = { feat: '#009688', fix: '#0891b2', refactor: '#7c3aed', perf: '#d97706' };
+
+        const linhas = versoes.map(v => `
+          <div class="entry">
+            <div class="entry-header">
+              <span class="badge" style="background:${v.cor};">${v.v}</span>
+              <span class="entry-date">${v.data}</span>
+              <span class="entry-tipo" style="background:${tipoCor[v.tipo] || '#009688'}22;color:${tipoCor[v.tipo] || '#009688'};border:1px solid ${tipoCor[v.tipo] || '#009688'}44;">${tipoLabel[v.tipo] || v.tipo}</span>
+            </div>
+            <div class="entry-titulo">${v.titulo}</div>
+            <div class="entry-desc">${v.desc}</div>
+          </div>
+        `).join('');
+
+        return \`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🕓 Histórico de Versões — Sistema de Solicitação de Consertos</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background:linear-gradient(135deg,#009688 0%,#00695c 100%);
+      min-height:100vh; padding:20px;
+    }
+    .container {
+      max-width:860px; margin:0 auto; background:#fff;
+      border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,.3); overflow:hidden;
+    }
+    .header {
+      background:linear-gradient(135deg,#009688 0%,#00796b 100%);
+      color:#fff; padding:40px; text-align:center;
+    }
+    .header h1 { font-size:2rem; margin-bottom:8px; }
+    .header p  { opacity:.85; font-size:1rem; }
+    .content   { padding:32px 40px; }
+    .intro {
+      background:#f0fdfa; border:1px solid #99f6e4; border-radius:10px;
+      padding:14px 18px; margin-bottom:28px; font-size:.9rem; color:#134e4a;
+    }
+    .entry {
+      border-left:3px solid #009688; padding:16px 20px;
+      margin-bottom:18px; background:#f8fafc; border-radius:0 10px 10px 0;
+      transition:box-shadow .15s;
+    }
+    .entry:hover { box-shadow:0 2px 12px rgba(0,150,136,.12); }
+    .entry-header { display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+    .badge {
+      color:#fff; padding:3px 12px; border-radius:14px;
+      font-size:.78rem; font-weight:700; letter-spacing:.03em;
+    }
+    .entry-date  { font-size:.78rem; color:#94a3b8; }
+    .entry-tipo  { font-size:.72rem; font-weight:600; padding:2px 9px; border-radius:10px; }
+    .entry-titulo{ font-weight:700; color:#1e293b; font-size:.97rem; margin-bottom:5px; }
+    .entry-desc  { font-size:.84rem; color:#475569; line-height:1.65; }
+    .footer {
+      background:#f8fafc; border-top:1px solid #e2e8f0;
+      padding:18px 40px; text-align:center; font-size:.8rem; color:#94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🕓 Histórico de Versões</h1>
+      <p>Sistema de Solicitação de Consertos — NeoFormula</p>
+    </div>
+    <div class="content">
+      <div class="intro">
+        Todas as versões estão listadas da mais recente para a mais antiga.
+        Versões marcadas como <strong>Nova funcionalidade</strong> adicionam capacidades novas;
+        <strong>Correção</strong> resolve comportamentos incorretos.
+      </div>
+      \${linhas}
+    </div>
+    <div class="footer">
+      Sistema de Solicitação de Conserto &nbsp;·&nbsp; 🤖 Desenvolvido com Claude Code (Anthropic)
+    </div>
+  </div>
+</body>
+</html>\`;
       }
 
       // Gera HTML completo da documentação técnica
