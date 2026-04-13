@@ -74,9 +74,10 @@ const CONFIG = {
     CRITICAL_MINUTES: 30,
     TIMEZONE: "America/Sao_Paulo"
   },
-  APP_VERSION: "v245",
+  APP_VERSION: "v247",
   APP_ENV: "PROD",
-  PROD_SPREADSHEET_ID: ""
+  // ID da planilha PROD — usado apenas no ambiente DEV para importação de dados
+  PROD_SPREADSHEET_ID: "1h4bCllbefqsmsjXpMSSRXVR6avdeXgDS3uGA3NercH8"
 };
 // DEBUG_ENABLED automático: ativo em DEV, desativado em PROD
 CONFIG.DEBUG_ENABLED = CONFIG.APP_ENV === "DEV";
@@ -545,13 +546,13 @@ function formatarPlanilhas_() {
       headerColor: '#1e88e5',
       alternateColor: '#e3f2fd',
       columns: [
-        { width: 280, format: 'TEXT' },      // id_solicitacao
-        { width: 100, format: 'TEXT' },      // requisicao
-        { width: 180, format: 'TEXT' },      // solicitante
-        { width: 150, format: 'DATETIME' },  // data_hora_pedido
-        { width: 100, format: 'TEXT' },      // status
-        { width: 200, format: 'TEXT' },      // criado_por_email
-        { width: 150, format: 'DATETIME' }   // criado_em
+        { width: 280, format: 'TEXT' },      // [0] id_solicitacao
+        { width: 100, format: 'TEXT' },      // [1] requisicao
+        { width: 180, format: 'TEXT' },      // [2] solicitante
+        { width: 150, format: 'DATETIME' },  // [3] data_hora_pedido
+        { width: 100, format: 'TEXT' },      // [4] status
+        { width: 200, format: 'TEXT' },      // [5] criado_por_email
+        { width: 150, format: 'DATETIME' }   // [6] criado_em
       ]
     });
 
@@ -559,13 +560,14 @@ function formatarPlanilhas_() {
       headerColor: '#e53935',
       alternateColor: '#ffebee',
       columns: [
-        { width: 280, format: 'TEXT' },      // id_solicitacao
-        { width: 80, format: 'NUMBER' },     // sequencia_erro
-        { width: 250, format: 'TEXT' },      // erro
-        { width: 300, format: 'TEXT' },      // detalhamento
-        { width: 120, format: 'TEXT' },      // setor_local
-        { width: 80, format: 'TEXT' },       // diferenca_valor
-        { width: 150, format: 'DATETIME' }   // criado_em
+        { width: 280, format: 'TEXT' },      // [0] id_solicitacao
+        { width: 80,  format: 'NUMBER' },    // [1] sequencia_erro
+        { width: 250, format: 'TEXT' },      // [2] erro
+        { width: 300, format: 'TEXT' },      // [3] detalhamento
+        { width: 120, format: 'TEXT' },      // [4] setor_local
+        { width: 100, format: 'TEXT' },      // [5] diferenca_valor
+        { width: 150, format: 'DATETIME' },  // [6] criado_em
+        { width: 130, format: 'TEXT' }       // [7] confirmacao_medica
       ]
     });
 
@@ -573,17 +575,17 @@ function formatarPlanilhas_() {
       headerColor: '#43a047',
       alternateColor: '#e8f5e9',
       columns: [
-        { width: 280, format: 'TEXT' },      // id_resposta
-        { width: 280, format: 'TEXT' },      // id_solicitacao
-        { width: 80, format: 'NUMBER' },     // sequencia_erro
-        { width: 200, format: 'TEXT' },      // nome_responsavel
-        { width: 200, format: 'TEXT' },      // email_responsavel
-        { width: 80, format: 'TEXT' },       // erro_corrigido
-        { width: 80, format: 'TEXT' },       // houve_diferenca_valor
-        { width: 100, format: 'CURRENCY' },  // diferenca_valor_resposta
-        { width: 250, format: 'TEXT' },      // observacoes
-        { width: 150, format: 'DATETIME' },  // data_hora_correcao
-        { width: 150, format: 'DATETIME' }   // criado_em
+        { width: 280, format: 'TEXT' },      // [0]  id_resposta
+        { width: 280, format: 'TEXT' },      // [1]  id_solicitacao
+        { width: 80,  format: 'NUMBER' },    // [2]  sequencia_erro
+        { width: 200, format: 'TEXT' },      // [3]  nome_responsavel
+        { width: 200, format: 'TEXT' },      // [4]  email_responsavel
+        { width: 80,  format: 'TEXT' },      // [5]  erro_corrigido
+        { width: 80,  format: 'TEXT' },      // [6]  houve_diferenca_valor
+        { width: 120, format: 'CURRENCY' },  // [7]  diferenca_valor_resposta
+        { width: 250, format: 'TEXT' },      // [8]  observacoes
+        { width: 150, format: 'DATETIME' },  // [9]  data_hora_correcao
+        { width: 150, format: 'DATETIME' }   // [10] criado_em
       ]
     });
 
@@ -608,10 +610,11 @@ function formatarPlanilhas_() {
       headerColor: '#ff6f00',
       alternateColor: '#fff3e0',
       columns: [
-        { width: 250, format: 'TEXT' },      // email
-        { width: 200, format: 'TEXT' },      // nome
-        { width: 100, format: 'TEXT' },      // perfil
-        { width: 150, format: 'TEXT' }       // setores
+        { width: 250, format: 'TEXT' },      // [0] email
+        { width: 200, format: 'TEXT' },      // [1] nome
+        { width: 100, format: 'TEXT' },      // [2] perfil
+        { width: 200, format: 'TEXT' },      // [3] setores
+        { width: 400, format: 'TEXT' }       // [4] permissoes (JSON)
       ]
     });
 
@@ -693,6 +696,7 @@ function formatarSheet_(ss, sheetName, config) {
     dataRange.setFontSize(9);
     dataRange.setVerticalAlignment('middle');
     dataRange.setBackground('#ffffff');
+    dataRange.setWrap(true);
 
     // Usar Banding para cores alternadas (muito mais eficiente que loop)
     const existingBandings = sheet.getBandings();
@@ -775,6 +779,7 @@ function formatarSheetLista_(ss, sheetName, headerColor) {
   if (lastRow > 1) {
     const dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
     dataRange.setFontSize(10);
+    dataRange.setWrap(true);
 
     // Cores alternadas — batch setBackgrounds() em vez de N chamadas individuais
     const bgMatrix = [];

@@ -5940,9 +5940,24 @@
       function gerarHistoricoVersoesHTML() {
         const versoes = [
           {
+            v: 'v247', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'Histórico de versões completo',
+            desc: 'Todas as versões do sistema adicionadas ao histórico: série v2.1.0–v2.8.31 (2024/2025), v207–v236 (2025) e v237–v247 (2025/2026). Mais de 80 versões documentadas.'
+          },
+          {
+            v: 'v246', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Correção SyntaxError no Histórico de Versões',
+            desc: 'Backtick escapado indevidamente (\`) no retorno de gerarHistoricoVersoesHTML() causava SyntaxError que quebrava o app inteiro (nenhuma aba respondia). Corrigido para template literal simples.'
+          },
+          {
+            v: 'v245', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'Histórico de Versões — página própria',
+            desc: 'Histórico de versões removido da aba Ajuda e movido para uma página própria que abre em nova aba (document.write), igual à Documentação Técnica e Referência da API.'
+          },
+          {
             v: 'v244', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
-            titulo: 'Aba Ajuda — página de Histórico de Versões',
-            desc: 'Histórico de versões movido para página própria (nova aba). Schema Usuarios atualizado com dashTabs. Texto do editor de permissões atualizado para 3 colunas.'
+            titulo: 'Aba Ajuda — histórico de versões e schema',
+            desc: 'Histórico de versões adicionado diretamente na aba Ajuda (depois movido para página própria em v245). Schema Usuarios atualizado com campo permissoes [4] e dashTabs. Texto do editor de permissões atualizado para 3 colunas.'
           },
           {
             v: 'v243', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
@@ -5980,9 +5995,359 @@
             desc: 'Cada usuário pode ter permissões customizadas independente do perfil base. Editor com checkboxes de Abas acessíveis e Ações disponíveis. Permissões salvas como JSON na col [4] da planilha Usuarios. Chips no card do usuário mostram contagem real com marcador ✎ quando customizadas.'
           },
           {
+            v: 'v236', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Configurações — profile cards visuais',
+            desc: 'Cards de usuário com painel de permissões expandido visualmente. Chips de abas e ações mostram o que cada usuário pode fazer. Layout melhorado na aba Configurações → Usuários.'
+          },
+          {
+            v: 'v235', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'SPREADSHEET_ID exclusivamente via PropertiesService',
+            desc: 'Remove SPREADSHEET_ID hardcoded do código. Apenas PropertiesService é usado. Simplifica configuração entre ambientes DEV e PROD.'
+          },
+          {
+            v: 'v234', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'SPREADSHEET_ID via PropertiesService',
+            desc: 'getSpreadsheet_ lê o SPREADSHEET_ID do PropertiesService com fallback para o ID hardcoded. Nova função setupPropriedades_ no menu para configurar a propriedade facilmente.'
+          },
+          {
+            v: 'v233', data: '2025', tipo: 'perf', cor: '#d97706',
+            titulo: 'Performance — memoização e operações em batch',
+            desc: 'Memoização do spreadsheet principal. Cache de ensureSheets e usuarioContexto. Batch em updateResposta e deleteSolicitacao. setBackgrounds em batch. Reduz chamadas ao Google Sheets.'
+          },
+          {
+            v: 'v232', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Segurança — permissões e rate limiting',
+            desc: 'Permissões validadas por setorLocal no backend. Rate limit nos endpoints de configuração. Null check nos payloads recebidos. Limites de tamanho de campo para prevenir abuso.'
+          },
+          {
+            v: 'v231', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Segurança LGPD — masking e DEBUG_ENABLED',
+            desc: 'Masking de e-mail nos logs de auditoria. DEBUG_ENABLED controlado automaticamente por PropertiesService. Dados sensíveis removidos do campo _debug. Rate limit reduzido de 30 para 15 req/min. Whitelist de tipo/classificação de erro. E-mail genérico nos dados de teste.'
+          },
+          {
+            v: 'v230', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Ordenação automática de Erros_Cadastro',
+            desc: 'Ao criar ou atualizar tipo de erro, a aba Erros_Cadastro é reordenada automaticamente: NA → Leve → Grave → Gravíssimo, depois alfabético dentro de cada grupo.'
+          },
+          {
+            v: 'v229', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Dark mode tabela Ajuda; filtro dashboard',
+            desc: 'Tabela da aba Ajuda recebe estilo correto no dark mode. Filtro do dashboard passa a incluir também os tipos de erro cadastrados na configuração (não apenas os tipos já registrados).'
+          },
+          {
+            v: 'v228', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Correção HTML inválido no GAS',
+            desc: 'Escapa fechamento de tag <\/script> em template literals do doGet(). Sem esse escape o GAS interpretava o fechamento como fim do bloco de script, quebrando o HTML gerado.'
+          },
+          {
+            v: 'v227', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Dark mode nas documentações e KPIs na Resposta',
+            desc: 'Logo sem frame branco no dark mode. Páginas de Documentação Técnica e Referência da API adaptadas ao dark mode. KPIs de Conf. Médica e Dif. Valor adicionados à aba Resposta.'
+          },
+          {
+            v: 'v226', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Dark mode completo — loading, resposta e ajuda',
+            desc: 'Dark mode aplicado na loading screen, tabela de resposta e aba Ajuda. Botão de toggle movido para o canto inferior esquerdo da tela.'
+          },
+          {
+            v: 'v225', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Correção tooltip flutuante e dark mode',
+            desc: 'Tooltip com position:fixed corrigido no CSS principal para não desaparecer. Dark mode completado em todos os elementos restantes do app.'
+          },
+          {
+            v: 'v224', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Modo escuro com toggle persistente',
+            desc: 'Toggle de dark mode adicionado ao header (apenas ambiente DEV). Preferência salva no localStorage. Todos os componentes principais adaptados para o tema escuro.'
+          },
+          {
+            v: 'v223', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Rodapé fixo com versão e ambiente',
+            desc: 'Rodapé fixo no fundo da tela exibe: "Solicitação Conserto · Deploy vXXX · Versão DEV/PROD". Controlado pelos campos APP_VERSION e APP_ENV no CONFIG do Code.gs.'
+          },
+          {
+            v: 'v222', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'appsscript USER_ACCESSING + ANYONE',
+            desc: 'Configuração executeAs: USER_ACCESSING e access: ANYONE aplicada em DEV e PROD. Corrige acesso ao app para usuários que não são proprietários do projeto GAS. Documentação DEV/PROD adicionada ao CLAUDE.md.'
+          },
+          {
+            v: 'v221', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'KPIs Conf. Médica e Dif. Valor no Dashboard',
+            desc: 'Dois novos cards no dashboard: quantidade de solicitações com confirmação médica e total de diferença de valor (R$). Documentação técnica atualizada.'
+          },
+          {
+            v: 'v220', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Tooltips globais',
+            desc: 'Tooltips informativos adicionados em todos os elementos interativos do app: botões, campos, ícones, badges e KPIs. Tooltip flutuante único gerenciado por JS.'
+          },
+          {
+            v: 'v219', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Diagnóstico — verificação de cabeçalhos real',
+            desc: 'Diagnóstico do sistema passou a verificar os cabeçalhos reais de todas as abas (lendo linha 1 do Sheets), não apenas uma coluna específica. Detecta inconsistências com mais precisão.'
+          },
+          {
+            v: 'v218', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Diagnóstico — corrige cabeçalho H1 vazio',
+            desc: 'Diagnóstico detecta e corrige automaticamente o caso em que o cabeçalho da coluna [7] (confirmacao_medica) da aba Erros estava vazio, causando falha silenciosa.'
+          },
+          {
+            v: 'v217', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Diagnóstico com auto-correção e melhorias',
+            desc: 'Diagnóstico do sistema passa a corrigir automaticamente problemas encontrados. LockService adicionado para evitar execuções simultâneas. Rate limiting e cache de 10 min nas chamadas de diagnóstico. Aba Ajuda reescrita com informações detalhadas.'
+          },
+          {
+            v: 'v216', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Badge de Conf. Médica e filtros no dashboard',
+            desc: 'Badge azul exibido nas solicitações com confirmação médica. Filtros de Dif. Valor e Conf. Médica adicionados ao dashboard para segmentação rápida.'
+          },
+          {
+            v: 'v215', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Diagnóstico do sistema',
+            desc: 'Nova seção em Configurações → Sistema com diagnóstico do estado da planilha: verifica abas existentes, cabeçalhos, integridade dos dados e reporta problemas encontrados.'
+          },
+          {
+            v: 'v214', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Formulário de solicitação — layout em linha',
+            desc: 'Os 6 campos do formulário de solicitação (Requisição, Solicitante, Erro, Detalhamento, Setor/Local, Dif. Valor) alinhados em uma única linha horizontal no desktop.'
+          },
+          {
             v: 'v213', data: '2025', tipo: 'feat', cor: '#7c3aed',
             titulo: 'Campo Confirmação Médica',
             desc: 'Campo confirmacao_medica adicionado na planilha Erros (índice [7]). Linhas com confirmação médica necessária exibidas com destaque lilás na aba Resposta. KPI Conf. Médica adicionado ao Dashboard.'
+          },
+          {
+            v: 'v212', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Loading — círculo maior para logo quadrada',
+            desc: 'Diâmetro do círculo animado na loading screen aumentado para acomodar a logo quadrada sem cortar as bordas.'
+          },
+          {
+            v: 'v211', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Loading — remove border-radius da logo',
+            desc: 'border-radius removido da imagem da logo na loading screen para não cortar os cantos da imagem retangular/quadrada.'
+          },
+          {
+            v: 'v210', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Ajuste de logo e documentação',
+            desc: 'Logo ajustada visualmente na loading screen. Versões antigas arquivadas no histórico. CLAUDE.md atualizado com convenções do projeto.'
+          },
+          {
+            v: 'v209', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Loading — qualidade visual da logo',
+            desc: 'Melhorias na qualidade visual da logo NeoExpedição na loading screen: tamanho, posicionamento e animação refinados.'
+          },
+          {
+            v: 'v208', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Loading — logo real em base64',
+            desc: 'Substitui placeholder pela imagem real gotinha.jpg da NeoExpedição, embutida em base64 diretamente no HTML para funcionar dentro do iframe do GAS.'
+          },
+          {
+            v: 'v207', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Loading NeoExpedição e redesign do campo Setores',
+            desc: 'Loading screen animada com logo e texto NeoExpedição exibida enquanto o app carrega. Campo Setores redesenhado com chips interativos para seleção múltipla.'
+          },
+          {
+            v: 'v2.8.31', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Debug — info de debug retornada ao frontend',
+            desc: 'Informações de debug passaram a ser retornadas ao frontend nas respostas de API para facilitar diagnóstico em desenvolvimento.'
+          },
+          {
+            v: 'v2.8.30', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Melhoria na verificação de permissões',
+            desc: 'Verificação de permissões de usuário reforçada no backend. Casos de perfil inválido ou usuário sem cadastro tratados de forma mais robusta.'
+          },
+          {
+            v: 'v2.8.29', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Formatação de planilhas no menu',
+            desc: 'Função de formatação de planilhas adicionada ao menu do GAS. Corrige ui.alert que não funcionava corretamente no contexto de Web App.'
+          },
+          {
+            v: 'v2.8.28', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Correção ao limpar dados de teste',
+            desc: 'Erro ao executar limpeza de dados de teste corrigido. Função de limpeza agora verifica existência de registros antes de tentar deletar.'
+          },
+          {
+            v: 'v2.8.27', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Gerador de dados configura usuário ADMIN',
+            desc: 'Gerador de dados de teste passa a configurar automaticamente o usuário executante como ADMIN na planilha, evitando erro de permissão ao gerar dados.'
+          },
+          {
+            v: 'v2.8.26', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Menu App Solicitações e gerador de dados de teste',
+            desc: 'Menu customizado "App Solicitações" adicionado ao Google Sheets com opções de configuração, formatação e gerador de dados de teste para facilitar o desenvolvimento.'
+          },
+          {
+            v: 'v2.8.25', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Subabas Ranking e Erros no Dashboard',
+            desc: 'Dashboard ganhou 4 subabas: Colaboradores, Solicitantes, Ranking e Erros. Cada subaba com seus próprios KPIs, gráficos e tabelas específicas.'
+          },
+          {
+            v: 'v2.8.23', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Espaço maior nos labels dos gráficos',
+            desc: 'Labels dos gráficos do dashboard com espaçamento maior para melhor legibilidade. Campo de ano transformado em input de texto livre.'
+          },
+          {
+            v: 'v2.8.22', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Tabela Resposta com colunas diferenciadas',
+            desc: 'Tabela da aba Resposta reorganizada com colunas diferenciadas por tipo de dado. Valor R$ de diferença exibido formatado com símbolo e 2 casas decimais.'
+          },
+          {
+            v: 'v2.8.21', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Card de variação com quantidade e valor total',
+            desc: 'Card de variação de valor no dashboard exibe simultaneamente a quantidade de registros com diferença e o valor total acumulado (R$).'
+          },
+          {
+            v: 'v2.8.20', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Correção contagem de variação de valor',
+            desc: 'Contagem de registros com variação de valor corrigida para considerar ambos os campos (houve_diferenca_valor e diferenca_valor_resposta). Exibição na tabela corrigida.'
+          },
+          {
+            v: 'v2.8.19', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Botão atualizar dashboard e refresh automático',
+            desc: 'Botão "Atualizar" adicionado ao header do dashboard. Refresh automático configurável via intervalo. Indicador visual de última atualização.'
+          },
+          {
+            v: 'v2.8.18', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Correção habilitação do campo diferença de valor',
+            desc: 'Campo de diferença de valor na resposta era habilitado/desabilitado incorretamente ao mudar a opção "houve diferença". Lógica de habilitação corrigida.'
+          },
+          {
+            v: 'v2.8.17', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Fechar modal ao clicar fora e campo diferença condicional',
+            desc: 'Modais fecham ao clicar no backdrop externo. Campo de diferença de valor na resposta só aparece quando "Sim" é selecionado em "Houve diferença de valor?".'
+          },
+          {
+            v: 'v2.8.16', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'PDF — fontes maiores para impressão',
+            desc: 'Tamanho de fontes nos PDFs do dashboard aumentado novamente para melhor legibilidade em impressão física A4.'
+          },
+          {
+            v: 'v2.8.15', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'PDF — melhoria na resolução dos gráficos',
+            desc: 'Resolução dos gráficos nos PDFs aumentada com devicePixelRatio maior. Gráficos mais nítidos na impressão e em telas de alta densidade.'
+          },
+          {
+            v: 'v2.8.14', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'PDF — status Corrigida em verde e gráficos maiores',
+            desc: 'Status "Corrigida" exibido em verde no PDF. Gráficos com altura aumentada para melhor visualização. Ajuste de cores e contraste.'
+          },
+          {
+            v: 'v2.8.13', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Correção salvar resposta e PDF compacto',
+            desc: 'Coluna id_solicitacao corrigida ao salvar resposta (estava usando índice errado). PDF reestruturado em layout compacto para caber em menos páginas.'
+          },
+          {
+            v: 'v2.8.12', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Correção salvar resposta e paginação PDF',
+            desc: 'Fluxo de salvar resposta corrigido. PDF do dashboard reestruturado com paginação mais eficiente.'
+          },
+          {
+            v: 'v2.8.11', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Correção erro console e PDF em 2 páginas',
+            desc: 'Erros no console JavaScript corrigidos. PDF do dashboard reestruturado em 2 páginas: página 1 com KPIs e gráficos principais, página 2 com tabela de detalhamento.'
+          },
+          {
+            v: 'v2.8.10', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'PDF — redução das margens',
+            desc: 'Margens do relatório PDF reduzidas para aproveitar melhor o espaço da página A4 e exibir mais informações por página.'
+          },
+          {
+            v: 'v2.8.9', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'PDF — gráficos profissionais e informações de suporte',
+            desc: 'Gráficos dos PDFs redesenhados com visual profissional. Seção de informações de suporte e contato adicionada ao rodapé dos relatórios.'
+          },
+          {
+            v: 'v2.8.8', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Redesign dos cards com indicadores de tendência',
+            desc: 'Cards do dashboard redesenhados com indicadores de tendência (setas para cima/baixo). Visual modernizado com gradientes e sombras.'
+          },
+          {
+            v: 'v2.8.7', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'PDF com logo NeoFormula e gráficos maiores',
+            desc: 'Logo da NeoFormula adicionada ao cabeçalho dos PDFs. Gráficos com altura aumentada. Layout mais profissional e alinhado com identidade visual.'
+          },
+          {
+            v: 'v2.8.6', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Relatório PDF profissional completo',
+            desc: 'Primeiro relatório PDF completo e profissional do dashboard. Inclui KPIs, gráficos capturados do canvas Chart.js, tabela de detalhamento e rodapé com data/hora de geração.'
+          },
+          {
+            v: 'v2.8.5', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'PDF — filtros, tabela, rótulos e resolução',
+            desc: 'PDF aplica os filtros ativos do dashboard. Tabela de dados incluída. Rótulos dos gráficos corrigidos. Resolução aumentada para melhor qualidade.'
+          },
+          {
+            v: 'v2.8.4', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'PDF melhorado com filtros e tabela detalhada',
+            desc: 'PDF do dashboard melhorado: filtros aplicados refletem no PDF, título com período filtrado, tabela detalhada de erros por tipo incluída.'
+          },
+          {
+            v: 'v2.8.3', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Rótulos internos nos gráficos e PDF melhorado',
+            desc: 'Gráficos de pizza e barra com rótulos internos mostrando valores e percentuais. PDF melhorado com layout em grade. Correções diversas de exibição.'
+          },
+          {
+            v: 'v2.8.2', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Cor verde nas subabas e correção gráfico SLA',
+            desc: 'Botões das subabas do dashboard com cor verde (padrão do sistema) no estado ativo. Gráfico de pizza do SLA corrigido para calcular percentuais corretamente.'
+          },
+          {
+            v: 'v2.8.1', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Subabas na Auditoria com botões de limpar',
+            desc: 'Aba Auditoria dividida em subabas: Histórico de Ações e Consulta por Requisição. Botões de limpar adicionados para facilitar nova busca.'
+          },
+          {
+            v: 'v2.8.0', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Consulta por requisição na Auditoria',
+            desc: 'Aba Auditoria ganha busca por número de requisição. Exibe histórico completo de uma requisição específica: solicitações, erros, respostas e ações auditadas.'
+          },
+          {
+            v: 'v2.7.4', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Correção robusta para resposta null na Auditoria',
+            desc: 'Tratamento de erro quando uma requisição não possui respostas registradas. Exibe mensagem informativa ao invés de quebrar a tabela.'
+          },
+          {
+            v: 'v2.7.3', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Loading em botões e campo diferença numérico',
+            desc: 'Indicador de loading adicionado em todos os botões que fazem chamadas ao backend. Campo de diferença de valor aceita apenas entrada numérica. Correções diversas de UX.'
+          },
+          {
+            v: 'v2.7.1', data: '2025', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Correções de bugs e ajustes de permissões',
+            desc: 'Correções de bugs variados encontrados após o lançamento do v2.7.0. Ajustes nas regras de permissão por perfil de usuário.'
+          },
+          {
+            v: 'v2.7.0', data: '2025', tipo: 'feat', cor: '#009688',
+            titulo: 'Modal de edição e otimização de performance',
+            desc: 'Modal de edição de solicitação disponível para perfis SOLICITANTE e ADMIN. Melhorias na aba de Auditoria. Otimização massiva de performance: carregamento inicial mais rápido, menos chamadas ao backend, melhor paginação.'
+          },
+          {
+            v: 'v2.6.0', data: '2024', tipo: 'feat', cor: '#009688',
+            titulo: 'Sistema de arquivamento mensal para Looker Studio',
+            desc: 'Arquivamento automático mensal dos dados para integração com Looker Studio. Dados históricos preservados em abas separadas por mês/ano.'
+          },
+          {
+            v: 'v2.5.0', data: '2024', tipo: 'feat', cor: '#009688',
+            titulo: 'Perfil Conferente, cores de classificação e backup',
+            desc: 'Novo perfil CONFERENTE com permissão de edição de solicitações e respostas. Cores de classificação de erro (Leve/Grave/Gravíssimo) na tabela. Sistema de backup e limpeza de dados antigos.'
+          },
+          {
+            v: 'v2.4.0', data: '2024', tipo: 'perf', cor: '#d97706',
+            titulo: 'Otimizações para 2000+ registros',
+            desc: 'Otimizações massivas de performance para suportar volume alto de dados. Virtualização de tabela, carregamento lazy, paginação server-side e redução de reflows no DOM.'
+          },
+          {
+            v: 'v2.3.0', data: '2024', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Configuração das abas — estado original',
+            desc: 'Reset completo da configuração visual das abas para o estado original do NeoRNC. Correções de layout, bordas, background e max-width.'
+          },
+          {
+            v: 'v2.2.0', data: '2024', tipo: 'feat', cor: '#009688',
+            titulo: 'Abas distribuídas por toda a largura',
+            desc: 'Barra de abas distribuída por toda a largura do container. Coluna Requisição com largura correta. Badges de SLA simplificados.'
+          },
+          {
+            v: 'v2.1.0', data: '2024', tipo: 'feat', cor: '#009688',
+            titulo: 'Melhoria de distribuição e layout da interface',
+            desc: 'Primeira versão com layout melhorado: abas distribuídas, tabela de solicitações com alinhamento correto, centralização do conteúdo principal.'
           }
         ];
 
@@ -6001,7 +6366,7 @@
           </div>
         `).join('');
 
-        return \`<!DOCTYPE html>
+        return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -6062,14 +6427,14 @@
         Versões marcadas como <strong>Nova funcionalidade</strong> adicionam capacidades novas;
         <strong>Correção</strong> resolve comportamentos incorretos.
       </div>
-      \${linhas}
+      ${linhas}
     </div>
     <div class="footer">
       Sistema de Solicitação de Conserto &nbsp;·&nbsp; 🤖 Desenvolvido com Claude Code (Anthropic)
     </div>
   </div>
 </body>
-</html>\`;
+</html>`;
       }
 
       // Gera HTML completo da documentação técnica
