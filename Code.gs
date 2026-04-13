@@ -74,7 +74,7 @@ const CONFIG = {
     CRITICAL_MINUTES: 30,
     TIMEZONE: "America/Sao_Paulo"
   },
-  APP_VERSION: "v243",
+  APP_VERSION: "v244",
   APP_ENV: "PROD",
   PROD_SPREADSHEET_ID: ""
 };

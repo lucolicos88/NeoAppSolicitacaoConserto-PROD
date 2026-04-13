@@ -4753,6 +4753,7 @@
           <button type="button" onclick="ajudaScrollTo('ajuda-config')" style="background:#0369a1;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">⚙️ Configurações</button>
           <button type="button" onclick="ajudaScrollTo('ajuda-api')" style="background:#334155;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">🔌 Referência Técnica</button>
           <button type="button" onclick="ajudaScrollTo('ajuda-seguranca')" style="background:#065f46;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">🔒 Segurança</button>
+          <button type="button" onclick="ajudaScrollTo('ajuda-historico')" style="background:#0f766e;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">🕓 Versões</button>
           <button type="button" onclick="ajudaScrollTo('ajuda-suporte')" style="background:#92400e;color:white;padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;">📞 Suporte</button>
         </div>
       </div>
@@ -4845,18 +4846,19 @@
         </div>
 
         <details style="margin-top:0.5rem;">
-          <summary class="help-summary">🔧 Como funciona o editor de permissões individuais (novo em v237)</summary>
+          <summary class="help-summary">🔧 Como funciona o editor de permissões individuais (v237 · atualizado v241)</summary>
           <div class="help-detail">
-            <p>Cada usuário pode ter permissões personalizadas que <strong>sobrescrevem</strong> os padrões do perfil dele. Isso permite, por exemplo, dar acesso à aba Auditoria para um CONFERENTE específico, ou remover a ação de Excluir para um ADMIN.</p>
+            <p>Cada usuário pode ter permissões personalizadas que <strong>sobrescrevem</strong> os padrões do perfil dele. Isso permite, por exemplo, dar acesso à aba Auditoria para um CONFERENTE específico, remover a ação de Excluir para um ADMIN, ou ocultar subabas do Dashboard que não são relevantes para determinado usuário.</p>
             <p><strong>Como editar:</strong></p>
             <ol>
               <li>Vá em <strong>Configurações → Usuários</strong></li>
               <li>Clique em <strong>Editar</strong> no card do usuário desejado</li>
               <li>Selecione o perfil base nos cards visuais — os checkboxes de permissão serão pré-preenchidos com os padrões daquele perfil</li>
-              <li>Marque ou desmarque livremente as <strong>Abas acessíveis</strong> e <strong>Ações disponíveis</strong></li>
+              <li>Marque ou desmarque livremente as <strong>Abas acessíveis</strong>, <strong>Ações disponíveis</strong> e <strong>Subabas do dashboard</strong></li>
               <li>Para voltar ao padrão do perfil, clique em <strong>"↺ Restaurar padrões do perfil"</strong></li>
               <li>Clique em <strong>Salvar usuário</strong></li>
             </ol>
+            <p>O editor possui <strong>3 colunas</strong>: <em>Abas acessíveis</em> (quais abas do menu aparecem), <em>Ações disponíveis</em> (o que o usuário pode fazer) e <em>Subabas do dashboard</em> (quais das 4 subabas — Colaboradores, Solicitantes, Ranking, Erros — ficam visíveis). As preferências de subabas ficam salvas na planilha junto com as demais permissões.</p>
             <p>No card de cada usuário cadastrado, os chips mostram a contagem real de permissões. Quando as permissões estão customizadas (diferentes do padrão do perfil), aparece o símbolo <strong>✎</strong> no chip.</p>
             <p style="background:#fff8e1;border:1px solid #fde68a;border-radius:6px;padding:0.6rem 0.75rem;font-size:0.82rem;">⚠️ <strong>Segurança:</strong> As permissões do frontend controlam o que cada usuário <em>vê e acessa</em>. O backend ainda valida o perfil para operações críticas (exclusão, gerenciamento de usuários). Permissões customizadas não substituem as validações de servidor.</p>
           </div>
@@ -5311,8 +5313,8 @@
 [1] nome
 [2] perfil
 [3] setores
-[4] permissoes ← v237
-    JSON {tabs:[...], actions:[...]}</pre>
+[4] permissoes ← v237/v241
+    JSON {tabs:[...], actions:[...], dashTabs:[...]}</pre>
               </div>
             </div>
 
@@ -5393,6 +5395,70 @@
             <li>Dados sensíveis são mascarados nos logs mesmo com debug ativo</li>
             <li>DEBUG é <strong>automático</strong>: ativado no ambiente DEV, desativado no PROD</li>
           </ul>
+        </div>
+      </div>
+
+      <!-- ===== HISTÓRICO DE VERSÕES ===== -->
+      <div class="form-section" id="ajuda-historico">
+        <h3>🕓 Histórico de Versões</h3>
+        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+
+          <div style="display:flex;gap:0.75rem;align-items:flex-start;">
+            <span style="background:#009688;color:white;padding:2px 9px;border-radius:12px;font-size:0.75rem;font-weight:700;white-space:nowrap;min-width:44px;text-align:center;">v243</span>
+            <div style="font-size:0.83rem;color:#374151;">
+              <strong>Formatar Planilhas — quebra de texto</strong><br>
+              <span style="color:#6b7280;">Células de dados recebem <code>setWrap(true)</code> ao formatar. Conteúdo longo não estoura mais para outras colunas.</span>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0.75rem;align-items:flex-start;">
+            <span style="background:#009688;color:white;padding:2px 9px;border-radius:12px;font-size:0.75rem;font-weight:700;white-space:nowrap;min-width:44px;text-align:center;">v242</span>
+            <div style="font-size:0.83rem;color:#374151;">
+              <strong>Formatar Planilhas — novas colunas</strong><br>
+              <span style="color:#6b7280;">Coluna <code>[7] confirmacao_medica</code> adicionada na aba Erros. Coluna <code>[4] permissoes</code> (JSON) adicionada na aba Usuarios. Índices explícitos em todas as abas.</span>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0.75rem;align-items:flex-start;">
+            <span style="background:#009688;color:white;padding:2px 9px;border-radius:12px;font-size:0.75rem;font-weight:700;white-space:nowrap;min-width:44px;text-align:center;">v241</span>
+            <div style="font-size:0.83rem;color:#374151;">
+              <strong>Visibilidade de subabas do dashboard por usuário</strong><br>
+              <span style="color:#6b7280;">Campo <code>dashTabs</code> adicionado em permissões (col [4] Usuarios). Editor de permissões ganha 3ª coluna: <em>Subabas do dashboard</em>. Preferência salva na planilha, aplicada ao carregar o app.</span>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0.75rem;align-items:flex-start;">
+            <span style="background:#009688;color:white;padding:2px 9px;border-radius:12px;font-size:0.75rem;font-weight:700;white-space:nowrap;min-width:44px;text-align:center;">v240</span>
+            <div style="font-size:0.83rem;color:#374151;">
+              <strong>PDFs do Dashboard completos</strong><br>
+              <span style="color:#6b7280;">Relatórios Colaboradores/Solicitantes: KPIs Dif. Valor R$, Conf. Médica, Dentro/Fora SLA%, Meta SLA, Status Geral + gráficos Tempo Resposta e Performance SLA. Relatório Erros: KPI Alt. Técnicas + gráficos Dia da Semana e Evolução + tabela de detalhamento por tipo.</span>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0.75rem;align-items:flex-start;">
+            <span style="background:#64748b;color:white;padding:2px 9px;border-radius:12px;font-size:0.75rem;font-weight:700;white-space:nowrap;min-width:44px;text-align:center;">v239</span>
+            <div style="font-size:0.83rem;color:#374151;">
+              <strong>Aba Ajuda reescrita + fix de navegação</strong><br>
+              <span style="color:#6b7280;">Guia completo com 7 seções, navegação rápida por pills. Correção: links de navegação abriam janela em branco fora do app (bug do iframe GAS).</span>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0.75rem;align-items:flex-start;">
+            <span style="background:#64748b;color:white;padding:2px 9px;border-radius:12px;font-size:0.75rem;font-weight:700;white-space:nowrap;min-width:44px;text-align:center;">v238</span>
+            <div style="font-size:0.83rem;color:#374151;">
+              <strong>Importação PROD → DEV</strong><br>
+              <span style="color:#6b7280;">Funcionalidade exclusiva do ambiente DEV em Configurações → Sistema. Permite copiar dados da planilha PROD para DEV selecionando as tabelas desejadas (apenas ADMIN).</span>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0.75rem;align-items:flex-start;">
+            <span style="background:#64748b;color:white;padding:2px 9px;border-radius:12px;font-size:0.75rem;font-weight:700;white-space:nowrap;min-width:44px;text-align:center;">v237</span>
+            <div style="font-size:0.83rem;color:#374151;">
+              <strong>Permissões individuais por usuário</strong><br>
+              <span style="color:#6b7280;">Editor de permissões com checkboxes de abas e ações por usuário, independente do perfil base. Permissões salvas em JSON na planilha Usuarios.</span>
+            </div>
+          </div>
+
         </div>
       </div>
 
