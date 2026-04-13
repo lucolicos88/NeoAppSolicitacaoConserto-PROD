@@ -77,6 +77,13 @@ function healthCheck(autoFix) {
   const checks = [];
   const fixes = [];
 
+  // autoFix altera planilhas — exige permissão manageConfig
+  if (autoFix) {
+    try { requirePermissao_('manageConfig'); } catch(e) {
+      return { ok: false, errors: [String(e)], debugId: debugId, checks: [], fixes: [] };
+    }
+  }
+
   function addCheck(categoria, nome, status, detalhe, valor) {
     checks.push({ categoria: categoria, nome: nome, status: status, detalhe: detalhe, valor: valor || null });
   }
@@ -472,8 +479,13 @@ function getBootstrapData() {
       result.errors.push("getResponsaveis_: " + error);
     }
 
+    // Lista de usuários exposta apenas para quem tem manageUsers (ADMIN por padrão)
     try {
-      result.usuarios = getUsuarios_();
+      const permActions = (result.usuario && result.usuario.permissoes && result.usuario.permissoes.actions)
+        ? result.usuario.permissoes.actions : [];
+      if (permActions.indexOf('manageUsers') !== -1) {
+        result.usuarios = getUsuarios_();
+      }
     } catch (error) {
       result.errors.push("getUsuarios_: " + error);
     }
@@ -634,6 +646,11 @@ function getAuditLogs(dataInicial, dataFinal) {
     debugId = Utilities.getUuid();
   } catch (e) {
     debugId = "fallback-" + new Date().getTime();
+  }
+
+  // Logs de auditoria são dados sensíveis — exige permissão viewAudit
+  try { requirePermissao_('viewAudit'); } catch(e) {
+    return { ok: false, errors: [String(e)], debugId: debugId, logs: [], total: 0 };
   }
 
   Logger.log("getAuditLogs START - debugId: " + debugId);
@@ -1209,89 +1226,71 @@ function updateSolicitacao(payload) {
     }
 
     // Find and update the solicitation
+    // Schema Solicitacoes: [0]id_solicitacao [1]requisicao [2]solicitante [3]data_hora_pedido [4]status [5]criado_por_email [6]criado_em
     const solicitacoesSheet = getSheet_(CONFIG.SHEETS.SOLICITACOES);
     const solicitacoes = solicitacoesSheet.getDataRange().getValues();
-    const headers = solicitacoes[0];
-
-    // Find column indices - column name is "id_solicitacao" not "id"
-    const colId = headers.indexOf("id_solicitacao");
-    const colRequisicao = headers.indexOf("requisicao");
-    const colSolicitante = headers.indexOf("solicitante");
-    const colSetorLocal = headers.indexOf("setorLocal");
-    const colDiferencaNoValor = headers.indexOf("diferencaNoValor");
-
-    safeLogDebug_("updateSolicitacao", "columns", { colId: colId, headers: headers.slice(0, 10) });
 
     let solicitacaoRowIndex = -1;
     const searchId = String(payload.solicitacaoId).trim();
     for (let i = 1; i < solicitacoes.length; i++) {
-      const rowId = String(solicitacoes[i][colId]).trim();
-      if (rowId === searchId) {
+      if (String(solicitacoes[i][0]).trim() === searchId) {
         solicitacaoRowIndex = i + 1; // 1-based row number
-        safeLogDebug_("updateSolicitacao", "found", { row: solicitacaoRowIndex, rowId: rowId });
         break;
       }
     }
 
     if (solicitacaoRowIndex === -1) {
-      safeLogDebug_("updateSolicitacao", "notFound", { searchId: searchId, colId: colId, totalRows: solicitacoes.length });
+      safeLogDebug_("updateSolicitacao", "notFound", { searchId: searchId, totalRows: solicitacoes.length });
       return { ok: false, errors: ["Solicitação não encontrada. ID: " + searchId], debugId: debugId };
     }
 
     const originalValues = payload.originalValues || {};
     const recordKey = payload.solicitacaoId;
 
-    // Update Solicitacoes sheet (only if user can edit solicitation)
+    // Update Solicitacoes sheet (cols [1]=requisicao, [2]=solicitante — apenas esses dois existem aqui)
     if (canEditSolicitation) {
       if (originalValues.requisicao !== payload.requisicao) {
-        solicitacoesSheet.getRange(solicitacaoRowIndex, colRequisicao + 1).setValue(payload.requisicao);
+        solicitacoesSheet.getRange(solicitacaoRowIndex, 2).setValue(payload.requisicao);  // col [1]
         auditLog_("UPDATE", "Solicitacoes", recordKey, "requisicao", originalValues.requisicao, payload.requisicao);
       }
       if (originalValues.solicitante !== payload.solicitante) {
-        solicitacoesSheet.getRange(solicitacaoRowIndex, colSolicitante + 1).setValue(payload.solicitante);
+        solicitacoesSheet.getRange(solicitacaoRowIndex, 3).setValue(payload.solicitante);  // col [2]
         auditLog_("UPDATE", "Solicitacoes", recordKey, "solicitante", originalValues.solicitante, payload.solicitante);
-      }
-      if (originalValues.setorLocal !== payload.setorLocal) {
-        solicitacoesSheet.getRange(solicitacaoRowIndex, colSetorLocal + 1).setValue(payload.setorLocal);
-        auditLog_("UPDATE", "Solicitacoes", recordKey, "setorLocal", originalValues.setorLocal, payload.setorLocal);
-      }
-      if (originalValues.diferencaNoValor !== payload.diferencaNoValor) {
-        solicitacoesSheet.getRange(solicitacaoRowIndex, colDiferencaNoValor + 1).setValue(payload.diferencaNoValor);
-        auditLog_("UPDATE", "Solicitacoes", recordKey, "diferencaNoValor", originalValues.diferencaNoValor, payload.diferencaNoValor);
       }
 
       // Update Erros sheet
+      // Schema Erros: [0]id_solicitacao [1]sequencia_erro [2]erro [3]detalhamento [4]setor_local [5]diferenca_valor [6]criado_em [7]confirmacao_medica
       const errosSheet = getSheet_(CONFIG.SHEETS.ERROS);
       const erros = errosSheet.getDataRange().getValues();
-      const errosHeaders = erros[0];
-
-      const erroColSolId = errosHeaders.indexOf("solicitacaoId");
-      const erroColSeq = errosHeaders.indexOf("erroSeq");
-      const erroColErro = errosHeaders.indexOf("erro");
-      const erroColDetalhamento = errosHeaders.indexOf("detalhamento");
-      const erroColSetorLocal = errosHeaders.indexOf("setorLocal");
-      const erroColDiferencaNoValor = errosHeaders.indexOf("diferencaNoValor");
 
       for (let i = 1; i < erros.length; i++) {
-        if (erros[i][erroColSolId] === payload.solicitacaoId &&
-            String(erros[i][erroColSeq]) === String(payload.erroSeq)) {
+        if (String(erros[i][0]) === String(payload.solicitacaoId) &&
+            String(erros[i][1]) === String(payload.erroSeq)) {
           const erroRowIndex = i + 1;
           const erroRecordKey = payload.solicitacaoId + "_" + payload.erroSeq;
 
+          // Coletar todos os campos alterados para um único setValues em batch
+          const rowCopy = erros[i].slice();  // cópia da linha atual
+
           if (originalValues.erro !== payload.erro) {
-            errosSheet.getRange(erroRowIndex, erroColErro + 1).setValue(payload.erro);
+            rowCopy[2] = payload.erro;  // col [2] erro
             auditLog_("UPDATE", "Erros", erroRecordKey, "erro", originalValues.erro, payload.erro);
           }
           if (originalValues.detalhamento !== payload.detalhamento) {
-            errosSheet.getRange(erroRowIndex, erroColDetalhamento + 1).setValue(payload.detalhamento);
+            rowCopy[3] = payload.detalhamento;  // col [3] detalhamento
             auditLog_("UPDATE", "Erros", erroRecordKey, "detalhamento", originalValues.detalhamento, payload.detalhamento);
           }
-          if (erroColSetorLocal >= 0 && originalValues.setorLocal !== payload.setorLocal) {
-            errosSheet.getRange(erroRowIndex, erroColSetorLocal + 1).setValue(payload.setorLocal);
+          if (originalValues.setorLocal !== payload.setorLocal) {
+            rowCopy[4] = payload.setorLocal;  // col [4] setor_local
+            auditLog_("UPDATE", "Erros", erroRecordKey, "setor_local", originalValues.setorLocal, payload.setorLocal);
           }
-          if (erroColDiferencaNoValor >= 0 && originalValues.diferencaNoValor !== payload.diferencaNoValor) {
-            errosSheet.getRange(erroRowIndex, erroColDiferencaNoValor + 1).setValue(payload.diferencaNoValor);
+          if (originalValues.diferencaNoValor !== payload.diferencaNoValor) {
+            rowCopy[5] = payload.diferencaNoValor;  // col [5] diferenca_valor
+            auditLog_("UPDATE", "Erros", erroRecordKey, "diferenca_valor", originalValues.diferencaNoValor, payload.diferencaNoValor);
           }
+
+          // Escreve todos os campos modificados em uma única chamada ao Sheets
+          errosSheet.getRange(erroRowIndex, 1, 1, rowCopy.length).setValues([rowCopy]);
           break;
         }
       }
@@ -1405,6 +1404,9 @@ const VALID_CONFIG_TYPES_ = ["solicitante", "setor", "erro"];
 function addConfigItem(type, value) {
   const debugId = Utilities.getUuid();
   safeLogDebug_("addConfigItem", "start", { debugId: debugId });
+  try { requirePermissao_('manageConfig'); } catch(e) {
+    return { ok: false, errors: [String(e)], debugId: debugId };
+  }
   ensureSheets_();
   checkRateLimit_(getEmailValidado_());
 
@@ -1442,6 +1444,9 @@ function addConfigItem(type, value) {
 function deleteConfigItem(type, value) {
   const debugId = Utilities.getUuid();
   safeLogDebug_("deleteConfigItem", "start", { debugId: debugId });
+  try { requirePermissao_('manageConfig'); } catch(e) {
+    return { ok: false, errors: [String(e)], debugId: debugId };
+  }
   ensureSheets_();
   checkRateLimit_(getEmailValidado_());
   const trimmed = String(value || "").trim();
@@ -1482,6 +1487,9 @@ function deleteConfigItem(type, value) {
 function updateErrorClassification(nomeErro, classificacao) {
   const debugId = Utilities.getUuid();
   safeLogDebug_("updateErrorClassification", "start", { debugId: debugId });
+  try { requirePermissao_('manageConfig'); } catch(e) {
+    return { ok: false, errors: [String(e)], debugId: debugId };
+  }
   ensureSheets_();
   checkRateLimit_(getEmailValidado_());
 
@@ -1565,6 +1573,9 @@ function sortErrosCadastro_() {
 function addUsuario(payload) {
   const debugId = Utilities.getUuid();
   safeLogDebug_("addUsuario", "start", { debugId: debugId });
+  try { requirePermissao_('manageUsers'); } catch(e) {
+    return { ok: false, errors: [String(e)], debugId: debugId };
+  }
   ensureSheets_();
   const email = String(payload.email || "").trim();
   const nome = String(payload.nome || "").trim();
@@ -1599,6 +1610,9 @@ function addUsuario(payload) {
 function updateUsuario(payload) {
   const debugId = Utilities.getUuid();
   safeLogDebug_("updateUsuario", "start", { debugId: debugId });
+  try { requirePermissao_('manageUsers'); } catch(e) {
+    return { ok: false, errors: [String(e)], debugId: debugId };
+  }
   ensureSheets_();
   const email = String(payload.email || "").trim();
   const nome = String(payload.nome || "").trim();
@@ -1641,9 +1655,17 @@ function updateUsuario(payload) {
 function deleteUsuario(payload) {
   const debugId = Utilities.getUuid();
   safeLogDebug_("deleteUsuario", "start", { debugId: debugId });
+  let usuarioLogado;
+  try { usuarioLogado = requirePermissao_('manageUsers'); } catch(e) {
+    return { ok: false, errors: [String(e)], debugId: debugId };
+  }
   ensureSheets_();
   const email = String(payload.email || "").trim();
   if (!email) return { ok: false, errors: ["Informe o email."], debugId: debugId };
+  // Protege contra auto-exclusão do único ADMIN
+  if (email === usuarioLogado.email) {
+    return { ok: false, errors: ["Não é possível excluir o próprio usuário."], debugId: debugId };
+  }
   const sheet = getSheet_(CONFIG.SHEETS.USUARIOS);
   const values = sheet.getDataRange().getValues();
   for (let i = 1; i < values.length; i++) {
@@ -1659,8 +1681,13 @@ function deleteUsuario(payload) {
 }
 
 function limparCache() {
-  CacheService.getScriptCache().removeAll([]);
-  safeLogDebug_("limparCache", "cache cleared");
+  // removeAll([]) com array vazio não faz nada no GAS — é necessário passar as chaves explicitamente
+  const cache = CacheService.getScriptCache();
+  const chaves = [CACHE_KEY_CONFIG, CACHE_KEY_LISTAS, CACHE_KEY_SHEETS_OK_];
+  cache.removeAll(chaves);
+  // Invalida também o cache de configuração via função dedicada
+  invalidateConfigCache_();
+  safeLogDebug_("limparCache", "cache cleared", { chaves: chaves });
   return { ok: true };
 }
 
@@ -1698,10 +1725,10 @@ function importarDadosProd(payload) {
     return { ok: false, errors: ["Tabela(s) não permitida(s): " + invalidas.join(", ")], debugId: debugId };
   }
 
-  // Abre planilha PROD
-  const prodId = CONFIG.PROD_SPREADSHEET_ID;
+  // Abre planilha PROD — ID lido via PropertiesService (execute "Configurar Propriedades" no menu)
+  const prodId = getProdSpreadsheetId_();
   if (!prodId) {
-    return { ok: false, errors: ["PROD_SPREADSHEET_ID não configurado."], debugId: debugId };
+    return { ok: false, errors: ["PROD_SPREADSHEET_ID não configurado. Execute 'Configurar Propriedades' no menu do Sheets."], debugId: debugId };
   }
 
   let prodSS;
@@ -1761,6 +1788,9 @@ function importarDadosProd(payload) {
 
 function salvarPastaBackup(payload) {
   const debugId = Utilities.getUuid();
+  try { requirePermissao_('manageConfig'); } catch(e) {
+    return { ok: false, errors: [String(e)], debugId: debugId };
+  }
   const folderId = String(payload.folderId || "").trim();
   if (!folderId) {
     return { ok: false, errors: ["Informe o ID da pasta."], debugId: debugId };
@@ -1772,6 +1802,9 @@ function salvarPastaBackup(payload) {
 
 function atualizarLimiares(payload) {
   const debugId = Utilities.getUuid();
+  try { requirePermissao_('manageConfig'); } catch(e) {
+    return { ok: false, errors: [String(e)], debugId: debugId };
+  }
   const minutosAlerta = Number(payload.minutosAlerta);
   const minutosCritico = Number(payload.minutosCritico);
   if (!minutosAlerta || !minutosCritico) {
@@ -1878,16 +1911,13 @@ function testarPastaBackup() {
  */
 function executarArquivamentoMensal(payload) {
   const debugId = Utilities.getUuid();
+  try { requirePermissao_([], { adminOnly: true }); } catch(e) {
+    return { ok: false, errors: [String(e)], debugId: debugId };
+  }
   const mes = Number(payload.mes);
   const ano = Number(payload.ano);
 
   try {
-    // Verificar permissão (apenas ADMIN)
-    const userEmail = Session.getActiveUser().getEmail() || "";
-    const usuario = getUsuarioContexto_(userEmail);
-    if (!usuario || usuario.perfil !== "ADMIN") {
-      return { ok: false, errors: ["Apenas ADMIN pode executar arquivamento."], debugId: debugId };
-    }
 
     // Validar mês e ano
     if (!mes || mes < 1 || mes > 12 || !ano || ano < 2020 || ano > 2030) {
@@ -2268,16 +2298,13 @@ function getWeekNumber_(date) {
  */
 function executarLimpeza(payload) {
   const debugId = Utilities.getUuid();
+  try { requirePermissao_([], { adminOnly: true }); } catch(e) {
+    return { ok: false, errors: [String(e)], debugId: debugId };
+  }
   const meses = Number(payload.meses) || 6;
   safeLogDebug_("executarLimpeza", "start", { debugId: debugId, meses: meses });
 
   try {
-    // Verificar permissão (apenas ADMIN)
-    const userEmail = Session.getActiveUser().getEmail() || "";
-    const usuario = getUsuarioContexto_(userEmail);
-    if (!usuario || usuario.perfil !== "ADMIN") {
-      return { ok: false, errors: ["Apenas ADMIN pode executar limpeza."], debugId: debugId };
-    }
 
     // Calcular data limite
     const dataLimite = new Date();

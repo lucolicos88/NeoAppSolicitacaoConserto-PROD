@@ -5940,6 +5940,11 @@
       function gerarHistoricoVersoesHTML() {
         const versoes = [
           {
+            v: 'v248', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'Segurança — Pacotes A e B',
+            desc: 'Pacote A: Guard requirePermissao_() centralizado; autorização server-side em addConfigItem, deleteConfigItem, updateErrorClassification, atualizarLimiares, salvarPastaBackup, addUsuario, updateUsuario, deleteUsuario, healthCheck(autoFix), getAuditLogs, executarLimpeza, executarArquivamentoMensal; lista de usuários no bootstrap restrita a quem tem manageUsers; PROD_SPREADSHEET_ID removido do código (agora via PropertiesService). Pacote B: updateSolicitacao reescrito com índices fixos (corrige bug onde edição de setor/erro nunca gravava); limparCache corrigido (removeAll com chaves explícitas); ensureThresholdDefault_ corrigido (WARN_MINUTES em vez de WARN_HOURS inexistente); dados de teste corrigidos (NAO sem acento); findLatestResposta_ com coerção String para erroSeq.'
+          },
+          {
             v: 'v247', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
             titulo: 'Histórico de versões completo',
             desc: 'Todas as versões do sistema adicionadas ao histórico: série v2.1.0–v2.8.31 (2024/2025), v207–v236 (2025) e v237–v247 (2025/2026). Mais de 80 versões documentadas.'

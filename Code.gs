@@ -74,10 +74,8 @@ const CONFIG = {
     CRITICAL_MINUTES: 30,
     TIMEZONE: "America/Sao_Paulo"
   },
-  APP_VERSION: "v247",
-  APP_ENV: "PROD",
-  // ID da planilha PROD — usado apenas no ambiente DEV para importação de dados
-  PROD_SPREADSHEET_ID: "1h4bCllbefqsmsjXpMSSRXVR6avdeXgDS3uGA3NercH8"
+  APP_VERSION: "v248",
+  APP_ENV: "PROD"
 };
 // DEBUG_ENABLED automático: ativo em DEV, desativado em PROD
 CONFIG.DEBUG_ENABLED = CONFIG.APP_ENV === "DEV";

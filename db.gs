@@ -126,9 +126,10 @@ function ensureSheet_(ss, name, headers) {
 function ensureThresholdDefault_() {
   const sheet = getSheet_(CONFIG.SHEETS.LIMIARES);
   if (sheet.getLastRow() < 2) {
+    // WARN_MINUTES e CRITICAL_MINUTES (não WARN_HOURS/CRITICAL_HOURS — esses campos não existem no CONFIG)
     sheet.appendRow([
-      CONFIG.DEFAULTS.WARN_HOURS,
-      CONFIG.DEFAULTS.CRITICAL_HOURS,
+      CONFIG.DEFAULTS.WARN_MINUTES,
+      CONFIG.DEFAULTS.CRITICAL_MINUTES,
       CONFIG.DEFAULTS.TIMEZONE,
       Session.getActiveUser().getEmail(),
       new Date()
@@ -501,8 +502,11 @@ function updateSolicitacaoStatus_(solicitacaoId) {
 
 function findLatestResposta_(respostas, solicitacaoId, erroSeq) {
   let latest = null;
+  // Coerce ambos os lados para String para evitar falha de comparação Number vs String
+  const solId = String(solicitacaoId);
+  const seq = String(erroSeq);
   for (let i = 1; i < respostas.length; i++) {
-    if (respostas[i][1] === solicitacaoId && respostas[i][2] === erroSeq) {
+    if (String(respostas[i][1]) === solId && String(respostas[i][2]) === seq) {
       latest = respostas[i];
     }
   }

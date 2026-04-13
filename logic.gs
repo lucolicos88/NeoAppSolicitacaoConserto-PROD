@@ -342,6 +342,40 @@ function getUsuarioContexto_(email) {
   return result;
 }
 
+/**
+ * Guard de autorização centralizado — verifica se o usuário logado tem a permissão exigida.
+ * Lança Error se não autorizado; retorna o objeto usuario se autorizado.
+ * Use ao início de qualquer endpoint de escrita sensível.
+ *
+ * @param {string|string[]} acaoOuAcoes - Uma ação ou array de ações necessárias (todas devem estar presentes)
+ * @param {Object} [options]
+ * @param {boolean} [options.adminOnly=false] - Se true, exige perfil ADMIN independente das actions
+ * @returns {Object} Objeto usuario autenticado
+ * @throws {Error} Se o usuário não tiver permissão
+ */
+function requirePermissao_(acaoOuAcoes, options) {
+  const email = getEmailValidado_();
+  const usuario = getUsuarioContexto_(email);
+  const opts = options || {};
+
+  if (opts.adminOnly) {
+    if (!usuario.perfil || usuario.perfil.toUpperCase() !== 'ADMIN') {
+      throw new Error('Acesso negado: apenas administradores podem realizar esta operação.');
+    }
+    return usuario;
+  }
+
+  const acoes = Array.isArray(acaoOuAcoes) ? acaoOuAcoes : [acaoOuAcoes];
+  const permActions = (usuario.permissoes && usuario.permissoes.actions) ? usuario.permissoes.actions : [];
+
+  for (let i = 0; i < acoes.length; i++) {
+    if (permActions.indexOf(acoes[i]) === -1) {
+      throw new Error('Acesso negado: permissão "' + acoes[i] + '" necessária.');
+    }
+  }
+  return usuario;
+}
+
 // Invalida o cache de um usuário específico após alteração de perfil/setores
 function invalidateUsuarioCache_(email) {
   try {
