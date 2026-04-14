@@ -389,7 +389,10 @@ function insertResposta_(payload, userEmail) {
       null
     );
 
-    updateSolicitacaoStatus_(payload.solicitacaoId);
+    // Passa os dados recém-lidos para evitar re-leitura das sheets em updateSolicitacaoStatus_
+    const errosParaStatus = getSheet_(CONFIG.SHEETS.ERROS).getDataRange().getValues();
+    const respostasParaStatus = respostasSheet.getDataRange().getValues();
+    updateSolicitacaoStatus_(payload.solicitacaoId, errosParaStatus, respostasParaStatus);
     return { respostaId: respostaId };
   } finally {
     lock.releaseLock();
@@ -452,23 +455,31 @@ function updateResposta_(payload, userEmail) {
       null
     );
 
-    updateSolicitacaoStatus_(payload.solicitacaoId);
+    // respostas já foi lido acima — relê após o setValues para ter o estado atualizado
+    const errosParaStatus = getSheet_(CONFIG.SHEETS.ERROS).getDataRange().getValues();
+    const respostasAtualizadas = respostasSheet.getDataRange().getValues();
+    updateSolicitacaoStatus_(payload.solicitacaoId, errosParaStatus, respostasAtualizadas);
     return { respostaId: respostaId };
   } finally {
     lock.releaseLock();
   }
 }
 
-function updateSolicitacaoStatus_(solicitacaoId) {
+/**
+ * Atualiza o status da solicitação com base nos erros e respostas.
+ * @param {string} solicitacaoId
+ * @param {Array[][]} [errosData] - Dados já lidos da sheet Erros (otimização: evita re-leitura)
+ * @param {Array[][]} [respostasData] - Dados já lidos da sheet Respostas (otimização: evita re-leitura)
+ */
+function updateSolicitacaoStatus_(solicitacaoId, errosData, respostasData) {
   const solicitacaoRow = findSolicitacaoRow_(solicitacaoId);
   if (!solicitacaoRow) {
     return;
   }
 
-  const errosSheet = getSheet_(CONFIG.SHEETS.ERROS);
-  const respostasSheet = getSheet_(CONFIG.SHEETS.RESPOSTAS);
-  const erros = errosSheet.getDataRange().getValues();
-  const respostas = respostasSheet.getDataRange().getValues();
+  // Reutiliza dados já lidos pelo caller quando disponíveis (evita 2 leituras extras ao Sheets)
+  const erros = errosData || getSheet_(CONFIG.SHEETS.ERROS).getDataRange().getValues();
+  const respostas = respostasData || getSheet_(CONFIG.SHEETS.RESPOSTAS).getDataRange().getValues();
 
   let totalErros = 0;
   let errosCorrigidos = 0;

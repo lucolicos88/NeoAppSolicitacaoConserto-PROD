@@ -322,7 +322,8 @@ function getUsuarioContexto_(email) {
         nome: values[i][1],
         perfil: perfil,
         setores: parseSetores_(values[i][3]),
-        permissoes: permissoes
+        permissoes: permissoes,
+        cadastrado: true
       };
       break;
     }
@@ -334,7 +335,8 @@ function getUsuarioContexto_(email) {
       nome: "",
       perfil: "ESPECTADOR",
       setores: [],
-      permissoes: PROFILE_PERM_DEFAULTS_.ESPECTADOR
+      permissoes: PROFILE_PERM_DEFAULTS_.ESPECTADOR,
+      cadastrado: false
     };
   }
 
@@ -377,9 +379,12 @@ function requirePermissao_(acaoOuAcoes, options) {
 }
 
 // Invalida o cache de um usuário específico após alteração de perfil/setores
+// Invalida também o cache de responsáveis pois a lista pode ter mudado
 function invalidateUsuarioCache_(email) {
   try {
-    CacheService.getScriptCache().remove(usuarioCacheKey_(email));
+    const cache = CacheService.getScriptCache();
+    cache.remove(usuarioCacheKey_(email));
+    cache.remove("app_responsaveis_v1");
   } catch(e) { /* ignore */ }
 }
 

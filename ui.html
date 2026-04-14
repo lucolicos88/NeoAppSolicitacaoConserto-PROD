@@ -707,6 +707,16 @@
 
       }
 
+      .user-nao-cadastrado-notice {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffc107;
+        border-radius: 6px;
+        padding: 0.25rem 0.65rem;
+        font-size: 0.688rem;
+        font-weight: 600;
+      }
+
       .users-grid {
 
         display: grid;
@@ -3058,6 +3068,8 @@
 
           <div class="user-badges" id="userBadges"></div>
 
+          <div class="user-nao-cadastrado-notice" id="userNaoCadastradoNotice" style="display:none">⚠️ Usuário não cadastrado — acesso restrito</div>
+
         </div>
 
       </div>
@@ -3241,6 +3253,7 @@
           <div style="margin-bottom: 12px;">
             <h3 style="margin: 0;">📋 Solicitações do Setor</h3>
             <div id="respostaCountInfo" class="info-text"></div>
+            <div id="openErrosHasMoreNotice" style="display:none;margin-top:6px;padding:0.4rem 0.75rem;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:6px;font-size:0.8rem;"></div>
             <!-- KPIs rápidos: conf. médica e dif. de valor -->
             <div id="respostaKpis" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
           </div>
@@ -5940,6 +5953,31 @@
       function gerarHistoricoVersoesHTML() {
         const versoes = [
           {
+            v: 'v253', data: 'Abr/2026', tipo: 'perf', cor: '#d97706',
+            titulo: 'Performance — Pacote F (cache + paginação)',
+            desc: 'Cache de getOpenErrosForUsuario_ por usuário (TTL 60s, chave versionada — invalidada automaticamente em qualquer escrita). Cache de getHistoricoRequisicao por requisição (TTL 120s, mesma chave de versão). Paginação server-side: quando totalCount > limite retornado, frontend exibe aviso com contagem real e orientação para arquivamento. invalidateDataCache_() chamado em submitRequest, submitResponse, deleteSolicitacao e updateSolicitacao.'
+          },
+          {
+            v: 'v252', data: 'Abr/2026', tipo: 'refactor', cor: '#7c3aed',
+            titulo: 'Qualidade de Código — Pacote E',
+            desc: 'console.log no frontend substituídos por logUI(). getHistoricoRequisicao refatorado: var→let/const, Logger.log removidos, guard requirePermissao_(\'viewAudit\') adicionado. Helpers hasAction_(), hasTab_() e hasDashTab_() centralizando verificações de permissão no frontend. getUsuarioContexto_ passa campo cadastrado:true/false permitindo UI exibir aviso "Usuário não cadastrado" em vez de tratar silenciosamente como ESPECTADOR.'
+          },
+          {
+            v: 'v251', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'Confiabilidade — Pacote D',
+            desc: 'LockService adicionado em executarArquivamentoMensal e executarLimpeza — impede execuções concorrentes que causariam estado inconsistente. Checkpoint gravado em Config_Geral antes de qualquer clearContents nas duas operações destrutivas — permite diagnóstico se o script for morto pelo timeout do GAS. updateSolicitacao agora valida campos editáveis contra lista branca (mesma lógica do validateRequestPayload_): farmacêutica, tipo de erro e setor devem existir na configuração; diferencaNoValor deve ser SIM ou NAO; tamanhos de campo respeitados.'
+          },
+          {
+            v: 'v250', data: 'Abr/2026', tipo: 'perf', cor: '#d97706',
+            titulo: 'Performance — Pacote C',
+            desc: 'executarLimpeza reescrita com batch delete (filter+clearContents+setValues — O(1) chamadas ao Sheets em vez de O(N) deleteRow individuais). updateSolicitacaoStatus_ aceita dados já lidos como parâmetros, eliminando 2 leituras extras ao Sheets por operação de resposta. getResponsaveis_ com cache de 10 min (invalidado ao alterar/excluir usuário e em limparCache). getOpenErrosForUsuario_ filtra registros CORRIGIDOS no servidor, reduzindo dados transferidos ao frontend.'
+          },
+          {
+            v: 'v249', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Fix — setupPropriedades_ usa ID da planilha ativa',
+            desc: 'Corrigido erro "CONFIG.SPREADSHEET_ID está vazio" ao clicar em Sim no menu Configurar Propriedades. Desde v235 o ID é exclusivamente via PropertiesService, então a função agora detecta automaticamente o ID da planilha aberta (SpreadsheetApp.getActiveSpreadsheet().getId()) em vez de tentar ler CONFIG.SPREADSHEET_ID.'
+          },
+          {
             v: 'v248', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
             titulo: 'Segurança — Pacotes A e B',
             desc: 'Pacote A: Guard requirePermissao_() centralizado; autorização server-side em addConfigItem, deleteConfigItem, updateErrorClassification, atualizarLimiares, salvarPastaBackup, addUsuario, updateUsuario, deleteUsuario, healthCheck(autoFix), getAuditLogs, executarLimpeza, executarArquivamentoMensal; lista de usuários no bootstrap restrita a quem tem manageUsers; PROD_SPREADSHEET_ID removido do código (agora via PropertiesService). Pacote B: updateSolicitacao reescrito com índices fixos (corrige bug onde edição de setor/erro nunca gravava); limparCache corrigido (removeAll com chaves explícitas); ensureThresholdDefault_ corrigido (WARN_MINUTES em vez de WARN_HOURS inexistente); dados de teste corrigidos (NAO sem acento); findLatestResposta_ com coerção String para erroSeq.'
@@ -7729,7 +7767,7 @@
         editModalDiferencaNoValor.addEventListener('change', function() {
           const hasDifference = String(this.value || '').trim().toLowerCase() === 'sim';
           editModalDiferencaValorRespostaEdit.disabled = !hasDifference;
-          console.log('Change event - Diferença no Valor:', this.value, '| hasDifference:', hasDifference);
+          logUI('editModal', 'diferencaNoValor_change', { value: this.value, hasDifference: hasDifference });
           if (!hasDifference) {
             editModalDiferencaValorRespostaEdit.value = '';
           }
@@ -8032,6 +8070,17 @@
           dashTabs: ['colaboradores', 'solicitantes', 'ranking', 'erros']
         }
       };
+
+      // Helpers de permissão — centralizam verificações sobre currentUser.permissoes
+      function hasAction_(action) {
+        return !!(currentUser && currentUser.permissoes && currentUser.permissoes.actions.indexOf(action) !== -1);
+      }
+      function hasTab_(tab) {
+        return !!(currentUser && currentUser.permissoes && currentUser.permissoes.tabs.indexOf(tab) !== -1);
+      }
+      function hasDashTab_(tab) {
+        return !!(currentUser && currentUser.permissoes && currentUser.permissoes.dashTabs && currentUser.permissoes.dashTabs.indexOf(tab) !== -1);
+      }
 
       // Seleciona visualmente um perfil e renderiza painel de permissões editável
       // customPermissoes: objeto {tabs:[...], actions:[...]} para pré-carregar (ao editar usuário)
@@ -9318,8 +9367,9 @@
             }
             if (openErrosRes && openErrosRes.ok) {
               openErros = openErrosRes.openErros || [];
-              logUI('openErros.loaded', { total: openErros.length });
+              logUI('openErros.loaded', { total: openErros.length, totalCount: openErrosRes.totalCount, hasMore: openErrosRes.hasMore });
               fillOpenErros(openErros);
+              showOpenErrosHasMoreNotice_(openErrosRes.hasMore, openErrosRes.totalCount, openErros.length);
             } else {
               logUI('getOpenErros.error', openErrosRes);
             }
@@ -9675,6 +9725,12 @@
 
         // Store user info globally for permissions checking
         currentUser = usuario;
+
+        // Show notice if user is not registered in the Usuarios sheet
+        const naoCadastradoNotice = document.getElementById('userNaoCadastradoNotice');
+        if (naoCadastradoNotice) {
+          naoCadastradoNotice.style.display = (usuario.cadastrado === false) ? '' : 'none';
+        }
 
         // Update user email chip in header
         const emailChip = document.getElementById('userEmail');
@@ -10405,6 +10461,19 @@
         syncUserSetoresValue();
       }
 
+      // Exibe (ou oculta) o aviso de paginação server-side.
+      // Ativado apenas quando totalCount > retornados (>5k registros no servidor).
+      function showOpenErrosHasMoreNotice_(hasMore, totalCount, returnedCount) {
+        const notice = document.getElementById('openErrosHasMoreNotice');
+        if (!notice) return;
+        if (hasMore) {
+          notice.style.display = '';
+          notice.textContent = '⚠️ Exibindo ' + returnedCount + ' de ' + totalCount + ' registros. Para ver todos, arquive solicitações antigas em Configurações → Manutenção.';
+        } else {
+          notice.style.display = 'none';
+        }
+      }
+
       function fillOpenErros(list) {
         // Store globally for filtering
         allOpenErros = list || [];
@@ -10464,6 +10533,7 @@
               filteredOpenErros = [...allOpenErros];
               filterOpenErrors();
               renderPage();
+              showOpenErrosHasMoreNotice_(res.hasMore, res.totalCount, allOpenErros.length);
 
               const count = allOpenErros.length;
               showModal('✅ Atualizado', `Lista atualizada com sucesso!<br><br>📋 <strong>${count}</strong> solicitação(ões) carregada(s).`);
@@ -10705,7 +10775,7 @@
             : '-';
 
           // Show delete button based on permissions
-          const deleteButton = (currentUser && currentUser.permissoes && currentUser.permissoes.actions.indexOf('delete') !== -1)
+          const deleteButton = hasAction_('delete')
             ? `<button type="button" class="btn-delete" data-action="delete" data-id="${escapeHtml(item.solicitacaoId)}" data-req="${escapeHtml(item.requisicao)}">🗑️ Excluir</button>`
             : '';
 
@@ -11209,9 +11279,8 @@
         editingSolicitacao = record;
 
         // Determine permissions based on user actions
-        const userActions = currentUser && currentUser.permissoes ? currentUser.permissoes.actions : [];
-        const canEditSolicitation = userActions.indexOf('editSolicitation') !== -1;
-        const canEditResponse = userActions.indexOf('respond') !== -1 || userActions.indexOf('editSolicitation') !== -1;
+        const canEditSolicitation = hasAction_('editSolicitation');
+        const canEditResponse = hasAction_('respond') || hasAction_('editSolicitation');
         const hasResponse = record.responsavel || record.dataHoraCorrecao;
 
         // Update modal title based on profile
@@ -11319,7 +11388,7 @@
           // The value comes from record.diferencaNoValor (which is also set in the select if editable)
           const hasDifference = String(record.diferencaNoValor || '').trim().toLowerCase() === 'sim';
           diferencaValorField.disabled = !hasDifference;
-          console.log('Diferença no Valor:', record.diferencaNoValor, '| hasDifference:', hasDifference, '| disabled:', !hasDifference);
+          logUI('editModal', 'diferencaNoValor_init', { value: record.diferencaNoValor, hasDifference: hasDifference });
 
           document.getElementById('editModalObservacoesEdit').value = record.observacoesResposta || '';
         } else if (hasResponse) {
@@ -11359,9 +11428,8 @@
         }
 
         // Determine permissions based on user actions
-        const userActions2 = currentUser && currentUser.permissoes ? currentUser.permissoes.actions : [];
-        const canEditSolicitation = userActions2.indexOf('editSolicitation') !== -1;
-        const canEditResponse = userActions2.indexOf('respond') !== -1 || userActions2.indexOf('editSolicitation') !== -1;
+        const canEditSolicitation = hasAction_('editSolicitation');
+        const canEditResponse = hasAction_('respond') || hasAction_('editSolicitation');
 
         const payload = {
           solicitacaoId: editingSolicitacao.solicitacaoId,
@@ -11464,8 +11532,7 @@
 
       // Decide which modal to open based on user permissions
       function openModalForRecord(record) {
-        const acts = currentUser && currentUser.permissoes ? currentUser.permissoes.actions : [];
-        const canDoAnything = acts.indexOf('editSolicitation') !== -1 || acts.indexOf('respond') !== -1;
+        const canDoAnything = hasAction_('editSolicitation') || hasAction_('respond');
         if (canDoAnything) {
           openEditSolicitacaoModal(record);
         } else {
@@ -11679,7 +11746,7 @@
               applySolFilters();
             }
 
-            console.log('Dashboard atualizado:', allDashboardRecords.length, 'registros');
+            logUI('dashboard', 'atualizado', { total: allDashboardRecords.length });
           } else {
             showModal('Erro', 'Falha ao atualizar dashboard: ' + (dashRes?.error || 'Erro desconhecido'));
           }

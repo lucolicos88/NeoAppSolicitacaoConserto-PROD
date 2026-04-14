@@ -558,18 +558,25 @@ function getOpenErros(limit) {
     const errosCount = errosSheet ? errosSheet.getLastRow() - 1 : 0;
     const solicitacoesCount = solicitacoesSheet ? solicitacoesSheet.getLastRow() - 1 : 0;
 
-    const openErros = getOpenErrosForUsuario_(usuario, MAX_LIMIT);
+    const { records: openErros, totalCount } = getOpenErrosForUsuario_(usuario, MAX_LIMIT);
     const elapsed = new Date().getTime() - startTime;
+    // hasMore: true indica que há mais registros no servidor do que foram retornados
+    // Frontend exibe aviso quando totalCount > MAX_LIMIT (paginação server-side — F3)
+    const hasMore = totalCount > openErros.length;
 
     return {
       ok: true,
       debugId: debugId,
       openErros: openErros,
+      totalCount: totalCount,
+      hasMore: hasMore,
       _debug: {
         usuarioPerfil: usuario ? usuario.perfil : null,
         errosSheetRows: errosCount,
         solicitacoesSheetRows: solicitacoesCount,
         returnedCount: openErros.length,
+        totalCount: totalCount,
+        hasMore: hasMore,
         limit: MAX_LIMIT,
         elapsedMs: elapsed
       }
@@ -804,42 +811,50 @@ function getAuditLogs(dataInicial, dataFinal) {
  * Retorna: solicitação, erros, respostas e logs de auditoria
  */
 function getHistoricoRequisicao(requisicao) {
-  var debugId = "";
+  let debugId = "";
   try {
     debugId = Utilities.getUuid();
   } catch (e) {
     debugId = "fallback-" + new Date().getTime();
   }
 
-  Logger.log("getHistoricoRequisicao START - requisicao: " + requisicao);
+  // Auditoria é dado sensível — exige permissão viewAudit
+  try { requirePermissao_('viewAudit'); } catch(e) {
+    return { ok: false, errors: [String(e)], debugId: debugId };
+  }
 
   try {
-    // Validate parameter
     if (!requisicao || String(requisicao).trim() === "") {
       return { ok: false, errors: ["Informe o número da requisição."], debugId: debugId };
     }
 
-    var requisicaoTrimmed = String(requisicao).trim();
+    const requisicaoTrimmed = String(requisicao).trim();
 
-    // Ensure sheets exist
+    // Cache por versão + requisição (TTL 120s, invalidado em qualquer escrita)
     try {
-      ensureSheets_();
-    } catch (e) {
-      // Continue anyway
-    }
+      const ver = getDataVersion_();
+      const reqKey = requisicaoTrimmed.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 40);
+      const cacheKey = "app_hist_" + ver + "_" + reqKey;
+      const cached = CacheService.getScriptCache().get(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        parsed.debugId = debugId; // atualiza debugId para rastreabilidade
+        safeLogDebug_("getHistoricoRequisicao", "cache_hit", { requisicao: requisicaoTrimmed });
+        return parsed;
+      }
+    } catch(e) { /* cache miss — continua */ }
 
-    // 1. Find the solicitação by requisicao number
-    var solicitacoesSheet = getSheet_(CONFIG.SHEETS.SOLICITACOES);
-    var solicitacoes = solicitacoesSheet.getDataRange().getValues();
+    try { ensureSheets_(); } catch (e) { /* continua mesmo se falhar */ }
 
-    var solicitacaoData = null;
-    var solicitacaoId = null;
+    // 1. Solicitação
+    const solicitacoes = getSheet_(CONFIG.SHEETS.SOLICITACOES).getDataRange().getValues();
+    let solicitacaoData = null;
+    let solicitacaoId = null;
 
-    for (var i = 1; i < solicitacoes.length; i++) {
-      var reqNum = String(solicitacoes[i][1] || "").trim();
-      if (reqNum === requisicaoTrimmed) {
+    for (let i = 1; i < solicitacoes.length; i++) {
+      if (String(solicitacoes[i][1] || "").trim() === requisicaoTrimmed) {
         solicitacaoId = solicitacoes[i][0];
-        var dataPedido = solicitacoes[i][3];
+        const dataPedido = solicitacoes[i][3];
         solicitacaoData = {
           id: solicitacaoId,
           requisicao: solicitacoes[i][1],
@@ -857,14 +872,10 @@ function getHistoricoRequisicao(requisicao) {
       return { ok: false, errors: ["Requisição não encontrada: " + requisicaoTrimmed], debugId: debugId };
     }
 
-    Logger.log("getHistoricoRequisicao: Found solicitacao ID=" + solicitacaoId);
-
-    // 2. Get all erros for this solicitação
-    var errosSheet = getSheet_(CONFIG.SHEETS.ERROS);
-    var erros = errosSheet.getDataRange().getValues();
-    var errosData = [];
-
-    for (var i = 1; i < erros.length; i++) {
+    // 2. Erros
+    const erros = getSheet_(CONFIG.SHEETS.ERROS).getDataRange().getValues();
+    const errosData = [];
+    for (let i = 1; i < erros.length; i++) {
       if (erros[i][0] === solicitacaoId) {
         errosData.push({
           solicitacaoId: erros[i][0],
@@ -878,17 +889,13 @@ function getHistoricoRequisicao(requisicao) {
       }
     }
 
-    Logger.log("getHistoricoRequisicao: Found " + errosData.length + " erros");
-
-    // 3. Get all respostas for this solicitação
-    var respostasSheet = getSheet_(CONFIG.SHEETS.RESPOSTAS);
-    var respostas = respostasSheet.getDataRange().getValues();
-    var respostasData = [];
-
-    for (var i = 1; i < respostas.length; i++) {
+    // 3. Respostas
+    const respostas = getSheet_(CONFIG.SHEETS.RESPOSTAS).getDataRange().getValues();
+    const respostasData = [];
+    for (let i = 1; i < respostas.length; i++) {
       if (respostas[i][1] === solicitacaoId) {
-        var dataCorrecao = respostas[i][9];
-        var criadoEm = respostas[i][10];
+        const dataCorrecao = respostas[i][9];
+        const criadoEmResp = respostas[i][10];
         respostasData.push({
           idResposta: respostas[i][0],
           solicitacaoId: respostas[i][1],
@@ -900,23 +907,18 @@ function getHistoricoRequisicao(requisicao) {
           diferencaValorResposta: respostas[i][7],
           observacoes: respostas[i][8],
           dataHoraCorrecao: dataCorrecao instanceof Date ? dataCorrecao.toISOString() : String(dataCorrecao || ""),
-          criadoEm: criadoEm instanceof Date ? criadoEm.toISOString() : String(criadoEm || "")
+          criadoEm: criadoEmResp instanceof Date ? criadoEmResp.toISOString() : String(criadoEmResp || "")
         });
       }
     }
 
-    Logger.log("getHistoricoRequisicao: Found " + respostasData.length + " respostas");
-
-    // 4. Get all audit logs related to this solicitação
-    var auditSheet = getSheet_(CONFIG.SHEETS.AUDITORIA);
-    var audits = auditSheet.getDataRange().getValues();
-    var auditLogs = [];
-
-    for (var i = 1; i < audits.length; i++) {
-      var recordKey = String(audits[i][4] || "");
-      // Match by solicitacaoId in recordKey (e.g., "id_solicitacao=xxx" or "xxx_1")
+    // 4. Auditoria
+    const audits = getSheet_(CONFIG.SHEETS.AUDITORIA).getDataRange().getValues();
+    const auditLogs = [];
+    for (let i = 1; i < audits.length; i++) {
+      const recordKey = String(audits[i][4] || "");
       if (recordKey.indexOf(solicitacaoId) !== -1 || recordKey.indexOf(requisicaoTrimmed) !== -1) {
-        var timestamp = audits[i][9];
+        const timestamp = audits[i][9];
         auditLogs.push({
           auditId: String(audits[i][0] || ""),
           userEmail: String(audits[i][1] || ""),
@@ -932,14 +934,9 @@ function getHistoricoRequisicao(requisicao) {
       }
     }
 
-    // Sort audit logs by timestamp (most recent first)
-    auditLogs.sort(function(a, b) {
-      return new Date(b.timestamp) - new Date(a.timestamp);
-    });
+    auditLogs.sort(function(a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
 
-    Logger.log("getHistoricoRequisicao: Found " + auditLogs.length + " audit logs");
-
-    return {
+    const histResult = {
       ok: true,
       debugId: debugId,
       solicitacao: solicitacaoData,
@@ -948,13 +945,19 @@ function getHistoricoRequisicao(requisicao) {
       auditLogs: auditLogs
     };
 
+    // Gravar no cache (por versão + requisição)
+    try {
+      const ver = getDataVersion_();
+      const reqKey = requisicaoTrimmed.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 40);
+      const cacheKey = "app_hist_" + ver + "_" + reqKey;
+      CacheService.getScriptCache().put(cacheKey, JSON.stringify(histResult), CACHE_TTL_HISTORICO_);
+    } catch(e) { /* cache write ignorado (dado muito grande ou erro de serviço) */ }
+
+    return histResult;
+
   } catch (error) {
-    Logger.log("getHistoricoRequisicao ERROR: " + String(error));
-    return {
-      ok: false,
-      errors: ["Erro ao buscar histórico: " + String(error)],
-      debugId: debugId
-    };
+    safeLogDebug_("getHistoricoRequisicao", "error", { debugId: debugId, error: String(error) });
+    return { ok: false, errors: ["Erro ao buscar histórico: " + String(error)], debugId: debugId };
   }
 }
 
@@ -1096,6 +1099,7 @@ function submitRequest(payload) {
   const userEmail = getEmailValidado_();
   checkRateLimit_(userEmail);
   const result = insertSolicitacaoEErro_(payload, userEmail);
+  invalidateDataCache_();
   safeLogDebug_("submitRequest", "inserted", result);
   return { ok: true, data: result, debugId: debugId };
 }
@@ -1143,12 +1147,14 @@ function submitResponse(payload) {
     if (!result) {
       return { ok: false, errors: ["Resposta não encontrada para atualização."], debugId: debugId };
     }
+    invalidateDataCache_();
     safeLogDebug_("submitResponse", "updated", result);
     return { ok: true, data: result, debugId: debugId };
   }
 
   // Otherwise, insert new response
   const result = insertResposta_(payload, userEmail);
+  invalidateDataCache_();
   safeLogDebug_("submitResponse", "inserted", result);
   return { ok: true, data: result, debugId: debugId };
 }
@@ -1176,6 +1182,7 @@ function deleteSolicitacao(solicitacaoId) {
     return { ok: false, errors: ["Solicitação não encontrada."], debugId: debugId };
   }
 
+  invalidateDataCache_();
   safeLogDebug_("deleteSolicitacao", "deleted", { solicitacaoId: solicitacaoId });
   return { ok: true, debugId: debugId };
 }
@@ -1211,14 +1218,30 @@ function updateSolicitacao(payload) {
     const errors = [];
     if (!payload.solicitacaoId) errors.push("ID da solicitação é obrigatório.");
 
-    // Only validate solicitation fields if user can edit them
+    // Validação com lista branca — mesmo padrão do validateRequestPayload_ (campos contra config)
     if (canEditSolicitation && payload.requisicao !== undefined) {
       if (!payload.requisicao) errors.push("Requisição é obrigatória.");
-      if (!payload.solicitante) errors.push("Solicitante é obrigatório.");
-      if (!payload.erro) errors.push("Tipo de erro é obrigatório.");
-      if (!payload.setorLocal) errors.push("Setor/Local é obrigatório.");
-      if (!payload.diferencaNoValor) errors.push("Diferença no valor é obrigatório.");
+      if (String(payload.requisicao).length > MAX_REQUISICAO_LEN) {
+        errors.push("Requisição não pode exceder " + MAX_REQUISICAO_LEN + " caracteres.");
+      }
+      const config = getConfigData_();
+      if (!payload.solicitante || config.pharmaceuticas.indexOf(payload.solicitante) === -1) {
+        errors.push("Selecione uma farmacêutica válida.");
+      }
+      const errorNames = config.erros.map(function(e) { return typeof e === 'object' ? e.nome : e; });
+      if (!payload.erro || errorNames.indexOf(payload.erro) === -1) {
+        errors.push("Selecione um tipo de erro válido.");
+      }
+      if (!payload.setorLocal || config.setores.indexOf(payload.setorLocal) === -1) {
+        errors.push("Selecione um setor/local válido.");
+      }
+      if (payload.diferencaNoValor !== "SIM" && payload.diferencaNoValor !== "NAO") {
+        errors.push("Diferença no valor deve ser SIM ou NAO.");
+      }
       if (!payload.detalhamento) errors.push("Detalhamento é obrigatório.");
+      if (String(payload.detalhamento || "").length > MAX_DETALHAMENTO_LEN) {
+        errors.push("Detalhamento não pode exceder " + MAX_DETALHAMENTO_LEN + " caracteres.");
+      }
     }
 
     if (errors.length) {
@@ -1376,6 +1399,7 @@ function updateSolicitacao(payload) {
       }
     }
 
+    invalidateDataCache_();
     return { ok: true, debugId: debugId };
 
   } catch (error) {
@@ -1683,10 +1707,12 @@ function deleteUsuario(payload) {
 function limparCache() {
   // removeAll([]) com array vazio não faz nada no GAS — é necessário passar as chaves explicitamente
   const cache = CacheService.getScriptCache();
-  const chaves = [CACHE_KEY_CONFIG, CACHE_KEY_LISTAS, CACHE_KEY_SHEETS_OK_];
+  const chaves = [CACHE_KEY_CONFIG, CACHE_KEY_LISTAS, CACHE_KEY_SHEETS_OK_, CACHE_KEY_RESPONSAVEIS_];
   cache.removeAll(chaves);
   // Invalida também o cache de configuração via função dedicada
   invalidateConfigCache_();
+  // Invalida caches de dados mutáveis (open erros, histórico)
+  invalidateDataCache_();
   safeLogDebug_("limparCache", "cache cleared", { chaves: chaves });
   return { ok: true };
 }
@@ -1916,6 +1942,14 @@ function executarArquivamentoMensal(payload) {
   }
   const mes = Number(payload.mes);
   const ano = Number(payload.ano);
+
+  // LockService: impede execuções concorrentes que causariam estado inconsistente nas planilhas
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+  } catch(e) {
+    return { ok: false, errors: ["Outra operação está em andamento. Tente novamente em instantes."], debugId: debugId };
+  }
 
   try {
 
@@ -2184,6 +2218,18 @@ function executarArquivamentoMensal(payload) {
       }
     }
 
+    // Checkpoint de segurança: grava os IDs a arquivar antes de qualquer clearContents.
+    // Se o script for morto pelo timeout durante a reescrita, o ADMIN pode ver quais IDs foram removidos
+    // e restaurar a partir do backup que foi criado antes desta etapa.
+    setConfigGeral_("checkpoint_arquivamento", JSON.stringify({
+      debugId: debugId,
+      operacao: "arquivamento_mensal",
+      mes: mes,
+      ano: ano,
+      ids: Array.from(idsDoMesSet),
+      timestamp: new Date().toISOString()
+    }));
+
     // Reescrever planilhas (muito mais rápido que deletar linha a linha)
     // Limpar e reescrever Solicitações
     solicitacoesSheet.clearContents();
@@ -2202,6 +2248,9 @@ function executarArquivamentoMensal(payload) {
     if (respostasManter.length > 0) {
       respostasSheet.getRange(1, 1, respostasManter.length, respostasManter[0].length).setValues(respostasManter);
     }
+
+    // Limpa checkpoint após conclusão com sucesso
+    setConfigGeral_("checkpoint_arquivamento", "");
 
     // Restaurar filtros nas planilhas que tinham
     sheetsComFiltro.forEach(sheet => {
@@ -2239,6 +2288,8 @@ function executarArquivamentoMensal(payload) {
 
     safeLogDebug_("executarArquivamentoMensal", "error", { debugId: debugId, error: String(error) });
     return { ok: false, errors: ["Erro no arquivamento: " + String(error)], debugId: debugId };
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -2304,6 +2355,14 @@ function executarLimpeza(payload) {
   const meses = Number(payload.meses) || 6;
   safeLogDebug_("executarLimpeza", "start", { debugId: debugId, meses: meses });
 
+  // LockService: impede execuções concorrentes
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+  } catch(e) {
+    return { ok: false, errors: ["Outra operação está em andamento. Tente novamente em instantes."], debugId: debugId };
+  }
+
   try {
 
     // Calcular data limite
@@ -2343,37 +2402,47 @@ function executarLimpeza(payload) {
     }
 
     // Coletar IDs para remover erros e respostas relacionados
-    const idsARemover = solicitacoesARemover.map(s => s.id);
+    const idsARemover = new Set(solicitacoesARemover.map(s => String(s.id)));
 
-    // Remover respostas relacionadas (coluna 1 = id_solicitacao)
+    // Checkpoint de segurança: grava os IDs a remover antes de qualquer clearContents
+    setConfigGeral_("checkpoint_limpeza", JSON.stringify({
+      debugId: debugId,
+      operacao: "limpeza_dados",
+      meses: meses,
+      dataLimite: dataLimiteStr,
+      ids: Array.from(idsARemover),
+      timestamp: new Date().toISOString()
+    }));
+
+    // Batch delete: filter + clearContents + setValues (O(1) chamadas ao Sheets, não O(N))
+    // Respostas
     const respostas = respostasSheet.getDataRange().getValues();
-    const respostasRowsARemover = [];
-    for (let i = 1; i < respostas.length; i++) {
-      if (idsARemover.indexOf(respostas[i][1]) !== -1) {
-        respostasRowsARemover.push(i + 1);
-      }
+    const respostasHeader = respostas[0];
+    const respostasRestantes = respostas.slice(1).filter(r => !idsARemover.has(String(r[1])));
+    respostasSheet.clearContents();
+    respostasSheet.getRange(1, 1, 1, respostasHeader.length).setValues([respostasHeader]);
+    if (respostasRestantes.length > 0) {
+      respostasSheet.getRange(2, 1, respostasRestantes.length, respostasHeader.length).setValues(respostasRestantes);
     }
-    // Remover de baixo para cima para não afetar os índices
-    respostasRowsARemover.sort((a, b) => b - a).forEach(row => {
-      respostasSheet.deleteRow(row);
-    });
 
-    // Remover erros relacionados
+    // Erros
     const erros = errosSheet.getDataRange().getValues();
-    const errosRowsARemover = [];
-    for (let i = 1; i < erros.length; i++) {
-      if (idsARemover.indexOf(erros[i][0]) !== -1) {
-        errosRowsARemover.push(i + 1);
-      }
+    const errosHeader = erros[0];
+    const errosRestantes = erros.slice(1).filter(r => !idsARemover.has(String(r[0])));
+    errosSheet.clearContents();
+    errosSheet.getRange(1, 1, 1, errosHeader.length).setValues([errosHeader]);
+    if (errosRestantes.length > 0) {
+      errosSheet.getRange(2, 1, errosRestantes.length, errosHeader.length).setValues(errosRestantes);
     }
-    errosRowsARemover.sort((a, b) => b - a).forEach(row => {
-      errosSheet.deleteRow(row);
-    });
 
-    // Remover solicitações (de baixo para cima)
-    solicitacoesARemover.sort((a, b) => b.row - a.row).forEach(s => {
-      solicitacoesSheet.deleteRow(s.row);
-    });
+    // Solicitações
+    const solicitacoesHeader = solicitacoes[0];
+    const solicitacoesRestantes = solicitacoes.slice(1).filter(r => !idsARemover.has(String(r[0])));
+    solicitacoesSheet.clearContents();
+    solicitacoesSheet.getRange(1, 1, 1, solicitacoesHeader.length).setValues([solicitacoesHeader]);
+    if (solicitacoesRestantes.length > 0) {
+      solicitacoesSheet.getRange(2, 1, solicitacoesRestantes.length, solicitacoesHeader.length).setValues(solicitacoesRestantes);
+    }
 
     const totalRemovidos = solicitacoesARemover.length;
 
@@ -2385,11 +2454,16 @@ function executarLimpeza(payload) {
 
     auditLog_("CLEANUP", "sistema", "limpeza_dados", "meses", meses, totalRemovidos + " registros");
 
+    // Limpa checkpoint após conclusão com sucesso
+    setConfigGeral_("checkpoint_limpeza", "");
+
     return { ok: true, debugId: debugId, removidos: totalRemovidos, dataLimite: dataLimiteStr };
 
   } catch (error) {
     safeLogDebug_("executarLimpeza", "error", { debugId: debugId, error: String(error) });
     return { ok: false, errors: [String(error)], debugId: debugId };
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -2416,6 +2490,21 @@ function executarLimpeza(payload) {
 function getOpenErrosForUsuario_(usuario, limit) {
   const startTime = new Date().getTime();
   const MAX_LIMIT = limit || 3000;
+
+  // Cache por versão + email — invalidado em qualquer escrita de dado (submitRequest/Response/delete/update)
+  if (usuario && usuario.email) {
+    try {
+      const ver = getDataVersion_();
+      const emailKey = usuario.email.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 40);
+      const cacheKey = "app_oe_" + ver + "_" + emailKey;
+      const cached = CacheService.getScriptCache().get(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        safeLogDebug_("getOpenErrosForUsuario_", "cache_hit", { email: usuario.email, count: parsed.records.length });
+        return parsed;
+      }
+    } catch(e) { /* cache miss — continua */ }
+  }
 
   // Log user info for debugging
   safeLogDebug_("getOpenErrosForUsuario_", "usuario", {
@@ -2461,14 +2550,18 @@ function getOpenErrosForUsuario_(usuario, limit) {
   let filteredBySetor = 0;
 
   for (let i = 1; i < erros.length; i++) {
+    const solicitacaoId = erros[i][0];
+    const solicitacaoData = solicitacoesMap[solicitacaoId];
+    if (!solicitacaoData) continue;
+
+    // Pula registros já CORRIGIDOS — evita transferir dados desnecessários ao frontend
+    if (solicitacaoData[4] === "CORRIGIDO") continue;
+
     const setorLocal = erros[i][4];
     if (!usuarioPodeVerSetor_(usuario, setorLocal)) {
       filteredBySetor++;
       continue;
     }
-    const solicitacaoId = erros[i][0];
-    const solicitacaoData = solicitacoesMap[solicitacaoId];
-    if (!solicitacaoData) continue;
 
     // Store only index and date timestamp for sorting
     const dataHoraPedido = solicitacaoData[3];
@@ -2486,6 +2579,9 @@ function getOpenErrosForUsuario_(usuario, limit) {
 
   // Sort by timestamp (oldest first for SLA priority)
   minimalList.sort((a, b) => a.ts - b.ts);
+
+  // totalCount = registros do setor do usuário antes de paginar
+  const totalCount = minimalList.length;
 
   // Take only the records we need
   const limitedList = minimalList.slice(0, MAX_LIMIT);
@@ -2560,10 +2656,23 @@ function getOpenErrosForUsuario_(usuario, limit) {
   const endTime = new Date().getTime();
   safeLogDebug_("getOpenErrosForUsuario_", "complete", {
     totalElapsed: endTime - startTime,
-    returned: result.length
+    returned: result.length,
+    totalCount: totalCount
   });
 
-  return result;
+  const output = { records: result, totalCount: totalCount };
+
+  // Gravar no cache (por versão + email)
+  if (usuario && usuario.email) {
+    try {
+      const ver = getDataVersion_();
+      const emailKey = usuario.email.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 40);
+      const cacheKey = "app_oe_" + ver + "_" + emailKey;
+      CacheService.getScriptCache().put(cacheKey, JSON.stringify(output), CACHE_TTL_OPEN_ERROS_);
+    } catch(e) { /* cache write ignorado (dado muito grande ou erro de serviço) */ }
+  }
+
+  return output;
 }
 
 function getSolicitacoesList_() {
@@ -2642,7 +2751,36 @@ function usuarioPodeVerSetor_(usuario, setorLocal) {
   return false;
 }
 
+const CACHE_KEY_RESPONSAVEIS_ = "app_responsaveis_v1";
+
+// Chave de versão global para caches de dados mutáveis (open erros e histórico).
+// Atualizar essa chave invalida todos os caches de usuário de uma vez.
+const CACHE_KEY_DATA_VER_ = "app_data_ver";
+const CACHE_TTL_OPEN_ERROS_ = 60;   // 60s — dados mudam com respostas
+const CACHE_TTL_HISTORICO_  = 120;  // 120s — histórico de auditoria
+
+// Retorna a versão corrente dos dados (string de timestamp).
+function getDataVersion_() {
+  try {
+    const v = CacheService.getScriptCache().get(CACHE_KEY_DATA_VER_);
+    return v || "0";
+  } catch(e) { return "0"; }
+}
+
+// Incrementa a versão — invalida todos os caches derivados de dados mutáveis.
+function invalidateDataCache_() {
+  try {
+    CacheService.getScriptCache().put(CACHE_KEY_DATA_VER_, String(new Date().getTime()), 3600);
+  } catch(e) { /* ignore */ }
+}
+
 function getResponsaveis_() {
+  const cache = CacheService.getScriptCache();
+  try {
+    const cached = cache.get(CACHE_KEY_RESPONSAVEIS_);
+    if (cached) return JSON.parse(cached);
+  } catch(e) { /* cache miss */ }
+
   const sheet = getSheet_(CONFIG.SHEETS.USUARIOS);
   const values = sheet.getDataRange().getValues();
   const list = [];
@@ -2654,6 +2792,8 @@ function getResponsaveis_() {
       list.push(nome);
     }
   }
+
+  try { cache.put(CACHE_KEY_RESPONSAVEIS_, JSON.stringify(list), CACHE_DURATION); } catch(e) { /* ignore */ }
   return list;
 }
 

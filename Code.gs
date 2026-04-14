@@ -74,7 +74,7 @@ const CONFIG = {
     CRITICAL_MINUTES: 30,
     TIMEZONE: "America/Sao_Paulo"
   },
-  APP_VERSION: "v248",
+  APP_VERSION: "v253",
   APP_ENV: "PROD"
 };
 // DEBUG_ENABLED automático: ativo em DEV, desativado em PROD
@@ -166,33 +166,71 @@ function onOpen() {
 function setupPropriedades_() {
   const ui = SpreadsheetApp.getUi();
   const props = PropertiesService.getScriptProperties();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ssIdAtual = ss ? ss.getId() : "";
 
-  // Verifica se já está configurado
-  const atual = props.getProperty("SPREADSHEET_ID");
-  if (atual) {
+  // Verifica se SPREADSHEET_ID já está salvo no PropertiesService
+  const salvo = props.getProperty("SPREADSHEET_ID") || "";
+
+  if (salvo) {
+    // Já configurado — pergunta se quer atualizar para o ID da planilha ativa
     const resp = ui.alert(
       "Propriedades já configuradas",
-      "SPREADSHEET_ID já está salvo:\n" + atual + "\n\nDeseja sobrescrever com o valor do código (" + CONFIG.SPREADSHEET_ID + ")?",
+      "SPREADSHEET_ID já está salvo:\n" + salvo +
+      "\n\nID da planilha ativa: " + ssIdAtual +
+      "\n\nDeseja atualizar para o ID da planilha ativa?",
       ui.ButtonSet.YES_NO
     );
     if (resp !== ui.Button.YES) {
       ui.alert("Operação cancelada. Propriedades mantidas.");
+      // Ainda oferece configurar PROD_SPREADSHEET_ID se DEV
+    } else {
+      props.setProperty("SPREADSHEET_ID", ssIdAtual);
+      ui.alert("SPREADSHEET_ID atualizado para: " + ssIdAtual);
+    }
+  } else {
+    // Não configurado — usa o ID da planilha ativa automaticamente
+    if (!ssIdAtual) {
+      ui.alert("Erro: não foi possível detectar o ID da planilha. Abra o script a partir da planilha correta.");
       return;
     }
+    props.setProperty("SPREADSHEET_ID", ssIdAtual);
+    ui.alert(
+      "Propriedades configuradas!",
+      "SPREADSHEET_ID salvo: " + ssIdAtual,
+      ui.ButtonSet.OK
+    );
   }
 
-  if (!CONFIG.SPREADSHEET_ID) {
-    ui.alert("Erro: CONFIG.SPREADSHEET_ID está vazio no código. Nada foi salvo.");
-    return;
+  // No ambiente DEV, pede também o PROD_SPREADSHEET_ID para importação de dados
+  if (CONFIG.APP_ENV === "DEV") {
+    const prodIdAtual = props.getProperty("PROD_SPREADSHEET_ID") || "";
+    const resp2 = ui.prompt(
+      "ID da Planilha PROD (apenas DEV)",
+      "Informe o SPREADSHEET_ID da planilha PROD para habilitar importação PROD→DEV.\n" +
+      "Atual: " + (prodIdAtual || "não configurado"),
+      ui.ButtonSet.OK_CANCEL
+    );
+    if (resp2.getSelectedButton() === ui.Button.OK) {
+      const prodId = String(resp2.getResponseText() || "").trim();
+      if (prodId) {
+        props.setProperty("PROD_SPREADSHEET_ID", prodId);
+        ui.alert("PROD_SPREADSHEET_ID salvo: " + prodId);
+      }
+    }
   }
+}
 
-  props.setProperty("SPREADSHEET_ID", CONFIG.SPREADSHEET_ID);
-  ui.alert(
-    "Propriedades configuradas!",
-    "SPREADSHEET_ID salvo no PropertiesService:\n" + CONFIG.SPREADSHEET_ID +
-    "\n\nO código agora lê o ID das propriedades — ele pode ser removido do CONFIG com segurança.",
-    ui.ButtonSet.OK
-  );
+/**
+ * Retorna o SPREADSHEET_ID da planilha PROD via PropertiesService.
+ * Usado exclusivamente pela importação PROD→DEV no ambiente DEV.
+ */
+function getProdSpreadsheetId_() {
+  try {
+    const id = PropertiesService.getScriptProperties().getProperty("PROD_SPREADSHEET_ID");
+    if (id) return id;
+  } catch(e) { /* ignore */ }
+  return "";
 }
 
 // ============================================================================
@@ -357,7 +395,7 @@ function gerarDadosTesteInterno_(quantidade) {
     const tipoErro = tiposErro[Math.floor(Math.random() * tiposErro.length)];
     const setor = setores[Math.floor(Math.random() * setores.length)];
     const detalhamento = detalhamentos[Math.floor(Math.random() * detalhamentos.length)];
-    const diferencaValor = Math.random() < 0.1 ? 'SIM' : 'NÃO'; // 10% com diferença
+    const diferencaValor = Math.random() < 0.1 ? 'SIM' : 'NAO'; // 10% com diferença
 
     errosData.push([
       solicitacaoId,
