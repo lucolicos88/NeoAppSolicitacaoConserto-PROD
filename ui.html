@@ -1648,25 +1648,32 @@
 
 
       /* Column widths for Resposta table - Reorganizado: Solicitação (verde) | Resposta (laranja) */
+      /* Impede quebra de linha nos cabeçalhos da tabela */
+      #openErrorsTable th { white-space: nowrap; }
+
+      /* Larguras somam exatos 100% (table-layout:fixed exige isso)          */
+      /* col: 1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17 */
+      /* %:   2 + 5 + 6 + 5 +12 + 5 + 3 + 3 + 6 + 3 + 5 + 5 + 7 + 4 + 7 + 8 + 9 = 100 */
       #openErrorsTable th:nth-child(1),
-      #openErrorsTable td:nth-child(1) { width: 2%; text-align: center; }  /* Selecionar checkbox */
+      #openErrorsTable td:nth-child(1) { width: 2%; text-align: center; }  /* Selecionar */
       /* === DADOS DA SOLICITAÇÃO (fundo verde claro) === */
       #openErrorsTable th:nth-child(2),
       #openErrorsTable td:nth-child(2) { width: 5%; }  /* Requisição */
       #openErrorsTable th:nth-child(3),
-      #openErrorsTable td:nth-child(3) { width: 7%; } /* Solicitante */
+      #openErrorsTable td:nth-child(3) { width: 6%; } /* Solicitante */
       #openErrorsTable th:nth-child(4),
       #openErrorsTable td:nth-child(4) { width: 5%; } /* Erro */
       #openErrorsTable th:nth-child(5),
-      #openErrorsTable td:nth-child(5) { width: 9%; } /* Detalhamento */
+      #openErrorsTable td:nth-child(5) { width: 12%; } /* Detalhamento */
       #openErrorsTable th:nth-child(6),
       #openErrorsTable td:nth-child(6) { width: 5%; } /* Setor/Local */
       #openErrorsTable th:nth-child(7),
-      #openErrorsTable td:nth-child(7) { width: 3%; text-align: center; }  /* Dif. Valor? SIM/NÃO */
+      #openErrorsTable td:nth-child(7) { width: 3%; text-align: center; }  /* Dif. Val? */
       #openErrorsTable th:nth-child(8),
-      #openErrorsTable td:nth-child(8) { width: 3%; text-align: center; } /* Conf. Médica? SIM/NÃO */
+      #openErrorsTable td:nth-child(8) { width: 4%; text-align: center; } /* Conf. Méd? */
+      #openErrorsTable th:nth-child(8) { white-space: normal; line-height: 1.2; } /* permite quebra no cabeçalho */
       #openErrorsTable th:nth-child(9),
-      #openErrorsTable td:nth-child(9) { width: 6%; } /* Data/Hora Pedido */
+      #openErrorsTable td:nth-child(9) { width: 5%; } /* Data/Hora */
       #openErrorsTable th:nth-child(10),
       #openErrorsTable td:nth-child(10) { width: 3%; text-align: center; } /* SLA */
       #openErrorsTable th:nth-child(11),
@@ -1675,15 +1682,15 @@
       #openErrorsTable th:nth-child(12),
       #openErrorsTable td:nth-child(12) { width: 5%; text-align: center; }  /* Status */
       #openErrorsTable th:nth-child(13),
-      #openErrorsTable td:nth-child(13) { width: 6%; } /* Responsável */
+      #openErrorsTable td:nth-child(13) { width: 7%; } /* Responsável */
       #openErrorsTable th:nth-child(14),
-      #openErrorsTable td:nth-child(14) { width: 5%; text-align: center; } /* Dif. Valor (R$) */
+      #openErrorsTable td:nth-child(14) { width: 4%; text-align: center; } /* Dif. R$ */
       #openErrorsTable th:nth-child(15),
-      #openErrorsTable td:nth-child(15) { width: 6%; } /* Data Correção */
+      #openErrorsTable td:nth-child(15) { width: 7%; } /* Data Correção */
       #openErrorsTable th:nth-child(16),
       #openErrorsTable td:nth-child(16) { width: 8%; } /* Observações */
       #openErrorsTable th:nth-child(17),
-      #openErrorsTable td:nth-child(17) { width: 8%; text-align: center; padding: 4px; } /* Ações */
+      #openErrorsTable td:nth-child(17) { width: 9%; text-align: center; padding: 4px; } /* Ações */
 
 
 
@@ -3254,8 +3261,6 @@
             <h3 style="margin: 0;">📋 Solicitações do Setor</h3>
             <div id="respostaCountInfo" class="info-text"></div>
             <div id="openErrosHasMoreNotice" style="display:none;margin-top:6px;padding:0.4rem 0.75rem;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:6px;font-size:0.8rem;"></div>
-            <!-- KPIs rápidos: conf. médica e dif. de valor -->
-            <div id="respostaKpis" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
           </div>
 
           <div class="d-flex justify-between align-center flex-wrap gap-1">
@@ -3307,15 +3312,15 @@
                   <th style="background:#e0f2f1;color:#00796b;">Erro</th>
                   <th style="background:#e0f2f1;color:#00796b;">Detalhamento</th>
                   <th style="background:#e0f2f1;color:#00796b;">Setor/Local</th>
-                  <th style="background:#e0f2f1;color:#00796b;">Dif. Valor?</th>
-                  <th style="background:#e0f2f1;color:#00796b;">Conf. Médica?</th>
+                  <th style="background:#e0f2f1;color:#00796b;" title="Diferença no Valor?">Dif. Val?</th>
+                  <th style="background:#e0f2f1;color:#00796b;" title="Confirmação Médica?">Conf. Méd?</th>
                   <th style="background:#e0f2f1;color:#00796b;">Data/Hora</th>
                   <th style="background:#e0f2f1;color:#00796b;">SLA</th>
                   <th style="background:#e0f2f1;color:#00796b;">Tempo</th>
                   <!-- Dados da Resposta -->
                   <th style="background:#fff3e0;color:#e65100;">Status</th>
                   <th style="background:#fff3e0;color:#e65100;">Responsável</th>
-                  <th style="background:#fff3e0;color:#e65100;">Dif. R$</th>
+                  <th style="background:#fff3e0;color:#e65100;" title="Diferença de Valor (R$)">Dif. R$</th>
                   <th style="background:#fff3e0;color:#e65100;">Data Correção</th>
                   <th style="background:#fff3e0;color:#e65100;">Observações</th>
                   <th>Ações</th>
@@ -5952,6 +5957,11 @@
 
       function gerarHistoricoVersoesHTML() {
         const versoes = [
+          {
+            v: 'v254', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Fix — Cabeçalho da tabela de solicitações',
+            desc: 'white-space:nowrap adicionado nos <th> da tabela — impede quebra de linha em "Conf. Médica?". Textos abreviados: "Dif. Val?", "Conf. Méd?", com title completo no hover. Larguras das colunas ajustadas: Data/Hora (8%), SLA (4%), Dif. Val/Conf. Méd (4% cada) para eliminar espaço sobrando.'
+          },
           {
             v: 'v253', data: 'Abr/2026', tipo: 'perf', cor: '#d97706',
             titulo: 'Performance — Pacote F (cache + paginação)',
@@ -10677,22 +10687,7 @@
         const displayStart = totalItems > 0 ? startIndex + 1 : 0;
         countInfo.textContent = `Exibindo ${displayStart}-${endIndex} de ${totalItems} solicitação(ões) do seu setor`;
 
-        // === KPIs: Conf. Médica e Dif. de Valor (sobre todos os erros visíveis, sem paginação) ===
-        const kpisDiv = document.getElementById('respostaKpis');
-        if (kpisDiv) {
-          const totalVisiveis = filteredOpenErros.length;
-          const totalConfMedica = filteredOpenErros.filter(i => i.confirmacaoMedica === 'SIM').length;
-          const totalDifValor = filteredOpenErros.filter(i => i.diferencaNoValor === 'SIM' || i.diferencaNoValor === 'Sim').length;
-          const pctConfMedica = totalVisiveis > 0 ? Math.round(totalConfMedica / totalVisiveis * 100) : 0;
-          const pctDifValor = totalVisiveis > 0 ? Math.round(totalDifValor / totalVisiveis * 100) : 0;
-          kpisDiv.innerHTML = `
-            <span class="kpi-chip ${totalConfMedica > 0 ? 'kpi-chip-med' : 'kpi-chip-zero'}" title="Erros que requerem confirmação médica (sobre os ${totalVisiveis} visíveis)">
-              💊 Conf. Médica: ${totalConfMedica} (${pctConfMedica}%)
-            </span>
-            <span class="kpi-chip ${totalDifValor > 0 ? 'kpi-chip-val' : 'kpi-chip-zero'}" title="Erros com diferença de valor (sobre os ${totalVisiveis} visíveis)">
-              💰 Dif. de Valor: ${totalDifValor} (${pctDifValor}%)
-            </span>`;
-        }
+        // KPI chips de Conf. Médica e Dif. de Valor removidos (v254)
 
         // Update visual filter tags area
         const filtrosContainer = document.getElementById('respostaFiltrosAtivos');
