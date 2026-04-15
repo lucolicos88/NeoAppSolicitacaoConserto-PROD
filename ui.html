@@ -3525,7 +3525,7 @@
                 </select>
               </div>
             </div>
-            <canvas id="chartTimelineColab" class="max-h-350"></canvas>
+            <canvas id="chartTimelineColab" class="max-h-350" style="width:100%;height:220px;display:block;"></canvas>
           </div>
 
           <!-- Gráficos Principais -->
@@ -3714,7 +3714,7 @@
             <div class="d-flex justify-between align-center mb-1">
               <h3>📈 Timeline de Erros (Solicitantes)</h3>
             </div>
-            <canvas id="chartTimelineSol" class="max-h-350"></canvas>
+            <canvas id="chartTimelineSol" class="max-h-350" style="width:100%;height:220px;display:block;"></canvas>
           </div>
 
           <!-- Gráficos Principais -->
@@ -12111,7 +12111,22 @@
         function captureChart(canvasId) {
           const canvas = document.getElementById(canvasId);
           if (!canvas) return null;
-          const scale = 12; // Ultra high resolution para impressão de qualidade
+
+          // Esconde título interno do Chart.js para evitar duplicação com o rótulo HTML externo
+          let chartInstance = null;
+          let hadTitle = false;
+          try {
+            if (typeof Chart !== 'undefined') {
+              chartInstance = Chart.getChart(canvas);
+              if (chartInstance?.options?.plugins?.title?.display) {
+                hadTitle = true;
+                chartInstance.options.plugins.title.display = false;
+                chartInstance.update('none');
+              }
+            }
+          } catch(e) {}
+
+          const scale = 3;
           const tempCanvas = document.createElement('canvas');
           tempCanvas.width = canvas.width * scale;
           tempCanvas.height = canvas.height * scale;
@@ -12120,7 +12135,17 @@
           ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
           ctx.scale(scale, scale);
           ctx.drawImage(canvas, 0, 0);
-          return tempCanvas.toDataURL('image/png', 1.0);
+          const dataUrl = tempCanvas.toDataURL('image/jpeg', 0.85);
+
+          // Restaura título do Chart.js
+          if (chartInstance && hadTitle) {
+            try {
+              chartInstance.options.plugins.title.display = true;
+              chartInstance.update('none');
+            } catch(e) {}
+          }
+
+          return dataUrl;
         }
 
         // Calculate all metrics
@@ -12187,12 +12212,25 @@
           return mins + ' min';
         };
 
+        const formatDateShort = (dateStr) => {
+          if (!dateStr) return 'Pendente';
+          try {
+            const dt = new Date(dateStr);
+            const dd = String(dt.getDate()).padStart(2, '0');
+            const mm = String(dt.getMonth() + 1).padStart(2, '0');
+            const yyyy = dt.getFullYear();
+            const hh = String(dt.getHours()).padStart(2, '0');
+            const min = String(dt.getMinutes()).padStart(2, '0');
+            return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+          } catch(e) { return dateStr; }
+        };
+
         // Build PDF HTML
         const pdfHtml = `
-          <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px 12px; background: #fff; color: #333;">
+          <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 6px 12px; background: #fff; color: #333;">
 
             <!-- HEADER WITH LOGO -->
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-bottom: 2px solid #009688; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 2px solid #009688; margin-bottom: 8px;">
               <div style="flex: 0 0 auto;">
                 <img src="${logoUrl}" alt="Neoformula" style="height: 40px; object-fit: contain;" crossorigin="anonymous" />
               </div>
@@ -12204,9 +12242,9 @@
             </div>
 
             <!-- FILTERS -->
-            <div style="background: #e8f5e9; padding: 8px 12px; border-radius: 5px; margin-bottom: 12px; border-left: 3px solid #009688;">
-              <h3 style="margin: 0 0 8px 0; font-size: 12px; color: #00796b;">Filtros Aplicados</h3>
-              <div style="display: flex; flex-wrap: wrap; gap: 20px; font-size: 10px; color: #333;">
+            <div style="background: #e8f5e9; padding: 4px 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #009688;">
+              <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 9px; color: #333; align-items: center;">
+                <span style="font-weight: 600; color: #00796b;">Filtros:</span>
                 <span><strong>Período:</strong> ${filters.dataInicial ? new Date(filters.dataInicial).toLocaleDateString('pt-BR') : 'Início'} até ${filters.dataFinal ? new Date(filters.dataFinal).toLocaleDateString('pt-BR') : 'Atual'}</span>
                 <span><strong>Tipo de Erro:</strong> ${filters.tipoErro || 'Todos'}</span>
                 <span><strong>${isColab ? 'Responsável' : 'Solicitante'}:</strong> ${(isColab ? filters.responsavel : filters.solicitante) || 'Todos'}</span>
@@ -12215,121 +12253,121 @@
             </div>
 
             <!-- KPIs ROW 1 - Status -->
-            <div style="margin-bottom: 8px;">
-              <h3 style="margin: 0 0 5px 0; font-size: 11px; color: #333; border-bottom: 1px solid #009688; padding-bottom: 3px;">Indicadores de Status</h3>
-              <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
-                <div style="background: linear-gradient(135deg, #009688 0%, #00897b 100%); padding: 6px 4px; border-radius: 4px; text-align: center; color: white;">
-                  <div style="font-size: 18px; font-weight: bold;">${totalErros}</div>
+            <div style="margin-bottom: 5px;">
+              <h3 style="margin: 0 0 3px 0; font-size: 10px; color: #333; border-bottom: 1px solid #009688; padding-bottom: 2px;">Indicadores de Status</h3>
+              <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px;">
+                <div style="background: linear-gradient(135deg, #009688 0%, #00897b 100%); padding: 4px; border-radius: 4px; text-align: center; color: white;">
+                  <div style="font-size: 16px; font-weight: bold;">${totalErros}</div>
                   <div style="font-size: 7px; opacity: 0.9;">Total Erros</div>
                 </div>
-                <div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); padding: 6px 4px; border-radius: 4px; text-align: center; color: white;">
-                  <div style="font-size: 18px; font-weight: bold;">${corrigidos}</div>
+                <div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); padding: 4px; border-radius: 4px; text-align: center; color: white;">
+                  <div style="font-size: 16px; font-weight: bold;">${corrigidos}</div>
                   <div style="font-size: 7px; opacity: 0.9;">Corrigidos</div>
                 </div>
-                <div style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); padding: 6px 4px; border-radius: 4px; text-align: center; color: white;">
-                  <div style="font-size: 18px; font-weight: bold;">${abertos}</div>
+                <div style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); padding: 4px; border-radius: 4px; text-align: center; color: white;">
+                  <div style="font-size: 16px; font-weight: bold;">${abertos}</div>
                   <div style="font-size: 7px; opacity: 0.9;">Abertos</div>
                 </div>
-                <div style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); padding: 6px 4px; border-radius: 4px; text-align: center; color: white;">
-                  <div style="font-size: 18px; font-weight: bold;">${criticos}</div>
+                <div style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); padding: 4px; border-radius: 4px; text-align: center; color: white;">
+                  <div style="font-size: 16px; font-weight: bold;">${criticos}</div>
                   <div style="font-size: 7px; opacity: 0.9;">Críticos</div>
                 </div>
-                <div style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); padding: 6px 4px; border-radius: 4px; text-align: center; color: white;">
-                  <div style="font-size: 18px; font-weight: bold;">${percAtendidas}%</div>
+                <div style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); padding: 4px; border-radius: 4px; text-align: center; color: white;">
+                  <div style="font-size: 16px; font-weight: bold;">${percAtendidas}%</div>
                   <div style="font-size: 7px; opacity: 0.9;">Atendimento</div>
                 </div>
               </div>
             </div>
 
             <!-- KPIs ROW 2 - Time Metrics -->
-            <div style="margin-bottom: 8px;">
-              <h3 style="margin: 0 0 5px 0; font-size: 11px; color: #333; border-bottom: 1px solid #009688; padding-bottom: 3px;">Métricas de Tempo</h3>
-              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 14px; font-weight: bold; color: #3B82F6;">${formatTime(tempoMedio)}</div>
+            <div style="margin-bottom: 5px;">
+              <h3 style="margin: 0 0 3px 0; font-size: 10px; color: #333; border-bottom: 1px solid #009688; padding-bottom: 2px;">Métricas de Tempo</h3>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;">
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 13px; font-weight: bold; color: #3B82F6;">${formatTime(tempoMedio)}</div>
                   <div style="font-size: 7px; color: #64748b;">Tempo Médio</div>
                 </div>
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 14px; font-weight: bold; color: #10B981;">${formatTime(tempoMin)}</div>
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 13px; font-weight: bold; color: #10B981;">${formatTime(tempoMin)}</div>
                   <div style="font-size: 7px; color: #64748b;">Mínimo</div>
                 </div>
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 14px; font-weight: bold; color: #EF4444;">${formatTime(tempoMax)}</div>
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 13px; font-weight: bold; color: #EF4444;">${formatTime(tempoMax)}</div>
                   <div style="font-size: 7px; color: #64748b;">Máximo</div>
                 </div>
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 14px; font-weight: bold; color: #F59E0B;">${alertas}</div>
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 13px; font-weight: bold; color: #F59E0B;">${alertas}</div>
                   <div style="font-size: 7px; color: #64748b;">Em Alerta</div>
                 </div>
               </div>
             </div>
 
             <!-- KPIs ROW 3 - Additional Metrics + SLA -->
-            <div style="margin-bottom: 8px;">
-              <h3 style="margin: 0 0 5px 0; font-size: 11px; color: #333; border-bottom: 1px solid #009688; padding-bottom: 3px;">Métricas Adicionais e SLA</h3>
-              <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;">
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 12px; font-weight: bold; color: #7C3AED;">${variacaoText}</div>
+            <div style="margin-bottom: 5px;">
+              <h3 style="margin: 0 0 3px 0; font-size: 10px; color: #333; border-bottom: 1px solid #009688; padding-bottom: 2px;">Métricas Adicionais e SLA</h3>
+              <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px;">
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 11px; font-weight: bold; color: #7C3AED;">${variacaoText}</div>
                   <div style="font-size: 7px; color: #64748b;">Dif. Valor R$</div>
                 </div>
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 12px; font-weight: bold; color: #1565C0;">${confMedicaText}</div>
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 11px; font-weight: bold; color: #1565C0;">${confMedicaText}</div>
                   <div style="font-size: 7px; color: #64748b;">Conf. Médica</div>
                 </div>
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 12px; font-weight: bold; color: #10B981;">${slaDentroPercent}%</div>
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 11px; font-weight: bold; color: #10B981;">${slaDentroPercent}%</div>
                   <div style="font-size: 7px; color: #64748b;">Dentro SLA</div>
                 </div>
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 12px; font-weight: bold; color: #EF4444;">${slaForaPercent}%</div>
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 11px; font-weight: bold; color: #EF4444;">${slaForaPercent}%</div>
                   <div style="font-size: 7px; color: #64748b;">Fora do SLA</div>
                 </div>
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 12px; font-weight: bold; color: #F59E0B;">${metaSla} min</div>
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 11px; font-weight: bold; color: #F59E0B;">${metaSla} min</div>
                   <div style="font-size: 7px; color: #64748b;">Meta SLA</div>
                 </div>
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 10px; font-weight: bold; color: #333;">${statusGeral}</div>
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; text-align: center; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 9px; font-weight: bold; color: #333;">${statusGeral}</div>
                   <div style="font-size: 7px; color: #64748b;">Status Geral</div>
                 </div>
               </div>
             </div>
 
             <!-- TIMELINE CHART -->
-            <div style="margin-bottom: 8px;">
-              <h3 style="margin: 0 0 5px 0; font-size: 11px; color: #333; border-bottom: 1px solid #009688; padding-bottom: 3px;">Timeline de Erros</h3>
-              <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
-                <img src="${captureChart(timelineChartId) || ''}" style="max-width: 100%; height: 150px; object-fit: contain;" />
+            <div style="margin-bottom: 5px;">
+              <h3 style="margin: 0 0 3px 0; font-size: 10px; color: #333; border-bottom: 1px solid #009688; padding-bottom: 2px;">Timeline de Erros</h3>
+              <div style="background: #f8fafc; padding: 4px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                <img src="${captureChart(timelineChartId) || ''}" style="width: 100%; height: 120px; display: block; object-fit: fill;" />
               </div>
             </div>
 
-            <!-- CHARTS GRID - 6 charts in 3x2 grid, compact -->
+            <!-- CHARTS GRID - 6 charts in 2x3 grid -->
             <div style="margin-bottom: 0;">
-              <h3 style="margin: 0 0 5px 0; font-size: 11px; color: #333; border-bottom: 1px solid #009688; padding-bottom: 3px;">Análise Gráfica</h3>
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
-                  <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 3px;">Tipos de Erros</div>
-                  <img src="${captureChart(isColab ? 'chartTiposColab' : 'chartTiposSol') || ''}" style="max-width: 100%; height: 140px; object-fit: contain;" />
+              <h3 style="margin: 0 0 3px 0; font-size: 10px; color: #333; border-bottom: 1px solid #009688; padding-bottom: 2px;">Análise Gráfica</h3>
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px;">
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
+                  <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 2px;">Tipos de Erros</div>
+                  <img src="${captureChart(isColab ? 'chartTiposColab' : 'chartTiposSol') || ''}" style="max-width: 100%; height: 158px; object-fit: contain;" />
                 </div>
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
-                  <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 3px;">Erros por Setor</div>
-                  <img src="${captureChart(isColab ? 'chartSetorColab' : 'chartSetorSol') || ''}" style="max-width: 100%; height: 140px; object-fit: contain;" />
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
+                  <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 2px;">Erros por Setor</div>
+                  <img src="${captureChart(isColab ? 'chartSetorColab' : 'chartSetorSol') || ''}" style="max-width: 100%; height: 158px; object-fit: contain;" />
                 </div>
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
-                  <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 3px;">Classificação</div>
-                  <img src="${captureChart(isColab ? 'chartClassificacaoColab' : 'chartClassificacaoSol') || ''}" style="max-width: 100%; height: 140px; object-fit: contain;" />
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
+                  <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 2px;">Classificação</div>
+                  <img src="${captureChart(isColab ? 'chartClassificacaoColab' : 'chartClassificacaoSol') || ''}" style="max-width: 100%; height: 158px; object-fit: contain;" />
                 </div>
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
-                  <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 3px;">Status SLA</div>
-                  <img src="${captureChart(isColab ? 'chartSLAColab' : 'chartSLASol') || ''}" style="max-width: 100%; height: 140px; object-fit: contain;" />
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
+                  <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 2px;">Status SLA</div>
+                  <img src="${captureChart(isColab ? 'chartSLAColab' : 'chartSLASol') || ''}" style="max-width: 100%; height: 158px; object-fit: contain;" />
                 </div>
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
-                  <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 3px;">Tempo de Resposta</div>
-                  <img src="${captureChart(isColab ? 'chartTempoColab' : 'chartTempoSol') || ''}" style="max-width: 100%; height: 140px; object-fit: contain;" />
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
+                  <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 2px;">Tempo de Resposta</div>
+                  <img src="${captureChart(isColab ? 'chartTempoColab' : 'chartTempoSol') || ''}" style="max-width: 100%; height: 158px; object-fit: contain;" />
                 </div>
-                <div style="background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
-                  <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 3px;">Performance SLA</div>
-                  <img src="${captureChart(isColab ? 'chartPerformanceSlaColab' : 'chartPerformanceSlaSol') || ''}" style="max-width: 100%; height: 140px; object-fit: contain;" />
+                <div style="background: #f8fafc; padding: 4px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
+                  <div style="font-size: 9px; font-weight: 600; color: #009688; margin-bottom: 2px;">Performance SLA</div>
+                  <img src="${captureChart(isColab ? 'chartPerformanceSlaColab' : 'chartPerformanceSlaSol') || ''}" style="max-width: 100%; height: 158px; object-fit: contain;" />
                 </div>
               </div>
             </div>
@@ -12347,7 +12385,7 @@
                     <th style="padding: 8px 5px; border: 1px solid #00796b; text-align: center; width: 50px;">Status</th>
                     <th style="padding: 8px 5px; border: 1px solid #00796b; text-align: center; width: 45px;">SLA</th>
                     <th style="padding: 8px 5px; border: 1px solid #00796b; text-align: left;">Responsável</th>
-                    <th style="padding: 8px 5px; border: 1px solid #00796b; text-align: left; width: 70px;">Data Correção</th>
+                    <th style="padding: 8px 5px; border: 1px solid #00796b; text-align: left; width: 90px;">Data Correção</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -12367,7 +12405,7 @@
                         <td style="padding: 6px 4px; border: 1px solid #e2e8f0; text-align: center; background: ${statusBg}; color: ${statusColor}; font-weight: bold;">${status}</td>
                         <td style="padding: 6px 4px; border: 1px solid #e2e8f0; text-align: center; background: ${slaBg}; color: ${slaColor}; font-weight: bold;">${r.slaStatus || 'OK'}</td>
                         <td style="padding: 6px 4px; border: 1px solid #e2e8f0;">${r.responsavel || '-'}</td>
-                        <td style="padding: 6px 4px; border: 1px solid #e2e8f0; font-size: 7px;">${r.dataHoraCorrecao || 'Pendente'}</td>
+                        <td style="padding: 6px 4px; border: 1px solid #e2e8f0; font-size: 7px; white-space: nowrap;">${formatDateShort(r.dataHoraCorrecao)}</td>
                       </tr>
                     `;
                   }).join('')}
@@ -12387,10 +12425,10 @@
         container.innerHTML = pdfHtml;
 
         const opt = {
-          margin: [2, 5, 5, 5],
+          margin: [0, 5, 5, 5],
           filename: `${dashboardName.replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
-          image: { type: 'png', quality: 1.0 },
-          html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+          image: { type: 'jpeg', quality: 0.85 },
+          html2canvas: { scale: 1.5, useCORS: true, logging: false, backgroundColor: '#ffffff' },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
           pagebreak: { mode: ['css', 'legacy'], before: '.page-break-before', after: '.page-break-after' }
         };
@@ -12508,9 +12546,9 @@
               </div>
               <div style="width: 40px;"></div>
             </div>
-            <div style="background: #e8f5e9; padding: 8px 12px; border-radius: 5px; margin-bottom: 12px; border-left: 3px solid #009688;">
-              <h3 style="margin: 0 0 8px 0; font-size: 12px; color: #00796b;">Filtros Aplicados</h3>
-              <div style="display: flex; gap: 20px; font-size: 10px;">
+            <div style="background: #e8f5e9; padding: 4px 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #009688;">
+              <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 9px; color: #333; align-items: center;">
+                <span style="font-weight: 600; color: #00796b;">Filtros:</span>
                 <span><strong>Período:</strong> ${filters.dataInicial ? new Date(filters.dataInicial).toLocaleDateString('pt-BR') : 'Início'} até ${filters.dataFinal ? new Date(filters.dataFinal).toLocaleDateString('pt-BR') : 'Atual'}</span>
                 <span><strong>Setor:</strong> ${filters.setor || 'Todos'}</span>
                 <span><strong>Dias Úteis:</strong> ${diasPeriodo} (excl. domingos)</span>
@@ -12545,10 +12583,10 @@
         const container = document.createElement('div');
         container.innerHTML = pdfHtml;
         const opt = {
-          margin: [2, 5, 5, 5],
+          margin: [0, 5, 5, 5],
           filename: `Ranking_Colaboradores_${new Date().toISOString().split('T')[0]}.pdf`,
-          image: { type: 'png', quality: 1.0 },
-          html2canvas: { scale: 3, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+          image: { type: 'jpeg', quality: 0.85 },
+          html2canvas: { scale: 1.5, useCORS: true, logging: false, backgroundColor: '#ffffff' },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
           pagebreak: { mode: ['css', 'legacy'], before: '.page-break-before' }
         };
@@ -12596,9 +12634,9 @@
               </div>
               <div style="width: 40px;"></div>
             </div>
-            <div style="background: #e8f5e9; padding: 8px 12px; border-radius: 5px; margin-bottom: 12px; border-left: 3px solid #009688;">
-              <h3 style="margin: 0 0 8px 0; font-size: 12px; color: #00796b;">Filtros Aplicados</h3>
-              <div style="display: flex; gap: 20px; font-size: 10px;">
+            <div style="background: #e8f5e9; padding: 4px 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #009688;">
+              <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 9px; color: #333; align-items: center;">
+                <span style="font-weight: 600; color: #00796b;">Filtros:</span>
                 <span><strong>Período:</strong> ${filters.dataInicial ? new Date(filters.dataInicial).toLocaleDateString('pt-BR') : 'Início'} até ${filters.dataFinal ? new Date(filters.dataFinal).toLocaleDateString('pt-BR') : 'Atual'}</span>
                 <span><strong>Tipo de Erro:</strong> ${filters.tipoErro || 'Todos'}</span>
                 <span><strong>Setor:</strong> ${filters.setor || 'Todos'}</span>
@@ -12670,19 +12708,19 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
               <div style="background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
                 <div style="font-size: 10px; font-weight: 600; color: #009688; margin-bottom: 5px;">Tipos de Erros</div>
-                <img src="${captureChart('chartErrosTipos') || ''}" style="max-width: 100%; height: 180px; object-fit: contain;" />
+                <img src="${captureChart('chartErrosTipos') || ''}" style="max-width: 100%; height: 225px; object-fit: contain;" />
               </div>
               <div style="background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
                 <div style="font-size: 10px; font-weight: 600; color: #009688; margin-bottom: 5px;">Classificação</div>
-                <img src="${captureChart('chartErrosClassificacao') || ''}" style="max-width: 100%; height: 180px; object-fit: contain;" />
+                <img src="${captureChart('chartErrosClassificacao') || ''}" style="max-width: 100%; height: 225px; object-fit: contain;" />
               </div>
               <div style="background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
                 <div style="font-size: 10px; font-weight: 600; color: #009688; margin-bottom: 5px;">Erros por Dia da Semana</div>
-                <img src="${captureChart('chartErrosDiaSemana') || ''}" style="max-width: 100%; height: 180px; object-fit: contain;" />
+                <img src="${captureChart('chartErrosDiaSemana') || ''}" style="max-width: 100%; height: 225px; object-fit: contain;" />
               </div>
               <div style="background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; text-align: center;">
                 <div style="font-size: 10px; font-weight: 600; color: #009688; margin-bottom: 5px;">Evolução de Erros</div>
-                <img src="${captureChart('chartErrosEvolucao') || ''}" style="max-width: 100%; height: 180px; object-fit: contain;" />
+                <img src="${captureChart('chartErrosEvolucao') || ''}" style="max-width: 100%; height: 225px; object-fit: contain;" />
               </div>
             </div>
 
@@ -12728,10 +12766,10 @@
         const container = document.createElement('div');
         container.innerHTML = pdfHtml;
         const opt = {
-          margin: [2, 5, 5, 5],
+          margin: [0, 5, 5, 5],
           filename: `Analise_Erros_${new Date().toISOString().split('T')[0]}.pdf`,
-          image: { type: 'png', quality: 1.0 },
-          html2canvas: { scale: 3, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+          image: { type: 'jpeg', quality: 0.85 },
+          html2canvas: { scale: 1.5, useCORS: true, logging: false, backgroundColor: '#ffffff' },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
         html2pdf().set(opt).from(container).save().then(() => { showModal('Sucesso', 'Relatório de Análise de Erros gerado com sucesso!'); }).catch((err) => { showModal('Erro', 'Erro ao gerar PDF: ' + err.message); });
@@ -15471,29 +15509,17 @@
 
 
       function formatDate(value) {
-
-
-
         try {
-
-
-
-          return new Date(value).toLocaleString();
-
-
-
+          const dt = new Date(value);
+          const dd = String(dt.getDate()).padStart(2, '0');
+          const mm = String(dt.getMonth() + 1).padStart(2, '0');
+          const yyyy = dt.getFullYear();
+          const hh = String(dt.getHours()).padStart(2, '0');
+          const min = String(dt.getMinutes()).padStart(2, '0');
+          return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
         } catch (e) {
-
-
-
           return value || '';
-
-
-
         }
-
-
-
       }
 
 
