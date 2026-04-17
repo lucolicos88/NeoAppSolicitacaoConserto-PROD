@@ -1658,39 +1658,42 @@
       #openErrorsTable td:nth-child(1) { width: 2%; text-align: center; }  /* Selecionar */
       /* === DADOS DA SOLICITAÇÃO (fundo verde claro) === */
       #openErrorsTable th:nth-child(2),
-      #openErrorsTable td:nth-child(2) { width: 5%; }  /* Requisição */
+      #openErrorsTable td:nth-child(2) { width: 3%; text-align: center; } /* Urgente */
+      #openErrorsTable th:nth-child(2) { white-space: normal; line-height: 1.2; }
       #openErrorsTable th:nth-child(3),
-      #openErrorsTable td:nth-child(3) { width: 6%; } /* Solicitante */
+      #openErrorsTable td:nth-child(3) { width: 5%; }  /* Requisição */
       #openErrorsTable th:nth-child(4),
-      #openErrorsTable td:nth-child(4) { width: 5%; } /* Erro */
+      #openErrorsTable td:nth-child(4) { width: 6%; } /* Solicitante */
       #openErrorsTable th:nth-child(5),
-      #openErrorsTable td:nth-child(5) { width: 12%; } /* Detalhamento */
+      #openErrorsTable td:nth-child(5) { width: 5%; } /* Erro */
       #openErrorsTable th:nth-child(6),
-      #openErrorsTable td:nth-child(6) { width: 5%; } /* Setor/Local */
+      #openErrorsTable td:nth-child(6) { width: 11%; } /* Detalhamento */
       #openErrorsTable th:nth-child(7),
-      #openErrorsTable td:nth-child(7) { width: 3%; text-align: center; }  /* Dif. Val? */
+      #openErrorsTable td:nth-child(7) { width: 5%; } /* Setor/Local */
       #openErrorsTable th:nth-child(8),
-      #openErrorsTable td:nth-child(8) { width: 4%; text-align: center; } /* Conf. Méd? */
-      #openErrorsTable th:nth-child(8) { white-space: normal; line-height: 1.2; } /* permite quebra no cabeçalho */
+      #openErrorsTable td:nth-child(8) { width: 3%; text-align: center; }  /* Dif. Val? */
       #openErrorsTable th:nth-child(9),
-      #openErrorsTable td:nth-child(9) { width: 5%; } /* Data/Hora */
+      #openErrorsTable td:nth-child(9) { width: 4%; text-align: center; } /* Conf. Méd? */
+      #openErrorsTable th:nth-child(9) { white-space: normal; line-height: 1.2; } /* permite quebra no cabeçalho */
       #openErrorsTable th:nth-child(10),
-      #openErrorsTable td:nth-child(10) { width: 3%; text-align: center; } /* SLA */
+      #openErrorsTable td:nth-child(10) { width: 5%; } /* Data/Hora */
       #openErrorsTable th:nth-child(11),
-      #openErrorsTable td:nth-child(11) { width: 5%; text-align: center; } /* Tempo */
-      /* === DADOS DA RESPOSTA (fundo laranja claro) === */
+      #openErrorsTable td:nth-child(11) { width: 3%; text-align: center; } /* SLA */
       #openErrorsTable th:nth-child(12),
-      #openErrorsTable td:nth-child(12) { width: 5%; text-align: center; }  /* Status */
+      #openErrorsTable td:nth-child(12) { width: 5%; text-align: center; } /* Tempo */
+      /* === DADOS DA RESPOSTA (fundo laranja claro) === */
       #openErrorsTable th:nth-child(13),
-      #openErrorsTable td:nth-child(13) { width: 7%; } /* Responsável */
+      #openErrorsTable td:nth-child(13) { width: 5%; text-align: center; }  /* Status */
       #openErrorsTable th:nth-child(14),
-      #openErrorsTable td:nth-child(14) { width: 4%; text-align: center; } /* Dif. R$ */
+      #openErrorsTable td:nth-child(14) { width: 7%; } /* Responsável */
       #openErrorsTable th:nth-child(15),
-      #openErrorsTable td:nth-child(15) { width: 7%; } /* Data Correção */
+      #openErrorsTable td:nth-child(15) { width: 4%; text-align: center; } /* Dif. R$ */
       #openErrorsTable th:nth-child(16),
-      #openErrorsTable td:nth-child(16) { width: 8%; } /* Observações */
+      #openErrorsTable td:nth-child(16) { width: 7%; } /* Data Correção */
       #openErrorsTable th:nth-child(17),
-      #openErrorsTable td:nth-child(17) { width: 9%; text-align: center; padding: 4px; } /* Ações */
+      #openErrorsTable td:nth-child(17) { width: 7%; } /* Observações */
+      #openErrorsTable th:nth-child(18),
+      #openErrorsTable td:nth-child(18) { width: 9%; text-align: center; padding: 4px; } /* Ações */
 
 
 
@@ -3221,6 +3224,15 @@
 
 
 
+          <div class="form-group" style="margin-bottom:14px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 16px;background:#fff3e0;border:2px solid #ff8f00;border-radius:6px;width:fit-content;">
+              <input type="checkbox" id="urgente" style="width:18px;height:18px;cursor:pointer;accent-color:#c62828;">
+              <span style="color:#c62828;font-weight:700;font-size:14px;">⚡ Marcar como URGENTE</span>
+            </label>
+          </div>
+
+
+
           <div class="actions">
 
 
@@ -3290,6 +3302,12 @@
                 <div id="filterRespostaConfMedica"></div>
               </div>
               <div class="form-group" style="margin: 0;">
+                <label style="visibility: hidden;">Urgente</label>
+                <button type="button" id="btnFiltroUrgente" onclick="toggleFiltroUrgente()" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; height: 38px; background:#fff3e0; border:2px solid #ff8f00; color:#bf360c; font-weight:600; border-radius:6px; cursor:pointer;" title="Mostrar apenas solicitações urgentes">
+                  🚨 Urgentes
+                </button>
+              </div>
+              <div class="form-group" style="margin: 0;">
                 <label style="visibility: hidden;">Ação</label>
                 <button type="button" class="btn secondary" onclick="atualizarSolicitacoes()" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; height: 38px;" title="Atualizar lista de solicitações">
                   🔄 Atualizar
@@ -3307,6 +3325,7 @@
                 <tr>
                   <th></th>
                   <!-- Dados da Solicitação -->
+                  <th style="background:#ffccbc;color:#bf360c;" title="Solicitação marcada como urgente">🚨 Urg.</th>
                   <th style="background:#e0f2f1;color:#00796b;">Requisição</th>
                   <th style="background:#e0f2f1;color:#00796b;">Solicitante</th>
                   <th style="background:#e0f2f1;color:#00796b;">Erro</th>
@@ -7905,6 +7924,13 @@
         detalhamento.addEventListener('input', () => {
           document.getElementById('detalhamentoCount').textContent = detalhamento.value.length;
         });
+        // Ctrl+Enter no detalhamento submete o formulário de solicitação
+        detalhamento.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            submitRequest();
+          }
+        });
       }
 
 
@@ -7915,6 +7941,13 @@
       if (observacoes) {
         observacoes.addEventListener('input', () => {
           document.getElementById('observacoesCount').textContent = observacoes.value.length;
+        });
+        // Ctrl+Enter nas observações submete o formulário de resposta
+        observacoes.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            submitResponse();
+          }
         });
       }
 
@@ -8348,7 +8381,8 @@
 
           setorLocal: document.getElementById('setorLocal').value,
           diferencaNoValor: document.getElementById('diferencaNoValor').value,
-          confirmacaoMedica: document.getElementById('confirmacaoMedica').value
+          confirmacaoMedica: document.getElementById('confirmacaoMedica').value,
+          urgente: document.getElementById('urgente').checked ? 'SIM' : 'NAO'
 
         };
 
@@ -8429,6 +8463,11 @@
 
         }
 
+        // PERF: calcula contagens client-side para evitar 2 leituras de sheet no backend
+        const _itensNaSolicitacao = openErros.filter(x => x.solicitacaoId === selectedErro.solicitacaoId);
+        const _totalErros = _itensNaSolicitacao.length || 1;
+        const _errosJaCorrigidos = _itensNaSolicitacao.filter(x => x.correcaoFinalizada).length;
+
         const payload = {
 
           solicitacaoId: selectedErro.solicitacaoId,
@@ -8439,7 +8478,11 @@
 
           dataHoraCorrecao: new Date().toISOString(),
 
-          observacoes: document.getElementById('observacoes').value.trim()
+          observacoes: document.getElementById('observacoes').value.trim(),
+
+          // PERF: passa contagens para o backend evitar leituras extras de sheet
+          totalErros: _totalErros,
+          errosJaCorrigidos: _errosJaCorrigidos
 
         };
 
@@ -10568,6 +10611,26 @@
           .getOpenErros();
       }
 
+      let filtroUrgenteAtivo = false;
+
+      function toggleFiltroUrgente() {
+        filtroUrgenteAtivo = !filtroUrgenteAtivo;
+        const btn = document.getElementById('btnFiltroUrgente');
+        if (btn) {
+          if (filtroUrgenteAtivo) {
+            btn.style.background = '#c62828';
+            btn.style.borderColor = '#c62828';
+            btn.style.color = '#fff';
+          } else {
+            btn.style.background = '#fff3e0';
+            btn.style.borderColor = '#ff8f00';
+            btn.style.color = '#bf360c';
+          }
+        }
+        currentPage = 1;
+        filterOpenErrors();
+      }
+
       function filterOpenErrors() {
         const filterRequisicao = document.getElementById('filterRespostaRequisicao').value.trim().toLowerCase();
 
@@ -10616,6 +10679,9 @@
             if (!filterConfMedica.includes(val)) return false;
           }
 
+          // Filtro urgente — mostra apenas itens marcados como urgente
+          if (filtroUrgenteAtivo && item.urgente !== 'SIM') return false;
+
           return true;
         });
 
@@ -10645,6 +10711,17 @@
         }
         if (multiSelectInstances['filterRespostaConfMedica']) {
           multiSelectInstances['filterRespostaConfMedica'].clear();
+        }
+
+        // Reset filtro urgente
+        if (filtroUrgenteAtivo) {
+          filtroUrgenteAtivo = false;
+          const btn = document.getElementById('btnFiltroUrgente');
+          if (btn) {
+            btn.style.background = '#fff3e0';
+            btn.style.borderColor = '#ff8f00';
+            btn.style.color = '#bf360c';
+          }
         }
 
         filterOpenErrors();
@@ -10740,7 +10817,7 @@
         selectedErro = null;
 
         if (!totalItems) {
-          tbody.innerHTML = '<tr><td colspan="16">Nenhuma solicitação encontrada com este status.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="18">Nenhuma solicitação encontrada com este status.</td></tr>';
           return;
         }
 
@@ -10761,8 +10838,14 @@
             ? '<span class="badge" style="background:#1565c0;color:#fff;">SIM</span>'
             : '<span class="badge secondary">NÃO</span>';
 
-          // Fundo da linha: lilás claro quando requer confirmação médica, verde claro padrão caso contrário
-          const bgSolicitacao = confirmacaoMedica ? '#f3e5f5' : '#f1f8f7';
+          // Urgente — badge vermelho para SIM
+          const ehUrgente = item.urgente === 'SIM';
+          const urgenteBadge = ehUrgente
+            ? '<span class="badge" style="background:#c62828;color:#fff;font-weight:700;">SIM</span>'
+            : '<span class="badge secondary" style="color:#9e9e9e;">—</span>';
+
+          // Fundo da linha: vermelho claro para urgente; lilás para confirmação médica; verde padrão
+          const bgSolicitacao = ehUrgente ? '#fff0ee' : (confirmacaoMedica ? '#f3e5f5' : '#f1f8f7');
 
           // Show edit button if there's a response (dataHoraCorrecao or responsavel) or if it's Alteração Técnica
           const editButton = (item.dataHoraCorrecao || item.responsavel || ehAlteracaoTecnica)
@@ -10830,9 +10913,10 @@
             ? `<span style="color:#e65100;font-weight:600;">R$ ${parseFloat(valorDiferenca).toFixed(2).replace('.', ',')}</span>`
             : '-';
 
-          return `<tr data-index="${startIndex + index}">
+          return `<tr data-index="${startIndex + index}"${ehUrgente ? ' style="outline:2px solid #c62828;outline-offset:-1px;"' : ''}>
             <td><input type="radio" name="selecionarErro"></td>
             <!-- Dados da Solicitação -->
+            <td style="background:${bgSolicitacao};text-align:center;">${urgenteBadge}</td>
             <td style="background:${bgSolicitacao};">${escapeHtml(item.requisicao)}</td>
             <td style="background:${bgSolicitacao};">${escapeHtml(item.solicitante)}</td>
             <td style="background:${bgSolicitacao};">${escapeHtml(item.erro)}</td>
@@ -15457,6 +15541,7 @@
         document.getElementById('detalhamento').value = '';
         document.getElementById('diferencaNoValor').value = '';
         document.getElementById('confirmacaoMedica').value = '';
+        document.getElementById('urgente').checked = false;
 
         document.getElementById('detalhamentoCount').textContent = '0';
 

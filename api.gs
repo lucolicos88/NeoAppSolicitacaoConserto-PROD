@@ -1101,6 +1101,7 @@ function submitRequest(payload) {
   const result = insertSolicitacaoEErro_(payload, userEmail);
   invalidateDataCache_();
   safeLogDebug_("submitRequest", "inserted", result);
+  flushAuditLogs_(); // PERF: grava todos os audits em lote (1 API call em vez de N appendRow)
   return { ok: true, data: result, debugId: debugId };
 }
 
@@ -1145,10 +1146,12 @@ function submitResponse(payload) {
     safeLogDebug_("submitResponse", "update_mode", { solicitacaoId: payload.solicitacaoId, erroSeq: payload.erroSeq });
     const result = updateResposta_(payload, userEmail);
     if (!result) {
+      flushAuditLogs_();
       return { ok: false, errors: ["Resposta não encontrada para atualização."], debugId: debugId };
     }
     invalidateDataCache_();
     safeLogDebug_("submitResponse", "updated", result);
+    flushAuditLogs_(); // PERF: grava todos os audits em lote
     return { ok: true, data: result, debugId: debugId };
   }
 
@@ -1156,6 +1159,7 @@ function submitResponse(payload) {
   const result = insertResposta_(payload, userEmail);
   invalidateDataCache_();
   safeLogDebug_("submitResponse", "inserted", result);
+  flushAuditLogs_(); // PERF: grava todos os audits em lote
   return { ok: true, data: result, debugId: debugId };
 }
 
@@ -2563,10 +2567,11 @@ function getOpenErrosForUsuario_(usuario, limit) {
       continue;
     }
 
-    // Store only index and date timestamp for sorting
+    // Store only index, urgente flag and date timestamp for sorting
     const dataHoraPedido = solicitacaoData[3];
     const timestamp = dataHoraPedido instanceof Date ? dataHoraPedido.getTime() : new Date(dataHoraPedido).getTime();
-    minimalList.push({ idx: i, ts: timestamp });
+    const urgente = solicitacaoData[7] === "SIM";
+    minimalList.push({ idx: i, ts: timestamp, urgente: urgente });
   }
 
   const filterTime = new Date().getTime();
@@ -2577,8 +2582,11 @@ function getOpenErrosForUsuario_(usuario, limit) {
     passed: minimalList.length
   });
 
-  // Sort by timestamp (oldest first for SLA priority)
-  minimalList.sort((a, b) => a.ts - b.ts);
+  // Sort: urgentes primeiro; dentro de cada grupo, mais antigos primeiro (prioridade SLA)
+  minimalList.sort((a, b) => {
+    if (a.urgente !== b.urgente) return a.urgente ? -1 : 1;
+    return a.ts - b.ts;
+  });
 
   // totalCount = registros do setor do usuário antes de paginar
   const totalCount = minimalList.length;
@@ -2642,6 +2650,7 @@ function getOpenErrosForUsuario_(usuario, limit) {
       setorLocal: setorLocal,
       diferencaNoValor: erros[i][5],
       confirmacaoMedica: erros[i][7] || "NAO",
+      urgente: solicitacaoData[7] === "SIM" ? "SIM" : "NAO",
       dataHoraPedido: dataHoraPedidoStr,
       slaStatus: slaStatus,
       responsavel: responsavel,

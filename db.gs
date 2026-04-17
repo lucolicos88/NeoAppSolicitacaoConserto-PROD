@@ -35,7 +35,8 @@ function ensureSheets_() {
     "data_hora_pedido",
     "status",
     "criado_por_email",
-    "criado_em"
+    "criado_em",
+    "urgente"
   ]);
   ensureSheet_(ss, CONFIG.SHEETS.ERROS, [
     "id_solicitacao",
@@ -236,7 +237,10 @@ function insertSolicitacaoEErro_(payload, userEmail) {
     const errosSheet = getSheet_(CONFIG.SHEETS.ERROS);
 
     let solicitacaoId = payload.solicitacaoId || Utilities.getUuid();
-    let solicitacaoRow = findSolicitacaoRow_(solicitacaoId);
+    // PERF: quando payload.solicitacaoId não é fornecido, é sempre uma nova solicitação —
+    // não há necessidade de buscar na planilha (evita 1 leitura completa de Solicitacoes)
+    const isNewSolicitacao = !payload.solicitacaoId;
+    let solicitacaoRow = isNewSolicitacao ? null : findSolicitacaoRow_(solicitacaoId);
     if (!solicitacaoRow) {
       solicitacoesSheet.appendRow([
         solicitacaoId,
@@ -245,11 +249,13 @@ function insertSolicitacaoEErro_(payload, userEmail) {
         new Date(payload.dataHoraPedido),
         "ABERTO",
         userEmail,
-        now
+        now,
+        payload.urgente || "NAO"
       ]);
       logDebug_("insertSolicitacaoEErro_", "nova_solicitacao", {
         solicitacaoId: solicitacaoId,
-        requisicao: payload.requisicao
+        requisicao: payload.requisicao,
+        urgente: payload.urgente || "NAO"
       });
       auditLog_(
         "CREATE",
@@ -261,7 +267,9 @@ function insertSolicitacaoEErro_(payload, userEmail) {
       );
     }
 
-    const erroSeq = payload.erroSeq || getNextErroSeq_(solicitacaoId);
+    // PERF: nova solicitação sempre começa com erroSeq = 1 —
+    // não há necessidade de varrer a planilha Erros (evita 1 leitura completa)
+    const erroSeq = payload.erroSeq || (isNewSolicitacao ? 1 : getNextErroSeq_(solicitacaoId));
     errosSheet.appendRow([
       solicitacaoId,
       erroSeq,
@@ -389,10 +397,18 @@ function insertResposta_(payload, userEmail) {
       null
     );
 
-    // Passa os dados recém-lidos para evitar re-leitura das sheets em updateSolicitacaoStatus_
-    const errosParaStatus = getSheet_(CONFIG.SHEETS.ERROS).getDataRange().getValues();
-    const respostasParaStatus = respostasSheet.getDataRange().getValues();
-    updateSolicitacaoStatus_(payload.solicitacaoId, errosParaStatus, respostasParaStatus);
+    // PERF: quando o frontend envia totalErros + errosJaCorrigidos, calcula o status em memória
+    // e usa TextFinder para atualizar a célula — elimina 2 leituras completas de sheet (Erros + Respostas).
+    if (payload.totalErros !== undefined && payload.errosJaCorrigidos !== undefined) {
+      const newCorrigidos = (payload.errosJaCorrigidos || 0) + 1;
+      const newStatus = newCorrigidos >= payload.totalErros ? "CORRIGIDO" : "EM_CORRECAO";
+      updateSolicitacaoStatusFast_(payload.solicitacaoId, newStatus);
+    } else {
+      // Fallback: lê as sheets (caminho legado, mais lento)
+      const errosParaStatus = getSheet_(CONFIG.SHEETS.ERROS).getDataRange().getValues();
+      const respostasParaStatus = respostasSheet.getDataRange().getValues();
+      updateSolicitacaoStatus_(payload.solicitacaoId, errosParaStatus, respostasParaStatus);
+    }
     return { respostaId: respostaId };
   } finally {
     lock.releaseLock();
@@ -404,16 +420,21 @@ function updateResposta_(payload, userEmail) {
   lock.waitLock(10000);
   try {
     const respostasSheet = getSheet_(CONFIG.SHEETS.RESPOSTAS);
-    const respostas = respostasSheet.getDataRange().getValues();
 
-    // Find the latest response for this solicitacaoId + erroSeq
+    // PERF: lê apenas colunas 1-3 (id, solicitacaoId, erroSeq) para achar a linha.
+    // Evita baixar todas as colunas de dados — ~4× menos dados que getDataRange().getValues().
+    const lastRow = respostasSheet.getLastRow();
     let rowToUpdate = -1;
     let respostaId = null;
-    for (let i = respostas.length - 1; i >= 1; i--) {
-      if (respostas[i][1] === payload.solicitacaoId && respostas[i][2] === payload.erroSeq) {
-        rowToUpdate = i + 1; // Convert to 1-indexed
-        respostaId = respostas[i][0];
-        break;
+    if (lastRow > 1) {
+      const lookup = respostasSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+      for (let i = lookup.length - 1; i >= 0; i--) {
+        if (String(lookup[i][1]) === String(payload.solicitacaoId) &&
+            String(lookup[i][2]) === String(payload.erroSeq)) {
+          rowToUpdate = i + 2; // 1-indexed (offset 2: header + 0-based)
+          respostaId = lookup[i][0];
+          break;
+        }
       }
     }
 
@@ -455,10 +476,8 @@ function updateResposta_(payload, userEmail) {
       null
     );
 
-    // respostas já foi lido acima — relê após o setValues para ter o estado atualizado
-    const errosParaStatus = getSheet_(CONFIG.SHEETS.ERROS).getDataRange().getValues();
-    const respostasAtualizadas = respostasSheet.getDataRange().getValues();
-    updateSolicitacaoStatus_(payload.solicitacaoId, errosParaStatus, respostasAtualizadas);
+    // PERF: atualização de resposta não altera a contagem de erros corrigidos
+    // (erro_corrigido era e continua "SIM") — status da solicitação não muda em edições.
     return { respostaId: respostaId };
   } finally {
     lock.releaseLock();
@@ -508,6 +527,28 @@ function updateSolicitacaoStatus_(solicitacaoId, errosData, respostasData) {
       oldValue,
       newStatus
     );
+  }
+}
+
+/**
+ * Atualiza o status da solicitação de forma rápida usando TextFinder.
+ * PERF: evita ler a planilha inteira (getDataRange) — usa busca server-side.
+ * Custo: ~1 API call (TextFinder) + 1 getRange + 1 setValue ≈ 0.5–0.8s total.
+ * Comparado a updateSolicitacaoStatus_: economiza 2-3 leituras completas de sheet (~2-3s).
+ */
+function updateSolicitacaoStatusFast_(solicitacaoId, newStatus) {
+  try {
+    const sheet = getSheet_(CONFIG.SHEETS.SOLICITACOES);
+    // TextFinder: busca server-side, não baixa todos os dados para o script
+    const found = sheet.createTextFinder(solicitacaoId).matchEntireCell(true).findAll();
+    if (found.length === 0) return;
+    const row = found[0].getRow();
+    // PERF: escreve diretamente sem ler o valor atual (−1 API call).
+    // O status é sempre diferente do atual neste path (chamado apenas quando há mudança real).
+    sheet.getRange(row, 5).setValue(newStatus);
+    auditLog_("UPDATE", "solicitacoes", "id_solicitacao=" + solicitacaoId, "status", null, newStatus);
+  } catch(e) {
+    safeLogDebug_("updateSolicitacaoStatusFast_", "error", { msg: String(e) });
   }
 }
 

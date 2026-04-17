@@ -1,18 +1,52 @@
+// Buffer de auditoria: entradas acumuladas durante a execução e gravadas em lote no final.
+// Cada execução GAS começa com o buffer vazio (variável de módulo reiniciada a cada request).
+let _auditBuffer_ = [];
+
+/**
+ * Enfileira uma entrada de auditoria no buffer em memória.
+ * NÃO grava na planilha — chame flushAuditLogs_() ao final da operação.
+ * PERF: elimina N appendRow individuais; flushAuditLogs_() faz UMA chamada setValues.
+ */
 function auditLog_(actionType, tableName, recordKey, fieldName, oldValue, newValue) {
-  const sheet = getSheet_(CONFIG.SHEETS.AUDITORIA);
-  const userEmail = Session.getActiveUser().getEmail() || "unknown";
-  sheet.appendRow([
-    Utilities.getUuid(),
-    userEmail,
-    actionType,
-    tableName,
-    recordKey,
-    fieldName || "",
-    oldValue || "",
-    newValue || "",
-    getClientIp_(),
-    new Date()
-  ]);
+  try {
+    const userEmail = Session.getActiveUser().getEmail() || "unknown";
+    _auditBuffer_.push([
+      Utilities.getUuid(),
+      userEmail,
+      actionType,
+      tableName,
+      recordKey,
+      fieldName || "",
+      String(oldValue !== null && oldValue !== undefined ? oldValue : ""),
+      String(newValue !== null && newValue !== undefined ? newValue : ""),
+      getClientIp_(),
+      new Date()
+    ]);
+  } catch(e) {
+    Logger.log("auditLog_ buffer failed: " + e);
+  }
+}
+
+/**
+ * Grava todas as entradas de auditoria acumuladas em UMA única chamada setValues.
+ * Deve ser chamada no final de cada função de API pública (submitRequest, submitResponse, etc.).
+ * PERF: 1 API call em vez de N appendRow individuais.
+ */
+function flushAuditLogs_() {
+  if (_auditBuffer_.length === 0) return;
+  try {
+    const sheet = getSheet_(CONFIG.SHEETS.AUDITORIA);
+    if (_auditBuffer_.length === 1) {
+      // PERF: appendRow = 1 API call vs getLastRow + setValues = 2 calls
+      sheet.appendRow(_auditBuffer_[0]);
+    } else {
+      const lastRow = sheet.getLastRow();
+      sheet.getRange(lastRow + 1, 1, _auditBuffer_.length, 10).setValues(_auditBuffer_);
+    }
+  } catch (e) {
+    Logger.log("flushAuditLogs_ failed: " + e);
+  }
+  _auditBuffer_ = [];
 }
 
 function getClientIp_() {
@@ -61,12 +95,23 @@ function sanitizePayloadForLog_(payload) {
   return result;
 }
 
+/**
+ * Registra mensagem de debug.
+ * PERF: Por padrão escreve APENAS em Logger.log() (rápido, sem chamada Sheets).
+ * Para gravar na planilha, ative CONFIG.DEBUG_SHEETS = true (uso pontual em depuração).
+ */
 function logDebug_(context, message, payload) {
   if (!CONFIG.DEBUG_ENABLED) return;
+  const sanitized = sanitizePayloadForLog_(payload);
+  // Logger.log() é em memória — zero API calls, sem custo de latência
+  Logger.log("[%s] %s %s", context, message || "", sanitized ? JSON.stringify(sanitized) : "");
+
+  // Gravação na planilha: DESATIVADA por padrão (CONFIG.DEBUG_SHEETS = false).
+  // Ligue somente para depuração pontual — cada chamada custa ~1s de latência.
+  if (!CONFIG.DEBUG_SHEETS) return;
   try {
     const sheet = getSheet_(CONFIG.SHEETS.LOGS_DEBUG);
     const email = Session.getActiveUser().getEmail() || "unknown";
-    const sanitized = sanitizePayloadForLog_(payload);
     sheet.appendRow([
       new Date(),
       context,
@@ -74,7 +119,6 @@ function logDebug_(context, message, payload) {
       message || "",
       sanitized ? JSON.stringify(sanitized) : ""
     ]);
-    Logger.log("[%s] %s", context, message || "");
     // Manter no máximo 1000 linhas de log (exclui as mais antigas)
     const MAX_LOG_ROWS = 1000;
     const lastRow = sheet.getLastRow();
@@ -82,7 +126,7 @@ function logDebug_(context, message, payload) {
       sheet.deleteRows(2, lastRow - MAX_LOG_ROWS - 1);
     }
   } catch (error) {
-    Logger.log("logDebug_ failed: " + error);
+    Logger.log("logDebug_ sheet write failed: " + error);
   }
 }
 

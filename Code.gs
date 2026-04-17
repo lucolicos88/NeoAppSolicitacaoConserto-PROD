@@ -74,11 +74,14 @@ const CONFIG = {
     CRITICAL_MINUTES: 30,
     TIMEZONE: "America/Sao_Paulo"
   },
-  APP_VERSION: "v262",
+  APP_VERSION: "v265",
   APP_ENV: "PROD"
 };
 // DEBUG_ENABLED automático: ativo em DEV, desativado em PROD
 CONFIG.DEBUG_ENABLED = CONFIG.APP_ENV === "DEV";
+// DEBUG_SHEETS: gravar logs na planilha (lento, ~1s/chamada). false = apenas Logger.log().
+// Ligue manualmente (true) apenas para sessões de depuração pontual.
+CONFIG.DEBUG_SHEETS = false;
 
 // ============================================================================
 // FUNÇÕES DE INICIALIZAÇÃO
