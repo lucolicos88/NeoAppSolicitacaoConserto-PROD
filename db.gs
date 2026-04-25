@@ -207,13 +207,11 @@ function resetPlanilha_() {
 
 function findSolicitacaoRow_(solicitacaoId) {
   const sheet = getSheet_(CONFIG.SHEETS.SOLICITACOES);
-  const values = sheet.getDataRange().getValues();
-  for (let i = 1; i < values.length; i++) {
-    if (values[i][0] === solicitacaoId) {
-      return { row: i + 1, data: values[i] };
-    }
-  }
-  return null;
+  const found = sheet.createTextFinder(solicitacaoId).matchEntireCell(true).findAll();
+  if (found.length === 0) return null;
+  const row = found[0].getRow();
+  const data = sheet.getRange(row, 1, 1, 7).getValues()[0];
+  return { row: row, data: data };
 }
 
 function getNextErroSeq_(solicitacaoId) {
@@ -543,10 +541,10 @@ function updateSolicitacaoStatusFast_(solicitacaoId, newStatus) {
     const found = sheet.createTextFinder(solicitacaoId).matchEntireCell(true).findAll();
     if (found.length === 0) return;
     const row = found[0].getRow();
-    // PERF: escreve diretamente sem ler o valor atual (−1 API call).
-    // O status é sempre diferente do atual neste path (chamado apenas quando há mudança real).
+    const currentStatus = sheet.getRange(row, 5).getValue();
+    if (currentStatus === newStatus) return;
     sheet.getRange(row, 5).setValue(newStatus);
-    auditLog_("UPDATE", "solicitacoes", "id_solicitacao=" + solicitacaoId, "status", null, newStatus);
+    auditLog_("UPDATE", "solicitacoes", "id_solicitacao=" + solicitacaoId, "status", currentStatus, newStatus);
   } catch(e) {
     safeLogDebug_("updateSolicitacaoStatusFast_", "error", { msg: String(e) });
   }
@@ -582,8 +580,10 @@ function setConfigGeral_(chave, valor) {
   for (let i = 1; i < values.length; i++) {
     if (values[i][0] === chave) {
       sheet.getRange(i + 1, 2).setValue(valor);
+      invalidateConfigCache_();
       return;
     }
   }
   sheet.appendRow([chave, valor]);
+  invalidateConfigCache_();
 }

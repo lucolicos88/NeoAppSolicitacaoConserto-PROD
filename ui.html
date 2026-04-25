@@ -1411,6 +1411,11 @@
 
       textarea.form-control { resize: vertical; min-height: 140px; }
 
+      .form-control.invalid {
+        border-color: #e53935;
+        box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
+      }
+
 
 
       .actions {
@@ -1524,6 +1529,15 @@
       .btn-edit:hover {
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, #e53935 0%, #b71c1c 100%);
+        color: white;
+        border: none;
+      }
+      .btn-danger:hover {
+        box-shadow: 0 4px 12px rgba(229, 57, 53, 0.4);
       }
 
       .btn-delete {
@@ -2624,8 +2638,16 @@
 
         .tab { min-width: 140px; }
 
+        #openErrorsTable { font-size: 12px; }
+        #openErrorsTable th, #openErrorsTable td { padding: 5px 4px; }
 
+      }
 
+      @media (max-width: 480px) {
+        /* Compact table view: hide least-critical columns, keep essential data visible */
+        #openErrorsTable th:nth-child(6), #openErrorsTable td:nth-child(6),
+        #openErrorsTable th:nth-child(17), #openErrorsTable td:nth-child(17) { display: none; }
+        #openErrorsTable { font-size: 11px; }
       }
 
       /* Dashboard Tabs Styles */
@@ -2693,6 +2715,9 @@
       .trend-text { display: block; margin-top: 4px; font-size: 0.85rem; }
       .grid-auto-200 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
       .overflow-x { overflow-x: auto; }
+      tr.row-selected td { background: rgba(26,115,232,0.10) !important; }
+      tr.row-selected { outline: 2px solid #1a73e8; outline-offset: -1px; }
+      .filtros-badge { display:inline-block;background:#1a73e8;color:#fff;font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:8px;line-height:1.5; }
       .text-center-2 { text-align: center; padding: 2rem; }
       .help-summary { cursor: pointer; font-weight: bold; padding: 0.5rem; background: #f8f9fa; border-radius: 4px; margin-bottom: 0.5rem; }
       .help-detail { padding: 1rem; margin-left: 0.5rem; }
@@ -3098,27 +3123,27 @@
 
 
 
-      <div class="tabs">
+      <div class="tabs" role="tablist" aria-label="Navegação principal">
 
 
 
-        <div class="tab active" data-tab="solicitacao">📝 Solicitação</div>
+        <div class="tab active" role="tab" aria-selected="true" aria-controls="tab-solicitacao" data-tab="solicitacao" tabindex="0">📝 Solicitação</div>
 
 
 
-        <div class="tab" data-tab="resposta">✅ Resposta</div>
+        <div class="tab" role="tab" aria-selected="false" aria-controls="tab-resposta" data-tab="resposta" tabindex="-1">✅ Resposta</div>
 
 
 
-        <div class="tab" data-tab="dashboard">📊 Dashboard</div>
+        <div class="tab" role="tab" aria-selected="false" aria-controls="tab-dashboard" data-tab="dashboard" tabindex="-1">📊 Dashboard</div>
 
 
 
-        <div class="tab" data-tab="config">⚙️ Configurações</div>
+        <div class="tab" role="tab" aria-selected="false" aria-controls="tab-config" data-tab="config" tabindex="-1">⚙️ Configurações</div>
 
-        <div class="tab" data-tab="auditoria">🔍 Auditoria</div>
+        <div class="tab" role="tab" aria-selected="false" aria-controls="tab-auditoria" data-tab="auditoria" tabindex="-1">🔍 Auditoria</div>
 
-        <div class="tab" data-tab="ajuda">❓ Ajuda</div>
+        <div class="tab" role="tab" aria-selected="false" aria-controls="tab-ajuda" data-tab="ajuda" tabindex="-1">❓ Ajuda</div>
 
       </div>
 
@@ -3136,7 +3161,7 @@
 
 
 
-      <div class="tab-content active" id="tab-solicitacao">
+      <div class="tab-content active" id="tab-solicitacao" role="tabpanel" aria-labelledby="tab-solicitacao">
 
 
 
@@ -3162,35 +3187,35 @@
 
             <div class="form-group required">
               <label>Requisição</label>
-              <input id="requisicao" class="form-control" placeholder="Informe a requisição">
+              <input id="requisicao" class="form-control" placeholder="Informe a requisição" required onblur="validateOnBlur(this)" oninput="if(this.value.trim())this.classList.remove('invalid')">
             </div>
 
 
 
             <div class="form-group required">
               <label for="solicitante">Farmacêutica Solicitante</label>
-              <select id="solicitante" class="form-control" aria-label="Farmacêutica Solicitante"></select>
+              <select id="solicitante" class="form-control" aria-label="Farmacêutica Solicitante" required></select>
             </div>
 
 
 
             <div class="form-group required">
               <label for="erro">Tipo de Erro</label>
-              <select id="erro" class="form-control" aria-label="Tipo de Erro"></select>
+              <select id="erro" class="form-control" aria-label="Tipo de Erro" required></select>
             </div>
 
 
 
             <div class="form-group required">
               <label for="setorLocal">Setor/Local</label>
-              <select id="setorLocal" class="form-control" aria-label="Setor/Local"></select>
+              <select id="setorLocal" class="form-control" aria-label="Setor/Local" required></select>
             </div>
 
 
 
             <div class="form-group required">
               <label for="diferencaNoValor">Houve diferença no valor?</label>
-              <select id="diferencaNoValor" class="form-control" aria-label="Houve diferença no valor?">
+              <select id="diferencaNoValor" class="form-control" aria-label="Houve diferença no valor?" required onblur="validateOnBlur(this)" onchange="if(this.value)this.classList.remove('invalid')">
                 <option value="">Selecione</option>
                 <option value="SIM">Sim</option>
                 <option value="NAO">Não</option>
@@ -3199,7 +3224,7 @@
 
             <div class="form-group required">
               <label for="confirmacaoMedica">Necessário confirmação Médica?</label>
-              <select id="confirmacaoMedica" class="form-control" aria-label="Necessário confirmação Médica?">
+              <select id="confirmacaoMedica" class="form-control" aria-label="Necessário confirmação Médica?" required onblur="validateOnBlur(this)" onchange="if(this.value)this.classList.remove('invalid')">
                 <option value="">Selecione</option>
                 <option value="SIM">Sim</option>
                 <option value="NAO">Não</option>
@@ -3218,7 +3243,7 @@
 
           <div class="form-group required">
             <label for="detalhamento">Detalhamento do Erro</label>
-            <textarea id="detalhamento" class="form-control" maxlength="500" aria-label="Detalhamento do Erro"></textarea>
+            <textarea id="detalhamento" class="form-control" maxlength="500" aria-label="Detalhamento do Erro" required></textarea>
             <div class="help"><span id="detalhamentoCount">0</span>/500 caracteres</div>
           </div>
 
@@ -3255,7 +3280,7 @@
 
 
 
-      <div class="tab-content" id="tab-resposta">
+      <div class="tab-content" id="tab-resposta" role="tabpanel" aria-labelledby="tab-resposta">
 
 
 
@@ -3270,7 +3295,7 @@
         <div class="form-section">
 
           <div style="margin-bottom: 12px;">
-            <h3 style="margin: 0;">📋 Solicitações do Setor</h3>
+            <h3 style="margin: 0;">📋 Solicitações do Setor <span id="filtrosBadge" class="filtros-badge" style="display:none;"></span></h3>
             <div id="respostaCountInfo" class="info-text"></div>
             <div id="openErrosHasMoreNotice" style="display:none;margin-top:6px;padding:0.4rem 0.75rem;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:6px;font-size:0.8rem;"></div>
           </div>
@@ -3370,24 +3395,24 @@
 
 
 
-      <div class="tab-content" id="tab-dashboard">
+      <div class="tab-content" id="tab-dashboard" role="tabpanel" aria-labelledby="tab-dashboard">
 
         <div class="page-title">📊 Dashboard Analítico</div>
 
         <!-- Dashboard Tabs -->
         <div class="form-section" class="p-0">
           <div class="d-flex justify-between align-center">
-            <div class="dashboard-tabs" class="d-flex gap-10 border-bottom-2 flex-1">
-              <button type="button" class="dashboard-tab active" onclick="switchDashboardTab('colaboradores')" id="tab-btn-colaboradores">
+            <div class="dashboard-tabs" class="d-flex gap-10 border-bottom-2 flex-1" role="tablist" aria-label="Sub-abas do Dashboard">
+              <button type="button" class="dashboard-tab active" onclick="switchDashboardTab('colaboradores')" id="tab-btn-colaboradores" role="tab" aria-selected="true" aria-controls="dashColaboradores">
                 👥 Dashboard Colaboradores
               </button>
-              <button type="button" class="dashboard-tab" onclick="switchDashboardTab('solicitantes')" id="tab-btn-solicitantes">
+              <button type="button" class="dashboard-tab" onclick="switchDashboardTab('solicitantes')" id="tab-btn-solicitantes" role="tab" aria-selected="false" aria-controls="dashSolicitantes">
                 🏪 Dashboard Solicitantes
               </button>
-              <button type="button" class="dashboard-tab" onclick="switchDashboardTab('ranking')" id="tab-btn-ranking">
+              <button type="button" class="dashboard-tab" onclick="switchDashboardTab('ranking')" id="tab-btn-ranking" role="tab" aria-selected="false" aria-controls="dashRanking">
                 🏆 Ranking
               </button>
-              <button type="button" class="dashboard-tab" onclick="switchDashboardTab('erros')" id="tab-btn-erros">
+              <button type="button" class="dashboard-tab" onclick="switchDashboardTab('erros')" id="tab-btn-erros" role="tab" aria-selected="false" aria-controls="dashErros">
                 ⚠️ Erros
               </button>
             </div>
@@ -3988,7 +4013,7 @@
 
 
 
-      <div class="tab-content" id="tab-config">
+      <div class="tab-content" id="tab-config" role="tabpanel" aria-labelledby="tab-config">
 
 
 
@@ -4558,7 +4583,7 @@
     </div>
 
     <!-- Aba de Auditoria -->
-    <div class="tab-content" id="tab-auditoria">
+    <div class="tab-content" id="tab-auditoria" role="tabpanel" aria-labelledby="tab-auditoria">
       <div class="page-title">🔍 Auditoria e Rastreabilidade</div>
 
       <!-- Sub-abas de Auditoria -->
@@ -4777,7 +4802,7 @@
     </div>
 
     <!-- Aba de Ajuda -->
-    <div class="tab-content" id="tab-ajuda">
+    <div class="tab-content" id="tab-ajuda" role="tabpanel" aria-labelledby="tab-ajuda">
       <div class="page-title">❓ Ajuda e Documentação</div>
 
       <!-- ===== ÍNDICE RÁPIDO ===== -->
@@ -4940,20 +4965,27 @@
 
             <p><strong>Como usar os filtros:</strong></p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0 0.75rem 0;font-size:0.82rem;">
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Requisição</strong><br>Busca textual pelo número da requisição</div>
               <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Status</strong><br>ABERTO, EM_CORRECAO, CORRIGIDO ou Todos</div>
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Solicitante</strong><br>Filtra por farmácia/unidade solicitante</div>
               <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Setor</strong><br>Filtra por setor/local específico</div>
               <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Dif. Valor?</strong><br>Mostra só erros com diferença de valor</div>
               <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Conf. Médica?</strong><br>Mostra só erros que requerem conf. médica</div>
+              <div style="background:#fff3e0;border:1px solid #ff8f00;border-radius:6px;padding:0.5rem 0.75rem;"><strong>⚡ Urgente</strong><br>Toggle: mostra apenas solicitações marcadas como urgentes</div>
+            </div>
+
+            <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
+              <strong>💾 Filtros persistentes:</strong> Os filtros que você aplica ficam salvos automaticamente em <code>localStorage</code>. Na próxima vez que abrir a aba Resposta, os mesmos filtros serão restaurados. O título "Solicitações do Setor" exibe um badge azul com a contagem de filtros ativos (ex: <span style="background:#1a73e8;color:#fff;font-size:0.75rem;padding:1px 7px;border-radius:10px;font-weight:700;">3 filtros</span>). Para limpar tudo, clique em <strong>"Limpar Filtros"</strong>.
             </div>
 
             <p><strong>Registrar uma resposta:</strong></p>
             <ol>
-              <li>Clique em uma linha da tabela para selecioná-la (ela ficará destacada)</li>
-              <li>O formulário de resposta do lado direito será preenchido automaticamente com os dados da solicitação</li>
+              <li>Clique em uma linha da tabela para selecioná-la — ela ficará destacada em <span style="background:rgba(26,115,232,0.10);border:2px solid #1a73e8;padding:1px 6px;border-radius:4px;font-size:0.8rem;">azul</span></li>
+              <li>O modal de resposta abrirá com os dados da solicitação selecionada</li>
               <li>Selecione o <strong>Responsável pelo Erro</strong> na lista de colaboradores</li>
               <li>Informe se <strong>Houve Diferença no Valor</strong> (SIM/NÃO). Se SIM, preencha o valor em R$</li>
               <li>Adicione <strong>Observações</strong> se necessário (máx. 1000 caracteres)</li>
-              <li>Clique em <strong>"Registrar Resposta"</strong></li>
+              <li>Clique em <strong>"Salvar Resposta"</strong></li>
             </ol>
 
             <p><strong>Editar uma resposta já registrada:</strong></p>
@@ -4965,8 +4997,10 @@
 
             <p><strong>Indicadores visuais na tabela:</strong></p>
             <ul>
+              <li>Linha com fundo <span style="background:#fff8e1;padding:1px 6px;border-radius:4px;font-size:0.8rem;">amarelo claro + ⚡</span> — solicitação marcada como urgente</li>
               <li>Linha com fundo <span style="background:#f3e5f5;padding:1px 6px;border-radius:4px;font-size:0.8rem;">lilás</span> — requer confirmação médica</li>
               <li>Linha com fundo <span style="background:#f1f8f7;padding:1px 6px;border-radius:4px;font-size:0.8rem;">verde claro</span> — solicitação normal</li>
+              <li>Linha com fundo <span style="background:rgba(26,115,232,0.10);padding:1px 6px;border-radius:4px;font-size:0.8rem;">azul</span> — linha selecionada pelo clique</li>
               <li><span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:0.8rem;font-weight:600;">ALERTA</span> e <span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:0.8rem;font-weight:600;">CRÍTICO</span> — indicadores de SLA na coluna Tempo</li>
             </ul>
 
@@ -4979,15 +5013,23 @@
           <div class="help-detail help-detail-dashboard">
             <p>Painel de análise com KPIs, gráficos e relatórios. Disponível para todos os perfis, mas usuários RESPOSTA veem apenas dados do seu setor.</p>
 
-            <p><strong>Duas visões disponíveis:</strong></p>
+            <p><strong>Quatro sub-abas disponíveis:</strong></p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0 0.75rem 0;font-size:0.82rem;">
               <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:0.6rem;">
-                <strong>👥 Visão Colaboradores</strong><br>
-                Analisa os erros por responsável. Permite identificar quem tem mais correções pendentes ou mais rápido no atendimento.
+                <strong>👥 Dashboard Colaboradores</strong><br>
+                Analisa os erros por responsável. Identifica quem tem mais correções pendentes e o tempo médio de atendimento por colaborador.
               </div>
               <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;padding:0.6rem;">
-                <strong>🏢 Visão Solicitantes</strong><br>
-                Analisa erros por farmácia/solicitante. Permite ver quais unidades geram mais erros e quais tipos são mais frequentes.
+                <strong>🏪 Dashboard Solicitantes</strong><br>
+                Analisa erros por farmácia/solicitante. Mostra quais unidades geram mais erros e os tipos mais frequentes por solicitante.
+              </div>
+              <div style="background:#fff8e1;border:1px solid #fde68a;border-radius:6px;padding:0.6rem;">
+                <strong>🏆 Ranking</strong><br>
+                Classificação comparativa de colaboradores e solicitantes por volume de erros, tempo médio e taxa de atendimento no período.
+              </div>
+              <div style="background:#fff1f2;border:1px solid #fecaca;border-radius:6px;padding:0.6rem;">
+                <strong>⚠️ Erros</strong><br>
+                Análise por tipo e classificação de erro (NA / Leve / Grave / Gravíssimo). Identifica os tipos mais recorrentes no período.
               </div>
             </div>
 
@@ -5386,7 +5428,11 @@
               <li><strong>Cache de configurações</strong> — <code>getConfigData()</code> cacheado por 10 min</li>
               <li><strong>Batch de escrita</strong> — <code>setValues()</code> em vez de N chamadas <code>setValue()</code> individuais</li>
               <li><strong>Batch de exclusão</strong> — filter+rewrite em vez de N chamadas <code>deleteRow()</code></li>
+              <li><strong>Audit log otimizado (v265)</strong> — <code>flushAuditLogs_()</code> usa <code>appendRow()</code> para 1 entrada (1 API call) e <code>setValues()</code> apenas para lotes maiores, eliminando o <code>getLastRow()</code> desnecessário no caso mais frequente</li>
+              <li><strong>Write direto no status (v265)</strong> — <code>updateSolicitacaoStatusFast_()</code> escreve diretamente sem ler o valor atual, economizando 1 API call por <code>submitResponse</code></li>
+              <li><strong>Edição de resposta sem re-calcular status (v265)</strong> — <code>updateResposta_()</code> não chama <code>updateSolicitacaoStatusFast_()</code>, pois o status da solicitação não muda em edições (erro já estava corrigido)</li>
             </ul>
+            <p style="font-size:0.82rem;color:#64748b;"><strong>Resultado v265 (conta consumer gratuita — quota 90 min/dia):</strong> submitRequest ~3 API calls, insertResposta ~4 API calls, updateResposta ~3 API calls. Estimativa: 1.000 operações/dia ≈ 41 min (46% da quota).</p>
 
             <p><strong>SPREADSHEET_ID:</strong> armazenado exclusivamente no <code>PropertiesService.getScriptProperties()</code> — nunca em código versionado. Execute o menu <strong>"Configurar Propriedades (rodar 1x)"</strong> no Google Apps Script após o primeiro deploy ou ao trocar a planilha.</p>
           </div>
@@ -5545,7 +5591,7 @@
         <!-- Formulário de Resposta -->
         <div class="form-group">
           <label for="modalNomeResponsavel">Responsável pelo Erro <span class="required">*</span></label>
-          <select id="modalNomeResponsavel" class="form-control"></select>
+          <select id="modalNomeResponsavel" class="form-control" required></select>
           <small class="help">Informe quem foi responsável por corrigir o erro</small>
         </div>
 
@@ -5591,27 +5637,27 @@
           <div class="form-grid">
             <div class="form-group required">
               <label for="editModalRequisicao">Requisição</label>
-              <input type="text" id="editModalRequisicao" class="form-control" placeholder="Informe a requisição" />
+              <input type="text" id="editModalRequisicao" class="form-control" placeholder="Informe a requisição" required />
             </div>
 
             <div class="form-group required">
               <label for="editModalSolicitante">Farmacêutica Solicitante</label>
-              <select id="editModalSolicitante" class="form-control"></select>
+              <select id="editModalSolicitante" class="form-control" required></select>
             </div>
 
             <div class="form-group required">
               <label for="editModalErro">Tipo de Erro</label>
-              <select id="editModalErro" class="form-control"></select>
+              <select id="editModalErro" class="form-control" required></select>
             </div>
 
             <div class="form-group required">
               <label for="editModalSetorLocal">Setor/Local</label>
-              <select id="editModalSetorLocal" class="form-control"></select>
+              <select id="editModalSetorLocal" class="form-control" required></select>
             </div>
 
             <div class="form-group required">
               <label for="editModalDiferencaNoValor">Houve diferença no valor?</label>
-              <select id="editModalDiferencaNoValor" class="form-control">
+              <select id="editModalDiferencaNoValor" class="form-control" required>
                 <option value="">Selecione</option>
                 <option value="SIM">Sim</option>
                 <option value="NAO">Não</option>
@@ -5811,6 +5857,7 @@
       let currentUser = null; // Global user info for permissions
 
       let selectedErro = null;
+      let selectedRowEl = null;
 
       let listasData = { colaboradores: [], setores: [] };
 
@@ -5822,6 +5869,16 @@
       let DEBUG_UI = localStorage.getItem('DEBUG_MODE') === 'true';
       const debugBuffer = [];
       let debugRenderPending = false; // Debounce para renderDebugPanel
+
+      // ==================== VALIDAÇÃO INLINE ====================
+      function validateOnBlur(el) {
+        const val = el.tagName === 'SELECT' ? el.value : el.value.trim();
+        if (!val) {
+          el.classList.add('invalid');
+        } else {
+          el.classList.remove('invalid');
+        }
+      }
 
       // ==================== LOADING OVERLAY ====================
       let loadingCount = 0; // Track nested loading calls
@@ -5976,6 +6033,21 @@
 
       function gerarHistoricoVersoesHTML() {
         const versoes = [
+          {
+            v: 'v270', data: 'Abr/2026', tipo: 'docs', cor: '#0369a1',
+            titulo: 'Docs — Atualização da aba Ajuda',
+            desc: 'Documentação técnica atualizada: aba Resposta agora documenta filtros persistentes (localStorage), badge de contagem, seleção visual de linha, filtro Urgente e lista completa de filtros disponíveis. Dashboard atualizado de "2 visões" para 4 sub-abas (Colaboradores, Solicitantes, Ranking, Erros). Arquitetura/Performance inclui otimizações v265 (audit appendRow, write direto no status, updateResposta sem re-calcular status).'
+          },
+          {
+            v: 'v269', data: 'Abr/2026', tipo: 'feat', cor: '#1a73e8',
+            titulo: 'UX — Pacote D (responsivo mobile + ARIA + required)',
+            desc: 'Tabela reduz font-size e padding em telas ≤768px; colunas Detalhamento e Observações ocultadas em telas ≤480px (scroll horizontal já existente mantido). ARIA: role="tablist/tab/tabpanel" + aria-selected dinâmico nas abas principais e sub-abas do Dashboard. Campos obrigatórios dos formulários recebem atributo required (sem afetar validação JS existente).'
+          },
+          {
+            v: 'v268', data: 'Abr/2026', tipo: 'feat', cor: '#1a73e8',
+            titulo: 'UX — Pacote C (filtros persistentes + badge + seleção visual)',
+            desc: 'Filtros da aba Resposta salvos em localStorage e restaurados automaticamente ao recarregar. Badge de contagem de filtros ativos exibido no título "Solicitações do Setor" (ex: "3 filtros"). Seleção visual de linha na tabela: linha clicada fica destacada em azul e radio button é marcado automaticamente.'
+          },
           {
             v: 'v254', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
             titulo: 'Fix — Cabeçalho da tabela de solicitações',
@@ -7603,7 +7675,7 @@
       }
 
       // Confirm Modal
-      function showConfirm(title, message, callback) {
+      function showConfirm(title, message, callback, options) {
         const backdrop = document.getElementById('confirmModalBackdrop');
         const titleEl = document.getElementById('confirmModalTitle');
         const bodyEl = document.getElementById('confirmModalBody');
@@ -7612,6 +7684,11 @@
 
         titleEl.textContent = title;
         bodyEl.innerHTML = message;
+
+        const opts = options || {};
+        okBtn.textContent = opts.okLabel || 'OK';
+        okBtn.className = 'btn' + (opts.okClass ? ' ' + opts.okClass : '');
+
         backdrop.classList.remove('hidden');
 
         const handleOk = () => {
@@ -7809,13 +7886,15 @@
           if (tab) {
             tab.addEventListener('click', () => {
 
-              tabs.forEach(t => t.classList.remove('active'));
-
-
+              tabs.forEach(t => {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+                t.setAttribute('tabindex', '-1');
+              });
 
           tab.classList.add('active');
-
-
+          tab.setAttribute('aria-selected', 'true');
+          tab.setAttribute('tabindex', '0');
 
           Object.keys(sections).forEach(key => {
 
@@ -7865,6 +7944,12 @@
             if (row && row.hasAttribute('data-index')) {
               const index = parseInt(row.getAttribute('data-index'));
               if (!isNaN(index) && filteredOpenErros[index]) {
+                // Visual row selection feedback
+                if (selectedRowEl) selectedRowEl.classList.remove('row-selected');
+                selectedRowEl = row;
+                row.classList.add('row-selected');
+                const radio = row.querySelector('input[type="radio"]');
+                if (radio) radio.checked = true;
                 openModalForRecord(filteredOpenErros[index]);
               }
             }
@@ -8587,7 +8672,7 @@
             if (!confirmed) return;
 
             logUI('addConfig.payload', { type: type, value: value });
-            showLoading('Salvando...');
+            showLoading('Salvando cadastro...');
 
             google.script.run
               .withSuccessHandler((res) => {
@@ -8633,7 +8718,7 @@
             if (!confirmed) return;
 
             logUI('addSolicitanteFromColaborador.payload', { value: value });
-            showLoading('Salvando...');
+            showLoading('Adicionando solicitante...');
 
             google.script.run
               .withSuccessHandler((res) => {
@@ -8670,7 +8755,7 @@
         }
 
         logUI('addConfigErroComClassificacao.payload', { nome, classificacao });
-        showLoading('Salvando...');
+        showLoading('Cadastrando tipo de erro...');
 
         // First add the error type
         google.script.run
@@ -8718,13 +8803,13 @@
 
       function deleteConfigItem(type, value) {
         showConfirm(
-          'Confirmação',
-          `Tem certeza que deseja excluir "${value}"?`,
+          'Confirmar Exclusão',
+          `Tem certeza que deseja excluir <strong>${escapeHtml(value)}</strong>?`,
           (confirmed) => {
             if (!confirmed) return;
 
             logUI('deleteConfigItem.request', { type: type, value: value });
-            showLoading('Excluindo...');
+            showLoading('Excluindo item...');
 
             google.script.run
               .withSuccessHandler((res) => {
@@ -8744,7 +8829,7 @@
               })
               .deleteConfigItem(type, value);
           }
-        );
+        , { okLabel: 'Excluir', okClass: 'btn-danger' });
       }
 
       function editConfigItem(type, nome, classificacao) {
@@ -8758,7 +8843,7 @@
             }
 
             logUI('editConfigItem.request', { type: type, nome: nome, classificacao: novaClassificacao });
-            showLoading('Salvando...');
+            showLoading('Salvando classificação...');
 
             google.script.run
               .withSuccessHandler((res) => {
@@ -9652,82 +9737,17 @@
 
 
       function loadFallbackData() {
-
         logUI('fallback.start');
-
         google.script.run.withSuccessHandler((res) => {
-
-          logUI('fallback.config', res);
-
-          if (res && res.ok) {
-
-            configCache = res.config || configCache;
-
-            fillConfig(configCache);
-
-          }
-
+          logUI('fallback.response', res);
+          if (!res || !res.ok) return;
+          if (res.config) { configCache = res.config; fillConfig(configCache); }
+          if (res.listas) { listasData = res.listas; fillListas(listasData); }
+          if (res.usuarios && res.usuarios.length) fillUsuariosList(res.usuarios);
+          if (res.usuario) fillUserInfo(res.usuario);
         }).withFailureHandler((error) => {
-
-          logUI('fallback.config.error', error);
-
-        }).getConfig();
-
-
-
-        google.script.run.withSuccessHandler((res) => {
-
-          logUI('fallback.listas', res);
-
-          if (res && res.ok) {
-
-            listasData = res.listas || listasData;
-
-            fillListas(listasData);
-
-          }
-
-        }).withFailureHandler((error) => {
-
-          logUI('fallback.listas.error', error);
-
-        }).getListas();
-
-
-
-        google.script.run.withSuccessHandler((res) => {
-
-          logUI('fallback.usuarios', res);
-
-          if (res && res.ok) {
-
-            fillUsuariosList(res.usuarios || []);
-
-          }
-
-        }).withFailureHandler((error) => {
-
-          logUI('fallback.usuarios.error', error);
-
-        }).getUsuarios();
-
-        // Load current user info
-        google.script.run.withSuccessHandler((res) => {
-
-          logUI('fallback.usuario', res);
-
-          if (res && res.ok && res.usuario) {
-
-            fillUserInfo(res.usuario);
-
-          }
-
-        }).withFailureHandler((error) => {
-
-          logUI('fallback.usuario.error', error);
-
-        }).getUsuario();
-
+          logUI('fallback.error', error);
+        }).getBootstrapLite();
       }
 
 
@@ -10104,8 +10124,8 @@
         if (!email) return;
 
         showConfirm(
-          'Confirmação',
-          'Deseja excluir este usuário?',
+          'Confirmar Exclusão',
+          `Deseja excluir o usuário <strong>${escapeHtml(email)}</strong>? Esta ação não pode ser desfeita.`,
           (confirmed) => {
             if (!confirmed) return;
 
@@ -10145,7 +10165,7 @@
               .deleteUsuario({ email: email });
 
           }
-        );
+        , { okLabel: 'Excluir', okClass: 'btn-danger' });
 
       }
 
@@ -10563,6 +10583,9 @@
         // Create selects for Dif. Valor and Conf. Médica
         createMultiSelect('filterRespostaDiferencaValor', ['SIM', 'NÃO'], () => filterOpenErrors(), 'Todos');
         createMultiSelect('filterRespostaConfMedica', ['SIM', 'NÃO'], () => filterOpenErrors(), 'Todos');
+
+        // Restore saved filter state (overrides defaults if user had saved filters)
+        restoreFilterState_();
       }
 
       // Função para atualizar lista de solicitações na aba Resposta
@@ -10688,8 +10711,48 @@
         // Reset to page 1 when filter changes
         currentPage = 1;
 
+        // Persist filters across reloads
+        saveFilterState_();
+
         // Render paginated results
         renderPage();
+      }
+
+      const FILTER_STORAGE_KEY_ = 'resposta_filtros_v1';
+
+      function saveFilterState_() {
+        try {
+          const state = {
+            requisicao: document.getElementById('filterRespostaRequisicao').value.trim(),
+            solicitantes: multiSelectInstances['filterRespostaSolicitante']?.getValues() || [],
+            setores: multiSelectInstances['filterRespostaSetor']?.getValues() || [],
+            status: multiSelectInstances['filterRespostaStatus']?.getValues() || [],
+            diferencaValor: multiSelectInstances['filterRespostaDiferencaValor']?.getValues() || [],
+            confMedica: multiSelectInstances['filterRespostaConfMedica']?.getValues() || [],
+            urgente: filtroUrgenteAtivo
+          };
+          localStorage.setItem(FILTER_STORAGE_KEY_, JSON.stringify(state));
+        } catch(e) {}
+      }
+
+      function restoreFilterState_() {
+        try {
+          const raw = localStorage.getItem(FILTER_STORAGE_KEY_);
+          if (!raw) return;
+          const state = JSON.parse(raw);
+          if (state.requisicao) {
+            const el = document.getElementById('filterRespostaRequisicao');
+            if (el) el.value = state.requisicao;
+          }
+          ['solicitantes','setores','status','diferencaValor','confMedica'].forEach(key => {
+            const idMap = { solicitantes:'filterRespostaSolicitante', setores:'filterRespostaSetor',
+              status:'filterRespostaStatus', diferencaValor:'filterRespostaDiferencaValor', confMedica:'filterRespostaConfMedica' };
+            if (state[key] && state[key].length && multiSelectInstances[idMap[key]]) {
+              multiSelectInstances[idMap[key]].setValues(state[key]);
+            }
+          });
+          if (state.urgente && !filtroUrgenteAtivo) toggleFiltroUrgente();
+        } catch(e) {}
       }
 
       function limparFiltrosResposta() {
@@ -10724,6 +10787,7 @@
           }
         }
 
+        try { localStorage.removeItem(FILTER_STORAGE_KEY_); } catch(e) {}
         filterOpenErrors();
       }
 
@@ -10799,6 +10863,19 @@
           filtrosContainer.style.display = 'none';
         }
 
+        // Update filter count badge
+        const filtrosBadge = document.getElementById('filtrosBadge');
+        if (filtrosBadge) {
+          const nFiltros = (filterRequisicao ? 1 : 0) + filterSolicitantes.length + filterSetores.length +
+            filterStatus.length + filterDiferencaValor.length + filterConfMedica.length + (filtroUrgenteAtivo ? 1 : 0);
+          if (nFiltros > 0) {
+            filtrosBadge.textContent = nFiltros + ' filtro' + (nFiltros !== 1 ? 's' : '');
+            filtrosBadge.style.display = 'inline-block';
+          } else {
+            filtrosBadge.style.display = 'none';
+          }
+        }
+
         // Update pagination info
         const paginationInfo = document.getElementById('paginationInfo');
         paginationInfo.textContent = `Página ${currentPage} de ${totalPages || 1} (${itemsPerPage} por página)`;
@@ -10815,9 +10892,25 @@
 
         const tbody = document.querySelector('#openErrorsTable tbody');
         selectedErro = null;
+        selectedRowEl = null;
 
         if (!totalItems) {
-          tbody.innerHTML = '<tr><td colspan="18">Nenhuma solicitação encontrada com este status.</td></tr>';
+          const temFiltroAtivo = allOpenErros.length > 0 || filtroUrgenteAtivo ||
+            !!(document.getElementById('filterRespostaRequisicao') && document.getElementById('filterRespostaRequisicao').value.trim()) ||
+            (multiSelectInstances['filterRespostaSetor']?.getValues() || []).length > 0 ||
+            (multiSelectInstances['filterRespostaSolicitante']?.getValues() || []).length > 0;
+          const emptyMsg = temFiltroAtivo
+            ? 'Nenhuma solicitação encontrada com os filtros aplicados.'
+            : 'Nenhuma solicitação em aberto no momento.';
+          const emptyAction = temFiltroAtivo
+            ? '<br><button class="btn secondary" style="margin-top:12px;font-size:0.8rem;" onclick="limparFiltrosResposta()">Limpar filtros</button>'
+            : '';
+          tbody.innerHTML = `<tr><td colspan="18" style="padding:40px 20px;text-align:center;">
+            <div style="font-size:2.5rem;margin-bottom:8px;">📋</div>
+            <div style="font-weight:600;color:var(--text);margin-bottom:4px;">${emptyMsg}</div>
+            <div style="font-size:0.85rem;color:var(--text-secondary);">As solicitações respondidas aparecem na aba Dashboard.</div>
+            ${emptyAction}
+          </td></tr>`;
           return;
         }
 
@@ -11060,16 +11153,14 @@
       }
 
       function deleteSolicitacao(solicitacaoId, requisicao) {
-        // Show confirmation dialog
         showConfirm(
           'Confirmar Exclusão',
-          `Tem certeza que deseja excluir a solicitação ${requisicao}? Esta ação não pode ser desfeita e excluirá todos os erros e respostas associadas.`,
+          `Tem certeza que deseja excluir a solicitação <strong>${escapeHtml(requisicao)}</strong>?<br><span style="color:#e53935;font-size:0.85rem;">Esta ação não pode ser desfeita e removerá todos os erros e respostas associadas.</span>`,
           (confirmed) => {
             if (!confirmed) {
               return;
             }
 
-            // User confirmed
             showLoading('Excluindo solicitação...');
 
             google.script.run
@@ -11089,7 +11180,7 @@
               })
               .deleteSolicitacao(solicitacaoId);
           }
-        );
+        , { okLabel: 'Excluir', okClass: 'btn-danger' });
       }
 
       // Modal de Resposta
@@ -12089,24 +12180,31 @@
         document.getElementById('viewErros').style.display = 'none';
 
         // Remove active class from all tabs
-        document.querySelectorAll('.dashboard-tab').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.dashboard-tab').forEach(btn => {
+          btn.classList.remove('active');
+          btn.setAttribute('aria-selected', 'false');
+        });
 
         // Show selected view and activate tab
         if (tab === 'colaboradores') {
           document.getElementById('viewColaboradores').style.display = 'block';
           document.getElementById('tab-btn-colaboradores').classList.add('active');
+          document.getElementById('tab-btn-colaboradores').setAttribute('aria-selected', 'true');
           applyColabFilters();
         } else if (tab === 'solicitantes') {
           document.getElementById('viewSolicitantes').style.display = 'block';
           document.getElementById('tab-btn-solicitantes').classList.add('active');
+          document.getElementById('tab-btn-solicitantes').setAttribute('aria-selected', 'true');
           applySolFilters();
         } else if (tab === 'ranking') {
           document.getElementById('viewRanking').style.display = 'block';
           document.getElementById('tab-btn-ranking').classList.add('active');
+          document.getElementById('tab-btn-ranking').setAttribute('aria-selected', 'true');
           applyRankingFilters();
         } else if (tab === 'erros') {
           document.getElementById('viewErros').style.display = 'block';
           document.getElementById('tab-btn-erros').classList.add('active');
+          document.getElementById('tab-btn-erros').setAttribute('aria-selected', 'true');
           applyErrosFilters();
         }
 
@@ -15544,6 +15642,11 @@
         document.getElementById('urgente').checked = false;
 
         document.getElementById('detalhamentoCount').textContent = '0';
+
+        ['requisicao', 'diferencaNoValor', 'confirmacaoMedica', 'detalhamento'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.remove('invalid');
+        });
 
       }
 

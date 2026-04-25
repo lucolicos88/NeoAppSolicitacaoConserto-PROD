@@ -524,6 +524,36 @@ function getBootstrapData() {
   }
 }
 
+/**
+ * Retorna config + listas + usuarios + usuario atual em uma única chamada.
+ * Usado como fallback quando getBootstrapData() falha — substitui 4 chamadas sequenciais.
+ */
+function getBootstrapLite() {
+  const debugId = Utilities.getUuid();
+  try {
+    const userEmail = Session.getActiveUser().getEmail() || "";
+    const usuario = getUsuarioContexto_(userEmail);
+    const result = {
+      ok: true,
+      debugId: debugId,
+      config: null,
+      listas: null,
+      usuarios: [],
+      usuario: usuario
+    };
+    try { result.config = getConfigData_(); } catch(e) { /* segue */ }
+    try { result.listas = getListasData_(); } catch(e) { /* segue */ }
+    try {
+      if (usuario && (usuario.perfil === 'ADMIN' || usuario.perfil === 'CONFERENTE')) {
+        result.usuarios = getUsuarios_();
+      }
+    } catch(e) { /* segue */ }
+    return result;
+  } catch (error) {
+    return { ok: false, error: String(error), debugId: debugId };
+  }
+}
+
 // ============================================================================
 // FUNÇÕES DE LEITURA DE DADOS
 // ============================================================================

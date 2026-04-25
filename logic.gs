@@ -1,6 +1,7 @@
 // Cache keys
 const CACHE_KEY_CONFIG = "app_config_data";
 const CACHE_KEY_LISTAS = "app_listas_data";
+const CACHE_KEY_THRESHOLDS_ = "app_thresholds_v1";
 const CACHE_DURATION = 600; // 10 minutes in seconds
 
 function getConfigData_() {
@@ -65,6 +66,7 @@ function invalidateConfigCache_() {
   const cache = CacheService.getScriptCache();
   cache.remove(CACHE_KEY_CONFIG);
   cache.remove(CACHE_KEY_LISTAS);
+  cache.remove(CACHE_KEY_THRESHOLDS_);
 }
 
 function getListasSheet_() {
@@ -153,20 +155,26 @@ function getListasData_() {
 }
 
 function getThresholds_() {
+  const cache = CacheService.getScriptCache();
+  try {
+    const cached = cache.get(CACHE_KEY_THRESHOLDS_);
+    if (cached) return JSON.parse(cached);
+  } catch(e) { /* cache miss */ }
+
   const sheet = getSheet_(CONFIG.SHEETS.LIMIARES);
   const values = sheet.getDataRange().getValues();
-  if (values.length < 2) {
-    return {
-      warnMinutes: CONFIG.DEFAULTS.WARN_MINUTES,
-      criticalMinutes: CONFIG.DEFAULTS.CRITICAL_MINUTES,
-      timezone: CONFIG.DEFAULTS.TIMEZONE
-    };
-  }
-  return {
+  const result = values.length < 2 ? {
+    warnMinutes: CONFIG.DEFAULTS.WARN_MINUTES,
+    criticalMinutes: CONFIG.DEFAULTS.CRITICAL_MINUTES,
+    timezone: CONFIG.DEFAULTS.TIMEZONE
+  } : {
     warnMinutes: Number(values[1][0]) || CONFIG.DEFAULTS.WARN_MINUTES,
     criticalMinutes: Number(values[1][1]) || CONFIG.DEFAULTS.CRITICAL_MINUTES,
     timezone: values[1][2] || CONFIG.DEFAULTS.TIMEZONE
   };
+
+  try { cache.put(CACHE_KEY_THRESHOLDS_, JSON.stringify(result), 300); } catch(e) {}
+  return result;
 }
 
 // Limites de tamanho de campo (caracteres)
