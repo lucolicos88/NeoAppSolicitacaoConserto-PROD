@@ -227,75 +227,70 @@ function getNextErroSeq_(solicitacaoId) {
 }
 
 function insertSolicitacaoEErro_(payload, userEmail) {
-  const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
-  try {
-    const now = new Date();
-    const solicitacoesSheet = getSheet_(CONFIG.SHEETS.SOLICITACOES);
-    const errosSheet = getSheet_(CONFIG.SHEETS.ERROS);
+  // PERF E3: sem LockService — UUID garante unicidade; appendRow é atômico no Sheets.
+  const now = new Date();
+  const solicitacoesSheet = getSheet_(CONFIG.SHEETS.SOLICITACOES);
+  const errosSheet = getSheet_(CONFIG.SHEETS.ERROS);
 
-    let solicitacaoId = payload.solicitacaoId || Utilities.getUuid();
-    // PERF: quando payload.solicitacaoId não é fornecido, é sempre uma nova solicitação —
-    // não há necessidade de buscar na planilha (evita 1 leitura completa de Solicitacoes)
-    const isNewSolicitacao = !payload.solicitacaoId;
-    let solicitacaoRow = isNewSolicitacao ? null : findSolicitacaoRow_(solicitacaoId);
-    if (!solicitacaoRow) {
-      solicitacoesSheet.appendRow([
-        solicitacaoId,
-        payload.requisicao,
-        payload.solicitante,
-        new Date(payload.dataHoraPedido),
-        "ABERTO",
-        userEmail,
-        now,
-        payload.urgente || "NAO"
-      ]);
-      logDebug_("insertSolicitacaoEErro_", "nova_solicitacao", {
-        solicitacaoId: solicitacaoId,
-        requisicao: payload.requisicao,
-        urgente: payload.urgente || "NAO"
-      });
-      auditLog_(
-        "CREATE",
-        "solicitacoes",
-        "id_solicitacao=" + solicitacaoId,
-        null,
-        null,
-        null
-      );
-    }
-
-    // PERF: nova solicitação sempre começa com erroSeq = 1 —
-    // não há necessidade de varrer a planilha Erros (evita 1 leitura completa)
-    const erroSeq = payload.erroSeq || (isNewSolicitacao ? 1 : getNextErroSeq_(solicitacaoId));
-    errosSheet.appendRow([
+  let solicitacaoId = payload.solicitacaoId || Utilities.getUuid();
+  // PERF: quando payload.solicitacaoId não é fornecido, é sempre uma nova solicitação —
+  // não há necessidade de buscar na planilha (evita 1 leitura completa de Solicitacoes)
+  const isNewSolicitacao = !payload.solicitacaoId;
+  let solicitacaoRow = isNewSolicitacao ? null : findSolicitacaoRow_(solicitacaoId);
+  if (!solicitacaoRow) {
+    solicitacoesSheet.appendRow([
       solicitacaoId,
-      erroSeq,
-      payload.erro,
-      payload.detalhamento,
-      payload.setorLocal,
-      payload.diferencaNoValor || "",
+      payload.requisicao,
+      payload.solicitante,
+      new Date(payload.dataHoraPedido),
+      "ABERTO",
+      userEmail,
       now,
-      payload.confirmacaoMedica || "NAO"
+      payload.urgente || "NAO"
     ]);
-    logDebug_("insertSolicitacaoEErro_", "novo_erro", {
+    logDebug_("insertSolicitacaoEErro_", "nova_solicitacao", {
       solicitacaoId: solicitacaoId,
-      erroSeq: erroSeq,
-      setorLocal: payload.setorLocal
+      requisicao: payload.requisicao,
+      urgente: payload.urgente || "NAO"
     });
     auditLog_(
       "CREATE",
-      "erros",
-      "id_solicitacao=" + solicitacaoId + ";sequencia_erro=" + erroSeq,
+      "solicitacoes",
+      "id_solicitacao=" + solicitacaoId,
       null,
       null,
       null
     );
-
-    return { solicitacaoId: solicitacaoId, erroSeq: erroSeq };
-  } finally {
-    lock.releaseLock();
   }
+
+  // PERF: nova solicitação sempre começa com erroSeq = 1 —
+  // não há necessidade de varrer a planilha Erros (evita 1 leitura completa)
+  const erroSeq = payload.erroSeq || (isNewSolicitacao ? 1 : getNextErroSeq_(solicitacaoId));
+  errosSheet.appendRow([
+    solicitacaoId,
+    erroSeq,
+    payload.erro,
+    payload.detalhamento,
+    payload.setorLocal,
+    payload.diferencaNoValor || "",
+    now,
+    payload.confirmacaoMedica || "NAO"
+  ]);
+  logDebug_("insertSolicitacaoEErro_", "novo_erro", {
+    solicitacaoId: solicitacaoId,
+    erroSeq: erroSeq,
+    setorLocal: payload.setorLocal
+  });
+  auditLog_(
+    "CREATE",
+    "erros",
+    "id_solicitacao=" + solicitacaoId + ";sequencia_erro=" + erroSeq,
+    null,
+    null,
+    null
+  );
+
+  return { solicitacaoId: solicitacaoId, erroSeq: erroSeq };
 }
 
 function deleteSolicitacao_(solicitacaoId) {
@@ -400,7 +395,9 @@ function insertResposta_(payload, userEmail) {
     if (payload.totalErros !== undefined && payload.errosJaCorrigidos !== undefined) {
       const newCorrigidos = (payload.errosJaCorrigidos || 0) + 1;
       const newStatus = newCorrigidos >= payload.totalErros ? "CORRIGIDO" : "EM_CORRECAO";
-      updateSolicitacaoStatusFast_(payload.solicitacaoId, newStatus);
+      // PERF E4: currentStatus deduzido do frontend (0 corrigidos = ABERTO, >0 = EM_CORRECAO)
+      const oldStatus = payload.currentStatus || ((payload.errosJaCorrigidos || 0) === 0 ? "ABERTO" : "EM_CORRECAO");
+      updateSolicitacaoStatusFast_(payload.solicitacaoId, newStatus, oldStatus);
     } else {
       // Fallback: lê as sheets (caminho legado, mais lento)
       const errosParaStatus = getSheet_(CONFIG.SHEETS.ERROS).getDataRange().getValues();
@@ -534,14 +531,14 @@ function updateSolicitacaoStatus_(solicitacaoId, errosData, respostasData) {
  * Custo: ~1 API call (TextFinder) + 1 getRange + 1 setValue ≈ 0.5–0.8s total.
  * Comparado a updateSolicitacaoStatus_: economiza 2-3 leituras completas de sheet (~2-3s).
  */
-function updateSolicitacaoStatusFast_(solicitacaoId, newStatus) {
+// PERF E4: oldStatus opcional — quando fornecido pelo frontend, evita 1 getValue() (~0.3s).
+function updateSolicitacaoStatusFast_(solicitacaoId, newStatus, oldStatus) {
   try {
     const sheet = getSheet_(CONFIG.SHEETS.SOLICITACOES);
-    // TextFinder: busca server-side, não baixa todos os dados para o script
     const found = sheet.createTextFinder(solicitacaoId).matchEntireCell(true).findAll();
     if (found.length === 0) return;
     const row = found[0].getRow();
-    const currentStatus = sheet.getRange(row, 5).getValue();
+    const currentStatus = oldStatus !== undefined ? oldStatus : sheet.getRange(row, 5).getValue();
     if (currentStatus === newStatus) return;
     sheet.getRange(row, 5).setValue(newStatus);
     auditLog_("UPDATE", "solicitacoes", "id_solicitacao=" + solicitacaoId, "status", currentStatus, newStatus);

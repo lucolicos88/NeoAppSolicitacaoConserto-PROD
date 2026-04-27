@@ -1511,19 +1511,18 @@
       }
 
       .btn-edit {
-        padding: 0.5rem 0.9rem;
+        padding: 0.4rem 0.6rem;
         background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
         color: white;
         border: none;
         border-radius: var(--radius);
-        font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
-        font-size: 0.8rem;
-        white-space: nowrap;
+        font-size: 1rem;
+        line-height: 1;
         display: inline-flex;
         align-items: center;
-        gap: 0.25rem;
+        justify-content: center;
       }
 
       .btn-edit:hover {
@@ -1541,19 +1540,18 @@
       }
 
       .btn-delete {
-        padding: 0.5rem 0.9rem;
+        padding: 0.4rem 0.6rem;
         background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
         color: white;
         border: none;
         border-radius: var(--radius);
-        font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
-        font-size: 0.8rem;
-        white-space: nowrap;
+        font-size: 1rem;
+        line-height: 1;
         display: inline-flex;
         align-items: center;
-        gap: 0.25rem;
+        justify-content: center;
       }
 
       .btn-delete:hover {
@@ -1665,9 +1663,8 @@
       /* Impede quebra de linha nos cabeçalhos da tabela */
       #openErrorsTable th { white-space: nowrap; }
 
-      /* Larguras somam exatos 100% (table-layout:fixed exige isso)          */
-      /* col: 1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17 */
-      /* %:   2 + 5 + 6 + 5 +12 + 5 + 3 + 3 + 6 + 3 + 5 + 5 + 7 + 4 + 7 + 8 + 9 = 100 */
+      /* col:  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18      */
+      /* %:    2 + 3 + 5 + 6 + 5 +13 + 6 + 3 + 4 + 5 + 3 + 5 + 5 +10 + 4 + 7 + 7 + 3 = 96 */
       #openErrorsTable th:nth-child(1),
       #openErrorsTable td:nth-child(1) { width: 2%; text-align: center; }  /* Selecionar */
       /* === DADOS DA SOLICITAÇÃO (fundo verde claro) === */
@@ -1681,9 +1678,9 @@
       #openErrorsTable th:nth-child(5),
       #openErrorsTable td:nth-child(5) { width: 5%; } /* Erro */
       #openErrorsTable th:nth-child(6),
-      #openErrorsTable td:nth-child(6) { width: 11%; } /* Detalhamento */
+      #openErrorsTable td:nth-child(6) { width: 13%; } /* Detalhamento */
       #openErrorsTable th:nth-child(7),
-      #openErrorsTable td:nth-child(7) { width: 5%; } /* Setor/Local */
+      #openErrorsTable td:nth-child(7) { width: 6%; } /* Setor/Local */
       #openErrorsTable th:nth-child(8),
       #openErrorsTable td:nth-child(8) { width: 3%; text-align: center; }  /* Dif. Val? */
       #openErrorsTable th:nth-child(9),
@@ -1699,7 +1696,7 @@
       #openErrorsTable th:nth-child(13),
       #openErrorsTable td:nth-child(13) { width: 5%; text-align: center; }  /* Status */
       #openErrorsTable th:nth-child(14),
-      #openErrorsTable td:nth-child(14) { width: 7%; } /* Responsável */
+      #openErrorsTable td:nth-child(14) { width: 10%; } /* Responsável */
       #openErrorsTable th:nth-child(15),
       #openErrorsTable td:nth-child(15) { width: 4%; text-align: center; } /* Dif. R$ */
       #openErrorsTable th:nth-child(16),
@@ -1707,7 +1704,7 @@
       #openErrorsTable th:nth-child(17),
       #openErrorsTable td:nth-child(17) { width: 7%; } /* Observações */
       #openErrorsTable th:nth-child(18),
-      #openErrorsTable td:nth-child(18) { width: 9%; text-align: center; padding: 4px; } /* Ações */
+      #openErrorsTable td:nth-child(18) { width: 3%; text-align: center; padding: 4px; } /* Ações */
 
 
 
@@ -8509,7 +8506,7 @@
 
                 clearSolicitacaoForm();
 
-                refreshData();
+                refreshOpenErrosOnly(); // PERF E1: só recarrega openErros, não o bootstrap inteiro
 
               })
 
@@ -8565,9 +8562,10 @@
 
           observacoes: document.getElementById('observacoes').value.trim(),
 
-          // PERF: passa contagens para o backend evitar leituras extras de sheet
+          // PERF: passa contagens e status atual para o backend evitar leituras extras de sheet
           totalErros: _totalErros,
-          errosJaCorrigidos: _errosJaCorrigidos
+          errosJaCorrigidos: _errosJaCorrigidos,
+          currentStatus: _errosJaCorrigidos === 0 ? 'ABERTO' : 'EM_CORRECAO'
 
         };
 
@@ -8621,7 +8619,8 @@
 
             clearRespostaForm();
 
-            refreshData();
+            applyOptimisticResponse_(payload, false); // PERF E2: atualiza tabela imediatamente
+            refreshOpenErrosOnly(); // PERF E1: confirma com servidor
 
           })
 
@@ -9419,6 +9418,73 @@
 
       let refreshDataTimeout = null;
       let isRefreshing = false;
+
+      // PERF E1: refresh leve — apenas getOpenErros(), sem recarregar config/usuarios/dashboard.
+      // Usado após submitRequest e submitResponse para evitar 3 round-trips desnecessários.
+      function refreshOpenErrosOnly() {
+        showLoading('Atualizando lista...');
+        google.script.run
+          .withSuccessHandler((res) => {
+            hideLoading();
+            if (res && res.ok) {
+              openErros = res.openErros || [];
+              allOpenErros = openErros;
+              fillOpenErros(openErros);
+              showOpenErrosHasMoreNotice_(res.hasMore, res.totalCount, openErros.length);
+              logUI('refreshOpenErrosOnly.done', { total: openErros.length });
+            } else {
+              logUI('refreshOpenErrosOnly.error', res);
+              // fallback: recarregamento completo se a chamada leve falhar
+              refreshData();
+            }
+          })
+          .withFailureHandler((err) => {
+            hideLoading();
+            logUI('refreshOpenErrosOnly.failure', err);
+            refreshData();
+          })
+          .getOpenErros();
+      }
+
+      // PERF E2: Atualiza openErros em memória imediatamente após salvar resposta,
+      // sem esperar o round-trip do servidor. O refreshOpenErrosOnly() confirma depois.
+      function applyOptimisticResponse_(payload, isUpdate) {
+        const solId = payload.solicitacaoId;
+        const seq = payload.erroSeq;
+        const now = new Date().toISOString();
+
+        if (isUpdate) {
+          const idx = allOpenErros.findIndex(x => x.solicitacaoId === solId && x.erroSeq === seq);
+          if (idx !== -1) {
+            if (payload.nomeResponsavel) allOpenErros[idx].responsavel = payload.nomeResponsavel;
+            if (payload.diferencaValorResposta) allOpenErros[idx].diferencaValorResposta = payload.diferencaValorResposta;
+            if (payload.observacoes !== undefined) allOpenErros[idx].observacoesResposta = payload.observacoes;
+          }
+        } else {
+          const itemsInSolicitation = allOpenErros.filter(x => x.solicitacaoId === solId);
+          const total = payload.totalErros || itemsInSolicitation.length;
+          const alreadyFixed = payload.errosJaCorrigidos !== undefined
+            ? payload.errosJaCorrigidos
+            : itemsInSolicitation.filter(x => x.correcaoFinalizada).length;
+
+          if (alreadyFixed + 1 >= total) {
+            allOpenErros = allOpenErros.filter(x => x.solicitacaoId !== solId);
+          } else {
+            const idx = allOpenErros.findIndex(x => x.solicitacaoId === solId && x.erroSeq === seq);
+            if (idx !== -1) {
+              allOpenErros[idx].correcaoFinalizada = true;
+              allOpenErros[idx].responsavel = payload.nomeResponsavel || '';
+              allOpenErros[idx].dataHoraCorrecao = payload.dataHoraCorrecao || now;
+              allOpenErros[idx].houveDiferencaValorResposta = payload.houveDiferencaValor || '';
+              allOpenErros[idx].diferencaValorResposta = payload.diferencaValorResposta || '';
+              allOpenErros[idx].observacoesResposta = payload.observacoes || '';
+            }
+          }
+        }
+
+        openErros = allOpenErros;
+        filterOpenErrors();
+      }
 
       function refreshData() {
         // Debounce: if called multiple times quickly, only execute once
@@ -10941,19 +11007,13 @@
           const bgSolicitacao = ehUrgente ? '#fff0ee' : (confirmacaoMedica ? '#f3e5f5' : '#f1f8f7');
 
           // Show edit button if there's a response (dataHoraCorrecao or responsavel) or if it's Alteração Técnica
-          const editButton = (item.dataHoraCorrecao || item.responsavel || ehAlteracaoTecnica)
-            ? `<button type="button" class="btn-edit" data-action="edit" data-index="${startIndex + index}">✏️ Editar</button>`
-            : '-';
-
-          // Show delete button based on permissions
+          // Show delete button based on permissions (edit via row click)
           const deleteButton = hasAction_('delete')
-            ? `<button type="button" class="btn-delete" data-action="delete" data-id="${escapeHtml(item.solicitacaoId)}" data-req="${escapeHtml(item.requisicao)}">🗑️ Excluir</button>`
+            ? `<button type="button" class="btn-delete" data-action="delete" data-id="${escapeHtml(item.solicitacaoId)}" data-req="${escapeHtml(item.requisicao)}" title="Excluir solicitação">🗑️</button>`
             : '';
 
-          // Combine actions with flex container for better spacing
-          const filteredButtons = [editButton, deleteButton].filter(btn => btn && btn !== '-');
-          const actions = filteredButtons.length > 0
-            ? '<div class="flex-center-gap">' + filteredButtons.join('') + '</div>'
+          const actions = deleteButton
+            ? '<div class="flex-center-gap">' + deleteButton + '</div>'
             : '-';
 
           // Response columns - Alteração Técnica não precisa de responsável
@@ -11006,7 +11066,7 @@
             ? `<span style="color:#e65100;font-weight:600;">R$ ${parseFloat(valorDiferenca).toFixed(2).replace('.', ',')}</span>`
             : '-';
 
-          return `<tr data-index="${startIndex + index}"${ehUrgente ? ' style="outline:2px solid #c62828;outline-offset:-1px;"' : ''}>
+          return `<tr data-index="${startIndex + index}">
             <td><input type="radio" name="selecionarErro"></td>
             <!-- Dados da Solicitação -->
             <td style="background:${bgSolicitacao};text-align:center;">${urgenteBadge}</td>
@@ -11336,7 +11396,8 @@
 
                 closeRespostaModal();
                 showModal('Sucesso', isEditMode ? 'Resposta atualizada com sucesso.' : 'Resposta registrada com sucesso.');
-                refreshData();
+                applyOptimisticResponse_(payload, isEditMode); // PERF E2
+                refreshOpenErrosOnly(); // PERF E1
               })
               .withFailureHandler((err) => {
                 hideLoading();
@@ -11424,7 +11485,8 @@
 
                 showModal('Sucesso', 'Resposta atualizada com sucesso.');
                 cancelEdit();
-                refreshData();
+                applyOptimisticResponse_(payload, true); // PERF E2
+                refreshOpenErrosOnly(); // PERF E1
               })
               .withFailureHandler((err) => {
                 hideLoading();
@@ -11687,7 +11749,7 @@
 
                 closeEditSolicitacaoModal();
                 showModal('Sucesso', 'Dados atualizados com sucesso. As alterações foram registradas na auditoria.');
-                refreshData();
+                refreshOpenErrosOnly(); // PERF E1
               })
               .withFailureHandler((err) => {
                 hideLoading();
