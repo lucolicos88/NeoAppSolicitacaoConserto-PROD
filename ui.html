@@ -10657,7 +10657,7 @@
         createMultiSelect('filterRespostaSetor', setores, () => filterOpenErrors(), 'Todos');
 
         // Create multi-select for status with default "Pendente" selected
-        const statusOptions = ['Pendente', 'Atrasada', 'Corrigida', 'Alteração Técnica'];
+        const statusOptions = ['Pendente', 'Atrasada', 'Corrigida', 'Alteração Técnica', 'Alt. Tec. Verificada'];
         createMultiSelect('filterRespostaStatus', statusOptions, () => filterOpenErrors(), 'Todos os status');
         // Set default to Pendente
         if (multiSelectInstances['filterRespostaStatus']) {
@@ -11129,9 +11129,9 @@
 
       // Calculate status from record
       function calculateStatus(record) {
-        // Alteração Técnica tem status próprio (não precisa de resposta tradicional)
+        // Alteração Técnica: verificada se já tem resposta, pendente se não tem
         if (isAlteracaoTecnica(record.erro)) {
-          return 'ALTERACAO_TECNICA';
+          return record.dataHoraCorrecao ? 'ALT_TEC_VERIFICADA' : 'ALTERACAO_TECNICA';
         }
 
         // Check if correction is finalized
@@ -11163,11 +11163,13 @@
           'ATRASADA': 'Atrasada',
           'CORRIGIDO': 'Corrigida',
           'ALTERACAO_TECNICA': 'Alteração Técnica',
+          'ALT_TEC_VERIFICADA': 'Alt. Tec. Verificada',
           'Pendente': 'Pendente',
           'Atrasada': 'Atrasada',
           'Em Correção': 'Atrasada',
           'Corrigida': 'Corrigida',
-          'Alteração Técnica': 'Alteração Técnica'
+          'Alteração Técnica': 'Alteração Técnica',
+          'Alt. Tec. Verificada': 'Alt. Tec. Verificada'
         };
         return statusMap[dbStatus] || 'Pendente'; // Default to Pendente if unknown
       }
@@ -11178,7 +11180,8 @@
           'Pendente': '<span class="badge error">Pendente</span>',
           'Atrasada': '<span class="badge warning">Atrasada</span>',
           'Corrigida': '<span class="badge success">Corrigida</span>',
-          'Alteração Técnica': '<span class="badge" style="background:#9e9e9e;color:#fff;">Alt. Técnica</span>'
+          'Alteração Técnica': '<span class="badge" style="background:#9e9e9e;color:#fff;">Alt. Técnica</span>',
+          'Alt. Tec. Verificada': '<span class="badge success">Alt. Tec. Verificada</span>'
         };
         return badges[mappedStatus] || '<span class="badge secondary">' + status + '</span>';
       }
