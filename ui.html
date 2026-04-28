@@ -4166,9 +4166,11 @@
 
           <div class="form-section">
 
-            <div class="section-header">
+            <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
 
-              <h3>Usuários cadastrados</h3>
+              <h3 style="margin:0;">Usuários cadastrados</h3>
+
+              <button type="button" class="btn secondary" onclick="syncPermissoesPlanilha()" style="font-size:0.85rem;">Sincronizar acesso à planilha</button>
 
             </div>
 
@@ -8965,7 +8967,23 @@
 
       }
 
-
+      function syncPermissoesPlanilha() {
+        showLoading('Sincronizando acesso à planilha...');
+        google.script.run
+          .withSuccessHandler((res) => {
+            hideLoading();
+            if (!res.ok) { showModal('Erro', res.errors.join('<br>')); return; }
+            const d = res.data;
+            const msg = d.sincronizados + ' usuário(s) sincronizado(s).' +
+              (d.erros.length ? '<br><br>Falhas:<br>' + d.erros.join('<br>') : '');
+            showModal('Acesso sincronizado', msg);
+          })
+          .withFailureHandler((error) => {
+            hideLoading();
+            showModal('Erro', 'Falha ao sincronizar: ' + error);
+          })
+          .syncPermissoesPlanilha();
+      }
 
       // ============================================================
       // DIAGNÓSTICO DO SISTEMA

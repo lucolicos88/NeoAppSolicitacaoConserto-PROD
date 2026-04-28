@@ -1662,6 +1662,7 @@ function addUsuario(payload) {
   sheet.appendRow([email, nome, perfil, setores, permissoesJson]);
   invalidateUsuarioCache_(email);
   auditLog_("CREATE", "usuarios", "email=" + email, null, null, null);
+  grantSpreadsheetAccess_(email);
   return { ok: true, debugId: debugId };
 }
 
@@ -1707,6 +1708,7 @@ function updateUsuario(payload) {
   auditLog_("UPDATE", "usuarios", "email=" + email, "perfil", oldRow[2], perfil);
   auditLog_("UPDATE", "usuarios", "email=" + email, "setores", oldRow[3], setores);
   safeLogDebug_("updateUsuario", "updated", { debugId: debugId });
+  grantSpreadsheetAccess_(email);
   return { ok: true, debugId: debugId };
 }
 
@@ -1736,6 +1738,45 @@ function deleteUsuario(payload) {
     }
   }
   return { ok: false, errors: ["Usuário não encontrado."], debugId: debugId };
+}
+
+function grantSpreadsheetAccess_(email) {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const spreadsheetId = props.getProperty("SPREADSHEET_ID") || CONFIG.SPREADSHEET_ID;
+    if (!spreadsheetId) return;
+    DriveApp.getFileById(spreadsheetId).addEditor(email);
+    safeLogDebug_("grantSpreadsheetAccess_", "acesso concedido", { email: email });
+  } catch(e) {
+    safeLogDebug_("grantSpreadsheetAccess_", "erro ao conceder acesso", { email: email, error: String(e) });
+  }
+}
+
+function syncPermissoesPlanilha() {
+  const debugId = Utilities.getUuid();
+  try { requirePermissao_('manageUsers'); } catch(e) {
+    return { ok: false, errors: [String(e)], debugId: debugId };
+  }
+  const props = PropertiesService.getScriptProperties();
+  const spreadsheetId = props.getProperty("SPREADSHEET_ID") || CONFIG.SPREADSHEET_ID;
+  if (!spreadsheetId) return { ok: false, errors: ["SPREADSHEET_ID não configurado."], debugId: debugId };
+  const file = DriveApp.getFileById(spreadsheetId);
+  const sheet = getSheet_(CONFIG.SHEETS.USUARIOS);
+  const values = sheet.getDataRange().getValues();
+  const erros = [];
+  let count = 0;
+  for (let i = 1; i < values.length; i++) {
+    const email = String(values[i][0] || "").trim();
+    if (!email) continue;
+    try {
+      file.addEditor(email);
+      count++;
+    } catch(e) {
+      erros.push(email + ": " + String(e));
+    }
+  }
+  safeLogDebug_("syncPermissoesPlanilha", "concluido", { sincronizados: count, erros: erros });
+  return { ok: true, data: { sincronizados: count, erros: erros }, debugId: debugId };
 }
 
 function limparCache() {
