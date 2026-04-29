@@ -1077,7 +1077,7 @@
 
 
 
-        max-width: 1900px;
+        max-width: 100%;
 
 
 
@@ -1085,7 +1085,7 @@
 
 
 
-        padding: 1.5rem 1rem;
+        padding: 0.5rem 1.5rem;
 
 
 
@@ -1619,7 +1619,7 @@
         margin-top: 12px;
         border-collapse: collapse;
         width: 100%;
-        min-width: 1400px;
+        min-width: unset;
         table-layout: fixed;
 
 
@@ -1632,7 +1632,7 @@
 
 
 
-        padding: 8px;
+        padding: 5px 6px;
 
 
 
@@ -1663,13 +1663,13 @@
       /* Impede quebra de linha nos cabeçalhos da tabela */
       #openErrorsTable th { white-space: nowrap; }
 
-      /* col:  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18      */
-      /* %:    2 + 3 + 5 + 6 + 5 +13 + 6 + 3 + 4 + 5 + 3 + 5 + 5 +10 + 4 + 7 + 7 + 3 = 96 */
+      /* col:   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18       */
+      /* %:     2 + 2 + 5 + 6 + 5 +14 + 5 + 3 + 3 + 6 + 3 + 4 + 7 + 9 + 4 + 7 +12 + 3 = 100 */
       #openErrorsTable th:nth-child(1),
       #openErrorsTable td:nth-child(1) { width: 2%; text-align: center; }  /* Selecionar */
       /* === DADOS DA SOLICITAÇÃO (fundo verde claro) === */
       #openErrorsTable th:nth-child(2),
-      #openErrorsTable td:nth-child(2) { width: 3%; text-align: center; } /* Urgente */
+      #openErrorsTable td:nth-child(2) { width: 2%; text-align: center; } /* Urgente */
       #openErrorsTable th:nth-child(2) { white-space: normal; line-height: 1.2; }
       #openErrorsTable th:nth-child(3),
       #openErrorsTable td:nth-child(3) { width: 5%; }  /* Requisição */
@@ -1678,35 +1678,40 @@
       #openErrorsTable th:nth-child(5),
       #openErrorsTable td:nth-child(5) { width: 5%; } /* Erro */
       #openErrorsTable th:nth-child(6),
-      #openErrorsTable td:nth-child(6) { width: 13%; } /* Detalhamento */
+      #openErrorsTable td:nth-child(6) { width: 14%; } /* Detalhamento */
       #openErrorsTable th:nth-child(7),
-      #openErrorsTable td:nth-child(7) { width: 6%; } /* Setor/Local */
+      #openErrorsTable td:nth-child(7) { width: 5%; } /* Setor/Local */
       #openErrorsTable th:nth-child(8),
       #openErrorsTable td:nth-child(8) { width: 3%; text-align: center; }  /* Dif. Val? */
       #openErrorsTable th:nth-child(9),
-      #openErrorsTable td:nth-child(9) { width: 4%; text-align: center; } /* Conf. Méd? */
+      #openErrorsTable td:nth-child(9) { width: 3%; text-align: center; } /* Conf. Méd? */
       #openErrorsTable th:nth-child(9) { white-space: normal; line-height: 1.2; } /* permite quebra no cabeçalho */
       #openErrorsTable th:nth-child(10),
-      #openErrorsTable td:nth-child(10) { width: 5%; } /* Data/Hora */
+      #openErrorsTable td:nth-child(10) { width: 6%; } /* Data/Hora */
       #openErrorsTable th:nth-child(11),
       #openErrorsTable td:nth-child(11) { width: 3%; text-align: center; } /* SLA */
       #openErrorsTable th:nth-child(12),
-      #openErrorsTable td:nth-child(12) { width: 5%; text-align: center; } /* Tempo */
+      #openErrorsTable td:nth-child(12) { width: 4%; text-align: center; } /* Tempo */
       /* === DADOS DA RESPOSTA (fundo laranja claro) === */
       #openErrorsTable th:nth-child(13),
-      #openErrorsTable td:nth-child(13) { width: 5%; text-align: center; }  /* Status */
+      #openErrorsTable td:nth-child(13) { width: 7%; text-align: center; }  /* Status */
       #openErrorsTable th:nth-child(14),
-      #openErrorsTable td:nth-child(14) { width: 10%; } /* Responsável */
+      #openErrorsTable td:nth-child(14) { width: 9%; } /* Responsável */
       #openErrorsTable th:nth-child(15),
       #openErrorsTable td:nth-child(15) { width: 4%; text-align: center; } /* Dif. R$ */
       #openErrorsTable th:nth-child(16),
       #openErrorsTable td:nth-child(16) { width: 7%; } /* Data Correção */
       #openErrorsTable th:nth-child(17),
-      #openErrorsTable td:nth-child(17) { width: 7%; } /* Observações */
+      #openErrorsTable td:nth-child(17) { width: 12%; } /* Observações ↑ */
       #openErrorsTable th:nth-child(18),
-      #openErrorsTable td:nth-child(18) { width: 3%; text-align: center; padding: 4px; } /* Ações */
+      #openErrorsTable td:nth-child(18) { width: 3%; text-align: center; } /* Ações */
 
 
+
+      /* Resposta tab: padding mínimo para maximizar espaço da tabela sem scrollbar horizontal */
+      #tab-resposta { padding: 0.5rem; }
+      #tab-resposta .form-section { padding: 0.75rem; overflow: hidden; }
+      #tab-resposta .table-responsive { overflow-x: hidden; }
 
       .list tr.selected { background: #E0F2F1; }
 
@@ -10656,13 +10661,9 @@
         // Create multi-select for setores
         createMultiSelect('filterRespostaSetor', setores, () => filterOpenErrors(), 'Todos');
 
-        // Create multi-select for status with default "Pendente" selected
+        // Create multi-select for status sem filtro padrão
         const statusOptions = ['Pendente', 'Atrasada', 'Corrigida', 'Alteração Técnica', 'Alt. Tec. Verificada'];
         createMultiSelect('filterRespostaStatus', statusOptions, () => filterOpenErrors(), 'Todos os status');
-        // Set default to Pendente
-        if (multiSelectInstances['filterRespostaStatus']) {
-          multiSelectInstances['filterRespostaStatus'].setValues(['Pendente']);
-        }
 
         // Create selects for Dif. Valor and Conf. Médica
         createMultiSelect('filterRespostaDiferencaValor', ['SIM', 'NÃO'], () => filterOpenErrors(), 'Todos');
