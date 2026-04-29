@@ -4968,9 +4968,10 @@
             <p>Esta é a aba principal do dia a dia. Exibe todas as solicitações abertas ou em correção do(s) setor(es) do usuário logado. Usuários RESPOSTA veem apenas os erros do seu setor; ADMIN e CONFERENTE veem tudo.</p>
 
             <p><strong>Como usar os filtros:</strong></p>
+            <p style="font-size:0.82rem;color:#64748b;">A aba abre sem filtros aplicados — todos os registros do setor são exibidos. Use os filtros abaixo para refinar a visualização.</p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0 0.75rem 0;font-size:0.82rem;">
               <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Requisição</strong><br>Busca textual pelo número da requisição</div>
-              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Status</strong><br>ABERTO, EM_CORRECAO, CORRIGIDO ou Todos</div>
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Status</strong><br>Pendente, Atrasada, Corrigida, Alteração Técnica ou Alt. Tec. Verificada</div>
               <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Solicitante</strong><br>Filtra por farmácia/unidade solicitante</div>
               <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Setor</strong><br>Filtra por setor/local específico</div>
               <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:0.5rem 0.75rem;"><strong>Dif. Valor?</strong><br>Mostra só erros com diferença de valor</div>
@@ -4998,6 +4999,15 @@
               <li>O modal de edição abrirá. Dependendo do seu perfil você poderá editar os dados da solicitação (ADMIN/CONFERENTE) ou apenas a resposta (RESPOSTA)</li>
               <li>Faça os ajustes e clique em <strong>Salvar</strong></li>
             </ol>
+
+            <p><strong>Status dos erros na tabela:</strong></p>
+            <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin:0.4rem 0 0.75rem 0;font-size:0.82rem;align-items:center;">
+              <span style="background:#ef4444;color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;">Pendente</span> — aguardando resposta
+              <span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;">Atrasada</span> — SLA ultrapassado
+              <span style="background:#10b981;color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;">Corrigida</span> — erro respondido
+              <span style="background:#9e9e9e;color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;">Alt. Técnica</span> — alteração técnica pendente de verificação
+              <span style="background:#10b981;color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;">Alt. Tec. Verificada</span> — alteração técnica já respondida
+            </div>
 
             <p><strong>Indicadores visuais na tabela:</strong></p>
             <ul>
@@ -5138,6 +5148,11 @@
               <li><span style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:2px 8px;border-radius:99px;font-size:0.75rem;font-weight:600;">🗂 6/6 abas</span> — quantidade de abas acessíveis (verde = todas, amarelo = parcial)</li>
               <li><span style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:2px 8px;border-radius:99px;font-size:0.75rem;font-weight:600;">⚡ 4/8 ações ✎</span> — ações disponíveis. O símbolo <strong>✎</strong> indica que as permissões foram customizadas</li>
             </ul>
+
+            <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:0.75rem;margin:0.75rem 0;">
+              <strong>🔑 Acesso automático à planilha:</strong> Ao salvar um usuário (novo ou editado), o sistema concede automaticamente acesso de editor à planilha Google Sheets para o e-mail cadastrado. Isso é necessário para que o usuário consiga abrir o app — sem esse acesso, o Google retorna erro de permissão antes mesmo de o app carregar.<br><br>
+              Para conceder acesso a usuários já cadastrados de uma vez só, clique no botão <strong>"Sincronizar acesso à planilha"</strong> que aparece acima da lista de usuários cadastrados. Este botão deve ser executado por um ADMIN com acesso de proprietário ou editor com permissão de compartilhamento na planilha.
+            </div>
 
             <p><strong>⚠️ Importante sobre e-mails:</strong> O acesso ao sistema é controlado pelo e-mail Google do usuário. Se o colaborador acessar com um e-mail diferente do cadastrado, ele não terá permissões e será tratado como ESPECTADOR.</p>
           </div>
@@ -6037,6 +6052,46 @@
 
       function gerarHistoricoVersoesHTML() {
         const versoes = [
+          {
+            v: 'v286', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Fix — Padding uniforme na tabela Resposta',
+            desc: 'Coluna Ações tinha padding: 4px diferente das demais (5px 6px), gerando espaçamento visualmente inconsistente. Unificado para 5px 6px em todas as células. Larguras das colunas corrigidas para somar exatamente 100% (estava em 101% — Detalhamento ajustado de 15% para 14%).'
+          },
+          {
+            v: 'v285', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'UX — Espaçamento e larguras de colunas da tabela Resposta',
+            desc: 'Padding das células reduzido de 8px para 5px 6px, eliminando espaçamento excessivo. Detalhamento ampliado de 12% para 15% e Observações de 8% para 12%, priorizando os campos com maior número de caracteres. Outras colunas reduzidas proporcionalmente para manter total em 100%.'
+          },
+          {
+            v: 'v284', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Fix — Aba Resposta abre sem filtros pré-aplicados',
+            desc: 'Removido filtro padrão "Pendente" que era aplicado automaticamente ao carregar a aba Resposta. A aba agora abre exibindo todos os registros do setor, sem nenhum filtro selecionado.'
+          },
+          {
+            v: 'v283', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'UX — Margem lateral proporcional ao menu de abas',
+            desc: 'Ajuste fino no container: padding lateral definido em 1.5rem para alinhar visualmente o card de conteúdo com o menu de navegação das abas, que tinha espaçamento similar.'
+          },
+          {
+            v: 'v282', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'UX — Tabela Resposta ocupa tela toda sem scrollbar horizontal',
+            desc: 'Container expandido para max-width: 100% com padding lateral mínimo. Tabela com min-width removido (table-layout: fixed, width: 100%) — ocupa todo o espaço disponível sem gerar scrollbar horizontal na página. Tab Resposta e form-section com padding reduzido e overflow: hidden para conter o conteúdo interno.'
+          },
+          {
+            v: 'v280', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'UX — Grid da aba Resposta ampliado',
+            desc: 'Padding do tab-content reduzido de 2rem para 1rem e form-section de 1.5rem para 1rem (exclusivo na aba Resposta). Min-width da tabela aumentado de 1400px para 1600px. Colunas redistribuídas de 96% para 100%: Status ampliado de 5% para 7% (acomoda "Alt. Tec. Verificada"), Solicitante 6→7%, Data Correção 7→8%, Observações 7→8%.'
+          },
+          {
+            v: 'v279', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'Feat — Novo status Alt. Tec. Verificada (badge verde)',
+            desc: 'Alterações técnicas que foram respondidas (dataHoraCorrecao preenchido) exibem agora o badge verde "Alt. Tec. Verificada" em vez do cinza "Alt. Técnica". Alterações técnicas sem resposta continuam com o badge cinza. Novo status adicionado ao filtro de status da tabela. Distinção feita em calculateStatus() no frontend.'
+          },
+          {
+            v: 'v278', data: 'Abr/2026', tipo: 'feat', cor: '#009688',
+            titulo: 'Feat — Acesso automático à planilha ao cadastrar usuário',
+            desc: 'Com executeAs: USER_ACCESSING, o Google bloqueia usuários que não têm acesso à planilha antes mesmo de o app carregar. Solução: addUsuario e updateUsuario agora chamam DriveApp.getFileById().addEditor(email) automaticamente ao salvar, concedendo acesso de editor à planilha. Nova função pública syncPermissoesPlanilha() percorre todos os usuários da aba Usuarios e sincroniza o acesso em lote. Botão "Sincronizar acesso à planilha" adicionado na seção de usuários cadastrados em Configurações.'
+          },
           {
             v: 'v270', data: 'Abr/2026', tipo: 'docs', cor: '#0369a1',
             titulo: 'Docs — Atualização da aba Ajuda',
