@@ -108,7 +108,7 @@ function healthCheck(autoFix) {
     { chave: "SOLICITACOES",   nome: "Solicitacoes",   headers: ["id_solicitacao","requisicao","solicitante","data_hora_pedido","status","criado_por_email","criado_em"] },
     { chave: "ERROS",          nome: "Erros",          headers: ["id_solicitacao","sequencia_erro","erro","detalhamento","setor_local","diferenca_valor","criado_em","confirmacao_medica"] },
     { chave: "RESPOSTAS",      nome: "Respostas",      headers: ["id_resposta","id_solicitacao","sequencia_erro","nome_responsavel","email_responsavel","erro_corrigido","houve_diferenca_valor","diferenca_valor_resposta","observacoes","data_hora_correcao","criado_em"] },
-    { chave: "USUARIOS",       nome: "Usuarios",       headers: ["email","nome","perfil","setores"] },
+    { chave: "USUARIOS",       nome: "Usuarios",       headers: ["email","nome","perfil","setores","permissoes"] },
     { chave: "SOLICITANTES",   nome: "Solicitantes",   headers: ["solicitante"] },
     { chave: "SETORES",        nome: "Setores_Local",  headers: ["setor_local"] },
     { chave: "ERROS_CADASTRO", nome: "Erros_Cadastro", headers: ["erro"] },
@@ -272,7 +272,51 @@ function healthCheck(autoFix) {
     addCheck("Configurações", "Usuários cadastrados", "erro", "Falha ao ler usuários: " + e, null);
   }
 
-  // --- 6. Usuário atual ---
+  // --- 6. Acesso à planilha por usuários cadastrados ---
+  try {
+    var usuariosSheet = ss.getSheetByName(CONFIG.SHEETS.USUARIOS);
+    var file = DriveApp.getFileById(ss.getId());
+    var editores = file.getEditors().map(function(e) { return e.getEmail().toLowerCase(); });
+    var proprietario = file.getOwner() ? file.getOwner().getEmail().toLowerCase() : "";
+    var acesso = [proprietario].concat(editores);
+    var numUsuarios2 = 0;
+    var semAcesso = [];
+    if (usuariosSheet && usuariosSheet.getLastRow() > 1) {
+      var uVals = usuariosSheet.getDataRange().getValues();
+      for (var ui2 = 1; ui2 < uVals.length; ui2++) {
+        var uEmail = String(uVals[ui2][0] || "").trim().toLowerCase();
+        if (!uEmail) continue;
+        numUsuarios2++;
+        if (acesso.indexOf(uEmail) === -1) semAcesso.push(uVals[ui2][0]);
+      }
+    }
+    if (semAcesso.length === 0) {
+      addCheck("Configurações", "Acesso à planilha", "ok",
+        numUsuarios2 + " usuário(s) com acesso confirmado", numUsuarios2);
+    } else {
+      var msgSemAcesso = semAcesso.length + " usuário(s) sem acesso à planilha: " + semAcesso.join(", ") +
+        " — Use 'Sincronizar acesso à planilha' em Configurações > Usuários.";
+      if (autoFix) {
+        var fixedCount = 0;
+        semAcesso.forEach(function(em) {
+          try { file.addEditor(em); fixedCount++; } catch(e2) {}
+        });
+        if (fixedCount === semAcesso.length) {
+          addCheck("Configurações", "Acesso à planilha", "ok", fixedCount + " usuário(s) sem acesso corrigido(s)", fixedCount);
+          addFix("Acesso à planilha concedido para: " + semAcesso.join(", "), true);
+        } else {
+          addCheck("Configurações", "Acesso à planilha", "aviso", "Correção parcial — " + fixedCount + "/" + semAcesso.length + " corrigidos", fixedCount);
+          addFix("Acesso parcial: " + fixedCount + "/" + semAcesso.length + " corrigidos", false);
+        }
+      } else {
+        addCheck("Configurações", "Acesso à planilha", "aviso", msgSemAcesso, semAcesso.length);
+      }
+    }
+  } catch(e) {
+    addCheck("Configurações", "Acesso à planilha", "aviso", "Não foi possível verificar acesso: " + e, null);
+  }
+
+  // --- 8. Usuário atual ---
   try {
     var emailAtual = Session.getActiveUser().getEmail() || "";
     var usuarioAtual = getUsuarioContexto_(emailAtual);
@@ -286,7 +330,7 @@ function healthCheck(autoFix) {
     addCheck("Aplicativo", "Usuário atual", "erro", "Falha ao identificar usuário: " + e, null);
   }
 
-  // --- 7. Cache ---
+  // --- 9. Cache ---
   try {
     var cache = CacheService.getScriptCache();
     var testKey = "healthcheck_" + debugId;
@@ -314,7 +358,7 @@ function healthCheck(autoFix) {
     addCheck("Aplicativo", "Cache do sistema", "aviso", "Cache indisponível: " + e, null);
   }
 
-  // --- 8. Resumo de solicitações ---
+  // --- 10. Resumo de solicitações ---
   try {
     var solSheet = ss.getSheetByName(CONFIG.SHEETS.SOLICITACOES);
     if (solSheet && solSheet.getLastRow() > 1) {
@@ -1777,6 +1821,107 @@ function syncPermissoesPlanilha() {
   }
   safeLogDebug_("syncPermissoesPlanilha", "concluido", { sincronizados: count, erros: erros });
   return { ok: true, data: { sincronizados: count, erros: erros }, debugId: debugId };
+}
+
+function relatorioSolicitacoesNaoPreenchidas() {
+  const debugId = Utilities.getUuid();
+  try { requirePermissao_('viewRelatorioIncompleto'); } catch(e) {
+    return { ok: false, errors: [String(e)], debugId: debugId };
+  }
+  ensureSheets_();
+
+  // Campos obrigatórios por registro
+  const CAMPOS_OBRIGATORIOS_SOL = [
+    { idx: 1, nome: 'Requisição' },
+    { idx: 2, nome: 'Solicitante' }
+  ];
+  const CAMPOS_OBRIGATORIOS_ERRO = [
+    { idx: 2, nome: 'Tipo de Erro' },
+    { idx: 3, nome: 'Detalhamento' },
+    { idx: 4, nome: 'Setor/Local' }
+  ];
+
+  // Ler planilhas
+  const solSheet = getSheet_(CONFIG.SHEETS.SOLICITACOES);
+  const erroSheet = getSheet_(CONFIG.SHEETS.ERROS);
+  const respSheet = getSheet_(CONFIG.SHEETS.RESPOSTAS);
+
+  const solData = solSheet && solSheet.getLastRow() > 1 ? solSheet.getDataRange().getValues() : [];
+  const erroData = erroSheet && erroSheet.getLastRow() > 1 ? erroSheet.getDataRange().getValues() : [];
+  const respData = respSheet && respSheet.getLastRow() > 1 ? respSheet.getDataRange().getValues() : [];
+
+  // Mapa id_solicitacao → dados da solicitacao (linha)
+  const solMap = {};
+  for (var si = 1; si < solData.length; si++) {
+    var idSol = String(solData[si][0] || "").trim();
+    if (idSol) solMap[idSol] = solData[si];
+  }
+
+  // Mapa id_solicitacao+sequencia → resposta
+  const respMap = {};
+  for (var ri = 1; ri < respData.length; ri++) {
+    var rKey = String(respData[ri][1] || "") + "|" + String(respData[ri][2] || "");
+    respMap[rKey] = respData[ri];
+  }
+
+  const incompletos = [];
+
+  // Verificar cada erro
+  for (var ei = 1; ei < erroData.length; ei++) {
+    var row = erroData[ei];
+    var idSolucao = String(row[0] || "").trim();
+    var seq = String(row[1] || "").trim();
+    var camposFaltando = [];
+
+    // Verificar campos da linha de Erros
+    CAMPOS_OBRIGATORIOS_ERRO.forEach(function(c) {
+      if (!String(row[c.idx] || "").trim()) camposFaltando.push(c.nome);
+    });
+
+    // Verificar campos da Solicitação vinculada
+    var solRow = solMap[idSolucao];
+    if (solRow) {
+      CAMPOS_OBRIGATORIOS_SOL.forEach(function(c) {
+        if (!String(solRow[c.idx] || "").trim()) camposFaltando.push('Solicitação: ' + c.nome);
+      });
+    }
+
+    // Verificar se há resposta para este erro
+    var rKey = idSolucao + "|" + seq;
+    var resp = respMap[rKey];
+    var tipoErro = String(row[2] || "").trim();
+    var isAltTec = tipoErro.toLowerCase().indexOf('alteração técnica') >= 0 || tipoErro.toLowerCase().indexOf('alteracao tecnica') >= 0;
+    var statusSol = solRow ? String(solRow[4] || "").trim() : "";
+    // Só verifica resposta para erros que não estão arquivados
+    var erroAberto = statusSol !== 'CORRIGIDO' && statusSol !== 'ARQUIVADO';
+
+    if (erroAberto) {
+      if (!resp) {
+        camposFaltando.push('Sem resposta');
+      } else {
+        // Verificar campos obrigatórios da resposta
+        if (!isAltTec && !String(resp[3] || "").trim()) camposFaltando.push('Resposta: Responsável');
+        if (!String(resp[9] || "").trim()) camposFaltando.push('Resposta: Data/Hora Correção');
+      }
+    }
+
+    if (camposFaltando.length > 0) {
+      incompletos.push({
+        idSolicitacao: idSolucao,
+        sequencia: seq,
+        requisicao: solRow ? String(solRow[1] || "-") : "-",
+        solicitante: solRow ? String(solRow[2] || "-") : "-",
+        tipoErro: tipoErro || "-",
+        setorLocal: String(row[4] || "-"),
+        status: statusSol || "-",
+        criadoEm: row[6] ? Utilities.formatDate(new Date(row[6]), "America/Sao_Paulo", "dd/MM/yyyy HH:mm") : "-",
+        camposFaltando: camposFaltando
+      });
+    }
+  }
+
+  safeLogDebug_("relatorioSolicitacoesNaoPreenchidas", "concluido", { total: incompletos.length, debugId: debugId });
+  return { ok: true, data: { incompletos: incompletos, total: incompletos.length }, debugId: debugId };
 }
 
 function limparCache() {

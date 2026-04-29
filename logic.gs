@@ -272,7 +272,7 @@ function getSlaStatus_(requestDatetime, correcaoDatetime) {
 const PROFILE_PERM_DEFAULTS_ = {
   ADMIN: {
     tabs: ['resposta', 'solicitacao', 'dashboard', 'config', 'auditoria', 'ajuda'],
-    actions: ['submitRequest', 'respond', 'editSolicitation', 'delete', 'manageUsers', 'manageConfig', 'archive', 'viewAudit'],
+    actions: ['submitRequest', 'respond', 'editSolicitation', 'delete', 'manageUsers', 'manageConfig', 'archive', 'viewAudit', 'viewRelatorioIncompleto'],
     dashTabs: ['colaboradores', 'solicitantes', 'ranking', 'erros']
   },
   CONFERENTE: {

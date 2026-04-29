@@ -4484,6 +4484,42 @@
 
           </div>
 
+          <!-- Relatório de Solicitações Não Preenchidas — apenas para quem tem viewRelatorioIncompleto -->
+          <div class="form-section" id="relatorioIncompletoSection" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.5rem;">
+              <h3 style="margin:0;">📋 Relatório de Solicitações não preenchidas</h3>
+              <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                <button type="button" class="btn secondary" onclick="gerarRelatorioIncompleto()" id="btnRelatorioIncompleto">
+                  🔍 Gerar Relatório
+                </button>
+                <button type="button" class="btn secondary" onclick="exportarRelatorioIncompletoPDF()" id="btnRelatorioIncompletoPDF" style="display:none;">
+                  🖨️ Exportar PDF
+                </button>
+              </div>
+            </div>
+            <p class="info-text-secondary" style="margin-bottom:1rem;">Lista erros sem resposta ou com campos obrigatórios não preenchidos (solicitação ou resposta). Erros já corrigidos/arquivados são ignorados.</p>
+
+            <div id="relatorioIncompletoResultado" style="display:none;">
+              <div id="relatorioIncompletoBanner" style="padding:0.6rem 1rem;border-radius:8px;margin-bottom:0.75rem;font-weight:600;font-size:0.9rem;"></div>
+              <div style="overflow-x:auto;">
+                <table class="list" id="relatorioIncompletoTable" style="min-width:unset;margin-top:0;">
+                  <thead>
+                    <tr>
+                      <th style="background:#fef3c7;color:#92400e;">Requisição</th>
+                      <th style="background:#fef3c7;color:#92400e;">Solicitante</th>
+                      <th style="background:#fef3c7;color:#92400e;">Tipo de Erro</th>
+                      <th style="background:#fef3c7;color:#92400e;">Setor/Local</th>
+                      <th style="background:#fef3c7;color:#92400e;">Status</th>
+                      <th style="background:#fef3c7;color:#92400e;">Criado em</th>
+                      <th style="background:#fee2e2;color:#991b1b;">Campos faltando</th>
+                    </tr>
+                  </thead>
+                  <tbody id="relatorioIncompletoBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
           <!-- Importação PROD→DEV — visível apenas no ambiente DEV -->
           <div class="form-section" id="importacaoProdSection" style="display:none;">
 
@@ -6052,6 +6088,16 @@
 
       function gerarHistoricoVersoesHTML() {
         const versoes = [
+          {
+            v: 'v290', data: 'Abr/2026', tipo: 'feat', cor: '#059669',
+            titulo: 'Relatório de Incompletos — exportar PDF',
+            desc: 'Botão "Exportar PDF" aparece após gerar o relatório. Abre uma janela de impressão formatada com cabeçalho, data de geração e tabela sem colunas ID/Seq. Colunas ID Solicitação e Seq. removidas da tabela do relatório.'
+          },
+          {
+            v: 'v289', data: 'Abr/2026', tipo: 'feat', cor: '#059669',
+            titulo: 'Relatório de Incompletos — sem resposta e campos faltantes',
+            desc: 'O relatório "Solicitações não preenchidas" agora detecta também: erros sem nenhuma resposta registrada (chip "Sem resposta"), respostas com Responsável vazio (erros não-Alteração Técnica) e respostas sem Data/Hora de Correção. Erros com status CORRIGIDO ou ARQUIVADO são ignorados.'
+          },
           {
             v: 'v286', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
             titulo: 'Fix — Padding uniforme na tabela Resposta',
@@ -8220,10 +8266,11 @@
         { id: 'respond',          label: 'Responder erro' },
         { id: 'editSolicitation', label: 'Editar solicitação' },
         { id: 'delete',           label: 'Excluir solicitação' },
-        { id: 'manageUsers',      label: 'Gerenciar usuários' },
-        { id: 'manageConfig',     label: 'Gerenciar configurações' },
-        { id: 'archive',          label: 'Arquivar dados' },
-        { id: 'viewAudit',        label: 'Visualizar auditoria' }
+        { id: 'manageUsers',            label: 'Gerenciar usuários' },
+        { id: 'manageConfig',           label: 'Gerenciar configurações' },
+        { id: 'archive',                label: 'Arquivar dados' },
+        { id: 'viewAudit',              label: 'Visualizar auditoria' },
+        { id: 'viewRelatorioIncompleto', label: 'Relatório de incompletos' }
       ];
 
       // Subabas do dashboard configuráveis por usuário
@@ -8238,7 +8285,7 @@
       const PROFILE_PERM_DEFAULTS_UI_ = {
         ADMIN: {
           tabs: ['resposta', 'solicitacao', 'dashboard', 'config', 'auditoria', 'ajuda'],
-          actions: ['submitRequest', 'respond', 'editSolicitation', 'delete', 'manageUsers', 'manageConfig', 'archive', 'viewAudit'],
+          actions: ['submitRequest', 'respond', 'editSolicitation', 'delete', 'manageUsers', 'manageConfig', 'archive', 'viewAudit', 'viewRelatorioIncompleto'],
           dashTabs: ['colaboradores', 'solicitantes', 'ranking', 'erros']
         },
         CONFERENTE: {
@@ -9043,6 +9090,110 @@
             showModal('Erro', 'Falha ao sincronizar: ' + error);
           })
           .syncPermissoesPlanilha();
+      }
+
+      // ============================================================
+      // RELATÓRIO DE SOLICITAÇÕES NÃO PREENCHIDAS
+      // ============================================================
+      function gerarRelatorioIncompleto() {
+        const btn = document.getElementById('btnRelatorioIncompleto');
+        const btnPdf = document.getElementById('btnRelatorioIncompletoPDF');
+        btn.disabled = true;
+        btn.textContent = '⏳ Gerando...';
+        btnPdf.style.display = 'none';
+        const resultado = document.getElementById('relatorioIncompletoResultado');
+        resultado.style.display = 'none';
+
+        google.script.run
+          .withSuccessHandler((res) => {
+            btn.disabled = false;
+            btn.textContent = '🔍 Gerar Relatório';
+            if (!res.ok) { showModal('Erro', res.errors.join('<br>')); return; }
+            const d = res.data;
+            const banner = document.getElementById('relatorioIncompletoBanner');
+            const tbody = document.getElementById('relatorioIncompletoBody');
+
+            if (d.total === 0) {
+              banner.style.background = '#d1fae5';
+              banner.style.color = '#065f46';
+              banner.textContent = '✅ Nenhuma solicitação com campos faltando encontrada.';
+              tbody.innerHTML = '';
+              btnPdf.style.display = 'none';
+            } else {
+              banner.style.background = '#fef3c7';
+              banner.style.color = '#92400e';
+              banner.textContent = '⚠️ ' + d.total + ' registro(s) com campos não preenchidos.';
+              tbody.innerHTML = d.incompletos.map(function(r) {
+                const badges = r.camposFaltando.map(function(c) {
+                  return '<span style="background:#fee2e2;color:#991b1b;padding:1px 7px;border-radius:99px;font-size:0.75rem;font-weight:600;white-space:nowrap;">' + escapeHtml(c) + '</span>';
+                }).join(' ');
+                return '<tr>' +
+                  '<td>' + escapeHtml(r.requisicao) + '</td>' +
+                  '<td>' + escapeHtml(r.solicitante) + '</td>' +
+                  '<td>' + escapeHtml(r.tipoErro) + '</td>' +
+                  '<td>' + escapeHtml(r.setorLocal) + '</td>' +
+                  '<td>' + escapeHtml(r.status) + '</td>' +
+                  '<td style="font-size:0.78rem;">' + escapeHtml(r.criadoEm) + '</td>' +
+                  '<td>' + badges + '</td>' +
+                  '</tr>';
+              }).join('');
+              btnPdf.style.display = '';
+            }
+            resultado.style.display = 'block';
+          })
+          .withFailureHandler((error) => {
+            btn.disabled = false;
+            btn.textContent = '🔍 Gerar Relatório';
+            showModal('Erro', 'Falha ao gerar relatório: ' + error);
+          })
+          .relatorioSolicitacoesNaoPreenchidas();
+      }
+
+      function exportarRelatorioIncompletoPDF() {
+        const banner = document.getElementById('relatorioIncompletoBanner');
+        const table = document.getElementById('relatorioIncompletoTable');
+        if (!table) return;
+
+        const now = new Date();
+        const dataStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        const html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+          '<title>Relatório de Incompletos</title>' +
+          '<style>' +
+          'body{font-family:Arial,sans-serif;font-size:11px;color:#111;margin:0;padding:20px;}' +
+          'h2{font-size:15px;margin:0 0 4px 0;color:#1e293b;}' +
+          '.subtitle{font-size:10px;color:#64748b;margin-bottom:14px;}' +
+          '.banner{padding:6px 12px;border-radius:6px;font-weight:700;font-size:11px;margin-bottom:12px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;}' +
+          'table{width:100%;border-collapse:collapse;table-layout:fixed;}' +
+          'th{background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:5px 7px;border:1px solid #fde68a;text-align:left;}' +
+          'th:last-child{background:#fee2e2;color:#991b1b;}' +
+          'td{padding:5px 7px;border:1px solid #e2e8f0;vertical-align:top;word-break:break-word;}' +
+          'tr:nth-child(even) td{background:#f8fafc;}' +
+          '.badge{display:inline-block;background:#fee2e2;color:#991b1b;padding:1px 7px;border-radius:99px;font-size:9px;font-weight:700;margin:1px 2px 1px 0;white-space:nowrap;}' +
+          '@media print{body{padding:10px;}@page{margin:15mm;}}' +
+          '</style></head><body>' +
+          '<h2>Relatório de Solicitações não preenchidas</h2>' +
+          '<div class="subtitle">Gerado em: ' + dataStr + ' &nbsp;|&nbsp; NeoFormula — Solicitação Conserto</div>' +
+          '<div class="banner">' + escapeHtml(banner.textContent) + '</div>' +
+          '<table>' +
+          '<thead><tr>' +
+          '<th style="width:9%">Requisição</th>' +
+          '<th style="width:18%">Solicitante</th>' +
+          '<th style="width:16%">Tipo de Erro</th>' +
+          '<th style="width:10%">Setor/Local</th>' +
+          '<th style="width:9%">Status</th>' +
+          '<th style="width:11%">Criado em</th>' +
+          '<th style="width:27%">Campos faltando</th>' +
+          '</tr></thead>' +
+          '<tbody>' + table.querySelector('tbody').innerHTML + '</tbody>' +
+          '</table></body></html>';
+
+        const win = window.open('', '_blank', 'width=900,height=700');
+        if (!win) { showModal('Atenção', 'Permita pop-ups para exportar o PDF.'); return; }
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        setTimeout(function() { win.print(); }, 400);
       }
 
       // ============================================================
@@ -10371,6 +10522,12 @@
         var importSection = document.getElementById('importacaoProdSection');
         if (importSection) {
           importSection.style.display = (appEnv === 'DEV') ? 'block' : 'none';
+        }
+
+        // Relatório de incompletos só aparece para quem tem a ação viewRelatorioIncompleto
+        var relSection = document.getElementById('relatorioIncompletoSection');
+        if (relSection) {
+          relSection.style.display = hasAction_('viewRelatorioIncompleto') ? 'block' : 'none';
         }
 
         if (config && config.thresholds) {
