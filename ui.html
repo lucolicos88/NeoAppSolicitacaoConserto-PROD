@@ -3308,6 +3308,10 @@
                 <label>🔍 Requisição</label>
                 <input type="text" id="filterRespostaRequisicao" class="form-control" placeholder="Nº requisição" onkeyup="filterOpenErrors()" style="width: 120px;">
               </div>
+              <div class="form-group" style="margin: 0; min-width: 140px;">
+                <label>📝 Detalhamento</label>
+                <input type="text" id="filterRespostaDetalhamento" class="form-control" placeholder="Detalhamento" onkeyup="filterOpenErrors()" style="width: 140px;">
+              </div>
               <div class="form-group" style="margin: 0; min-width: 180px;">
                 <label>👤 Solicitante</label>
                 <div id="filterRespostaSolicitante"></div>
@@ -6101,6 +6105,11 @@
       function gerarHistoricoVersoesHTML() {
         const versoes = [
           {
+            v: 'v302', data: 'Abr/2026', tipo: 'feat', cor: '#059669',
+            titulo: 'Filtro Detalhamento na Aba Resposta',
+            desc: 'Adicionado campo de texto "Detalhamento" na barra de filtros da Aba Resposta, funcionando igual ao filtro de Requisição (busca parcial, case-insensitive). Integrado ao sistema de tags de filtros ativos, contador de filtros, localStorage (persistência entre sessões) e botão Limpar Filtros.'
+          },
+          {
             v: 'v301', data: 'Abr/2026', tipo: 'docs', cor: '#7c3aed',
             titulo: 'Documentação atualizada — Ajuda, Documentação Técnica e API',
             desc: 'Aba Ajuda: schema Solicitacoes atualizado com [7]urgente e [8]atualizado_em; getOpenErros documenta retorno de CORRIGIDO; updateSolicitacao documenta permissões via permissoes.actions; guia Resposta detalha botão Salvar bloqueado, responsável obrigatório, regra diferença de valor e decimal virgula; campo Solicitante documenta filtro por usuário logado; nota de segurança atualizada. Documentação Técnica: tabela de planilhas reescrita com schema real. API Reference: seção de endpoints fictícios substituída pelos endpoints reais do sistema (submitRequest, submitResponse, getOpenErros, updateSolicitacao, deleteSolicitacao, getDashboardRecords, relatorioSolicitacoesNaoPreenchidas, CRUD usuários e config).'
@@ -7918,7 +7927,7 @@
 
     <div class="footer">
       <p><strong>API do Sistema de Solicitação de Consertos — NeoFormula</strong></p>
-      <p>v301 | Documentação atualizada</p>
+      <p>v302 | Filtro Detalhamento na Aba Resposta</p>
       <p style="margin-top: 15px; font-size: 0.9rem;">© 2025 NeoFormula</p>
     </div>
   </div>
@@ -11134,6 +11143,7 @@
 
       function filterOpenErrors() {
         const filterRequisicao = document.getElementById('filterRespostaRequisicao').value.trim().toLowerCase();
+        const filterDetalhamento = document.getElementById('filterRespostaDetalhamento').value.trim().toLowerCase();
 
         // Get multi-select values
         const filterSolicitantes = multiSelectInstances['filterRespostaSolicitante']?.getValues() || [];
@@ -11146,6 +11156,11 @@
         filteredOpenErros = allOpenErros.filter(item => {
           // Filter by requisição (partial match)
           if (filterRequisicao && !String(item.requisicao || '').toLowerCase().includes(filterRequisicao)) {
+            return false;
+          }
+
+          // Filter by detalhamento (partial match)
+          if (filterDetalhamento && !String(item.detalhamento || '').toLowerCase().includes(filterDetalhamento)) {
             return false;
           }
 
@@ -11202,6 +11217,7 @@
         try {
           const state = {
             requisicao: document.getElementById('filterRespostaRequisicao').value.trim(),
+            detalhamento: document.getElementById('filterRespostaDetalhamento').value.trim(),
             solicitantes: multiSelectInstances['filterRespostaSolicitante']?.getValues() || [],
             setores: multiSelectInstances['filterRespostaSetor']?.getValues() || [],
             status: multiSelectInstances['filterRespostaStatus']?.getValues() || [],
@@ -11222,6 +11238,10 @@
             const el = document.getElementById('filterRespostaRequisicao');
             if (el) el.value = state.requisicao;
           }
+          if (state.detalhamento) {
+            const el = document.getElementById('filterRespostaDetalhamento');
+            if (el) el.value = state.detalhamento;
+          }
           ['solicitantes','setores','status','diferencaValor','confMedica'].forEach(key => {
             const idMap = { solicitantes:'filterRespostaSolicitante', setores:'filterRespostaSetor',
               status:'filterRespostaStatus', diferencaValor:'filterRespostaDiferencaValor', confMedica:'filterRespostaConfMedica' };
@@ -11234,8 +11254,9 @@
       }
 
       function limparFiltrosResposta() {
-        // Clear requisição
+        // Clear requisição e detalhamento
         document.getElementById('filterRespostaRequisicao').value = '';
+        document.getElementById('filterRespostaDetalhamento').value = '';
 
         // Clear multi-selects
         if (multiSelectInstances['filterRespostaSolicitante']) {
@@ -11285,6 +11306,7 @@
         // Update count info
         const countInfo = document.getElementById('respostaCountInfo');
         const filterRequisicao = document.getElementById('filterRespostaRequisicao').value.trim();
+        const filterDetalhamento = document.getElementById('filterRespostaDetalhamento').value.trim();
         const filterSolicitantes = multiSelectInstances['filterRespostaSolicitante']?.getValues() || [];
         const filterSetores = multiSelectInstances['filterRespostaSetor']?.getValues() || [];
         const filterStatus = multiSelectInstances['filterRespostaStatus']?.getValues() || [];
@@ -11294,6 +11316,7 @@
         // Build filter description - show actual names
         const filtrosAtivos = [];
         if (filterRequisicao) filtrosAtivos.push(`req: ${filterRequisicao}`);
+        if (filterDetalhamento) filtrosAtivos.push(`det: ${filterDetalhamento}`);
         if (filterSolicitantes.length > 0) {
           const solNames = filterSolicitantes.map(s => s.split(' ')[0]).join(', ');
           filtrosAtivos.push(`sol: ${solNames}`);
@@ -11310,13 +11333,16 @@
 
         // Update visual filter tags area
         const filtrosContainer = document.getElementById('respostaFiltrosAtivos');
-        const hasFilters = filterRequisicao || filterSolicitantes.length > 0 || filterSetores.length > 0 || filterStatus.length > 0 || filterDiferencaValor.length > 0 || filterConfMedica.length > 0;
+        const hasFilters = filterRequisicao || filterDetalhamento || filterSolicitantes.length > 0 || filterSetores.length > 0 || filterStatus.length > 0 || filterDiferencaValor.length > 0 || filterConfMedica.length > 0;
 
         if (hasFilters) {
           let tagsHTML = '<span class="filtros-ativos-label">🏷️ Filtros:</span>';
 
           if (filterRequisicao) {
             tagsHTML += `<span class="filtro-tag">Req: ${filterRequisicao}</span>`;
+          }
+          if (filterDetalhamento) {
+            tagsHTML += `<span class="filtro-tag">Det: ${filterDetalhamento}</span>`;
           }
           filterSolicitantes.forEach(sol => {
             tagsHTML += `<span class="filtro-tag">${sol}</span>`;
@@ -11344,7 +11370,7 @@
         // Update filter count badge
         const filtrosBadge = document.getElementById('filtrosBadge');
         if (filtrosBadge) {
-          const nFiltros = (filterRequisicao ? 1 : 0) + filterSolicitantes.length + filterSetores.length +
+          const nFiltros = (filterRequisicao ? 1 : 0) + (filterDetalhamento ? 1 : 0) + filterSolicitantes.length + filterSetores.length +
             filterStatus.length + filterDiferencaValor.length + filterConfMedica.length + (filtroUrgenteAtivo ? 1 : 0);
           if (nFiltros > 0) {
             filtrosBadge.textContent = nFiltros + ' filtro' + (nFiltros !== 1 ? 's' : '');

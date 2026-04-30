@@ -74,7 +74,7 @@ const CONFIG = {
     CRITICAL_MINUTES: 30,
     TIMEZONE: "America/Sao_Paulo"
   },
-  APP_VERSION: "v301",
+  APP_VERSION: "v302",
   APP_ENV: "PROD"
 };
 // DEBUG_ENABLED automático: ativo em DEV, desativado em PROD
@@ -382,8 +382,10 @@ function gerarDadosTesteInterno_(quantidade) {
     // Primeiras qtdRespostas serão respondidas, restante fica ABERTO
     const temResposta = i < qtdRespostas;
     const status = temResposta ? 'CORRIGIDO' : 'ABERTO';
+    const urgente = Math.random() < 0.15 ? 'SIM' : 'NAO'; // 15% urgentes
+    const atualizadoEm = temResposta && Math.random() < 0.3 ? new Date(dataHoraPedido.getTime() + Math.floor(Math.random() * 12) * 3600000) : '';
 
-    // Solicitação
+    // Schema Solicitacoes: [0]id [1]requisicao [2]solicitante [3]data_hora_pedido [4]status [5]criado_por_email [6]criado_em [7]urgente [8]atualizado_em
     solicitacoesData.push([
       solicitacaoId,
       requisicao,
@@ -391,7 +393,9 @@ function gerarDadosTesteInterno_(quantidade) {
       dataHoraPedido,
       status,
       testEmail,
-      dataHoraPedido
+      dataHoraPedido,
+      urgente,
+      atualizadoEm
     ]);
 
     // Exatamente 1 erro por solicitação
@@ -399,7 +403,9 @@ function gerarDadosTesteInterno_(quantidade) {
     const setor = setores[Math.floor(Math.random() * setores.length)];
     const detalhamento = detalhamentos[Math.floor(Math.random() * detalhamentos.length)];
     const diferencaValor = Math.random() < 0.1 ? 'SIM' : 'NAO'; // 10% com diferença
+    const confirmacaoMedica = Math.random() < 0.2 ? 'SIM' : 'NAO'; // 20% exigem confirmação médica
 
+    // Schema Erros: [0]id_solicitacao [1]seq [2]erro [3]detalhamento [4]setor_local [5]diferenca_valor [6]criado_em [7]confirmacao_medica
     errosData.push([
       solicitacaoId,
       1, // Sempre sequência 1 (1 erro por solicitação)
@@ -407,7 +413,8 @@ function gerarDadosTesteInterno_(quantidade) {
       detalhamento,
       setor,
       diferencaValor,
-      dataHoraPedido
+      dataHoraPedido,
+      confirmacaoMedica
     ]);
 
     // Criar resposta se status não for ABERTO
@@ -416,8 +423,10 @@ function gerarDadosTesteInterno_(quantidade) {
       const dataCorrecao = new Date(dataHoraPedido.getTime() + horasParaCorrecao * 60 * 60 * 1000);
       const responsavel = colaboradores[Math.floor(Math.random() * colaboradores.length)];
       const obs = observacoes[Math.floor(Math.random() * observacoes.length)];
+      // Regra: diferencaValor=SIM exige valorDif preenchido
       const valorDif = diferencaValor === 'SIM' ? (Math.random() * 100).toFixed(2).replace(".", ",") : '';
 
+      // Schema Respostas: [0]id [1]id_sol [2]seq [3]nome_responsavel [4]email [5]erro_corrigido [6]houve_dif_valor [7]dif_valor_resposta [8]observacoes [9]data_hora_correcao [10]criado_em
       respostasData.push([
         Utilities.getUuid(),
         solicitacaoId,
@@ -489,19 +498,21 @@ function configurarUsuarioAdmin_(email, setores) {
 
   const values = usuariosSheet.getDataRange().getValues();
 
+  // Schema Usuarios: [0]email [1]nome [2]perfil [3]setores [4]permissoes
   // Verificar se usuário já existe
   for (let i = 1; i < values.length; i++) {
     if (values[i][0] === email) {
-      // Atualizar para ADMIN com todos os setores
+      // Atualizar para ADMIN com todos os setores; limpa permissoes customizadas (usa padrão do perfil)
       usuariosSheet.getRange(i + 1, 3).setValue('ADMIN');
       usuariosSheet.getRange(i + 1, 4).setValue('*');
+      usuariosSheet.getRange(i + 1, 5).setValue('');
       return;
     }
   }
 
-  // Adicionar novo usuário ADMIN
+  // Adicionar novo usuário ADMIN — 5 colunas conforme schema atual
   const nome = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  usuariosSheet.appendRow([email, nome, 'ADMIN', '*']);
+  usuariosSheet.appendRow([email, nome, 'ADMIN', '*', '']);
 }
 
 function limparDadosTeste_() {
