@@ -4961,7 +4961,7 @@
             </ol>
             <p>O editor possui <strong>3 colunas</strong>: <em>Abas acessíveis</em> (quais abas do menu aparecem), <em>Ações disponíveis</em> (o que o usuário pode fazer) e <em>Subabas do dashboard</em> (quais das 4 subabas — Colaboradores, Solicitantes, Ranking, Erros — ficam visíveis). As preferências de subabas ficam salvas na planilha junto com as demais permissões.</p>
             <p>No card de cada usuário cadastrado, os chips mostram a contagem real de permissões. Quando as permissões estão customizadas (diferentes do padrão do perfil), aparece o símbolo <strong>✎</strong> no chip.</p>
-            <p style="background:#fff8e1;border:1px solid #fde68a;border-radius:6px;padding:0.6rem 0.75rem;font-size:0.82rem;">⚠️ <strong>Segurança:</strong> As permissões do frontend controlam o que cada usuário <em>vê e acessa</em>. O backend ainda valida o perfil para operações críticas (exclusão, gerenciamento de usuários). Permissões customizadas não substituem as validações de servidor.</p>
+            <p style="background:#fff8e1;border:1px solid #fde68a;border-radius:6px;padding:0.6rem 0.75rem;font-size:0.82rem;">⚠️ <strong>Segurança:</strong> As permissões do frontend controlam o que cada usuário <em>vê e acessa</em>. O backend valida as mesmas permissões via <code>permissoes.actions</code> para operações de escrita — incluindo as ações <em>editSolicitation</em> (editar campos da solicitação) e <em>respond</em> (preencher resposta), que são verificadas de forma independente desde a v297. Operações críticas (exclusão, gerenciamento de usuários) exigem perfil ADMIN no servidor.</p>
           </div>
         </details>
       </div>
@@ -4978,7 +4978,7 @@
             <p><strong>Passo a passo:</strong></p>
             <ol>
               <li><strong>Requisição</strong> — Informe o número da requisição onde o erro foi encontrado (ex: <code>123456</code>). Máximo 30 caracteres.</li>
-              <li><strong>Solicitante</strong> — Selecione na lista a farmácia ou unidade que está solicitando a correção.</li>
+              <li><strong>Solicitante</strong> — Selecione na lista a farmácia ou unidade que está solicitando a correção. <strong>Regra de exibição (v291):</strong> se o nome do usuário logado constar na lista de solicitantes, apenas o nome dele é exibido; se não constar, a lista fica vazia (exceto ADMIN sem nome na lista, que vê todos).</li>
               <li><strong>Tipo de Erro</strong> — Escolha o tipo de erro da lista cadastrada. Cada erro tem uma classificação de gravidade: <span style="background:#f1f5f9;padding:1px 6px;border-radius:4px;font-size:0.8rem;">NA</span> <span style="background:#fef3c7;padding:1px 6px;border-radius:4px;font-size:0.8rem;">Leve</span> <span style="background:#fee2e2;padding:1px 6px;border-radius:4px;font-size:0.8rem;">Grave</span> <span style="background:#fce7f3;padding:1px 6px;border-radius:4px;font-size:0.8rem;">Gravíssimo</span>.</li>
               <li><strong>Detalhamento</strong> — Descreva o problema com o máximo de detalhes possível. Máximo 2000 caracteres. Um bom detalhamento facilita a correção rápida.</li>
               <li><strong>Setor/Local</strong> — Selecione onde o erro ocorreu. Somente usuários com acesso ao setor poderão ver esta solicitação.</li>
@@ -5029,12 +5029,22 @@
               <li>Clique em <strong>"Salvar Resposta"</strong></li>
             </ol>
 
-            <p><strong>Editar uma resposta já registrada:</strong></p>
+            <p><strong>Editar dados de uma solicitação ou resposta:</strong></p>
             <ol>
               <li>Clique no botão <strong>✏️ Editar</strong> na linha correspondente</li>
-              <li>O modal de edição abrirá. Dependendo do seu perfil você poderá editar os dados da solicitação (ADMIN/CONFERENTE) ou apenas a resposta (RESPOSTA)</li>
-              <li>Faça os ajustes e clique em <strong>Salvar</strong></li>
+              <li>O modal de edição abrirá. Dependendo das suas permissões você poderá editar os dados da solicitação (ação <em>Editar solicitação</em>) ou da resposta (ação <em>Responder erro</em>) — as duas seções são independentes</li>
+              <li>O botão <strong>"Salvar Alterações" inicia desabilitado</strong> — ele só é habilitado quando ao menos um campo for alterado em relação ao valor original (v299)</li>
+              <li>Faça os ajustes e clique em <strong>Salvar Alterações</strong></li>
             </ol>
+            <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:0.75rem;margin:0.5rem 0;">
+              <strong>⚠️ Regras de validação da resposta (v297–v299):</strong>
+              <ul style="margin:0.4rem 0 0 1rem;">
+                <li><strong>Responsável obrigatório:</strong> ao preencher qualquer campo de resposta (Diferença R$ ou Observações), o campo <em>Responsável pelo Erro</em> também deve ser informado</li>
+                <li><strong>Diferença R$ obrigatória:</strong> se o erro foi registrado com "Diferença no Valor = SIM", o valor em R$ deve ser preenchido ao informar o responsável</li>
+                <li><strong>Observações:</strong> campo opcional — pode ser preenchido livremente junto com o responsável</li>
+                <li><strong>Decimal:</strong> o valor em R$ é gravado com vírgula como separador decimal (ex: 1,23), independente do que for digitado no campo (v300)</li>
+              </ul>
+            </div>
 
             <p><strong>Status dos erros na tabela:</strong></p>
             <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin:0.4rem 0 0.75rem 0;font-size:0.82rem;align-items:center;">
@@ -5279,7 +5289,7 @@
                   <tr style="border-bottom:1px solid #e2e8f0;background:#fafafa;">
                     <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>getOpenErros()</code></td>
                     <td style="padding:0.5rem 0.75rem;color:#64748b;">—</td>
-                    <td style="padding:0.5rem 0.75rem;color:#64748b;">Lista de erros ABERTO/EM_CORRECAO do setor do usuário, com slaStatus calculado</td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;">Lista de erros do setor do usuário (ABERTO, EM_CORRECAO e CORRIGIDO — apenas ARQUIVADO é excluído), com slaStatus e campo <code>status</code> calculados. v297: inclui campo <code>status</code> para fallback de registros históricos.</td>
                     <td style="padding:0.5rem 0.75rem;">Qualquer</td>
                   </tr>
                   <tr style="border-bottom:1px solid #e2e8f0;">
@@ -5296,9 +5306,9 @@
                   </tr>
                   <tr style="border-bottom:1px solid #e2e8f0;">
                     <td style="padding:0.5rem 0.75rem;white-space:nowrap;"><code>updateSolicitacao(payload)</code></td>
-                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>solicitacaoId, erroSeq, requisicao, solicitante, erro, setorLocal, diferencaNoValor, detalhamento, responseData?</code></td>
-                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>ok</code></td>
-                    <td style="padding:0.5rem 0.75rem;">ação "editSolicitation"</td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>solicitacaoId, erroSeq, requisicao?, solicitante?, erro?, setorLocal?, diferencaNoValor?, detalhamento?, originalValues?, responseData?{responsavel, diferencaValorResposta, observacoes}</code></td>
+                    <td style="padding:0.5rem 0.75rem;color:#64748b;"><code>ok</code>. Grava <code>atualizado_em</code> [col 8] ao alterar campos da solicitação. Cria resposta na planilha Respostas apenas quando <code>responsavel</code> estiver preenchido. Se <code>diferencaNoValor=SIM</code>, <code>diferencaValorResposta</code> é obrigatório ao informar responsável. <code>diferencaValorResposta</code> é normalizado (ponto→vírgula) antes de gravar.</td>
+                    <td style="padding:0.5rem 0.75rem;">ação "editSolicitation" (campos solicitação) · ação "respond" (responseData) — v297: verificado via <code>permissoes.actions</code></td>
                   </tr>
                 </tbody>
               </table>
@@ -5413,7 +5423,9 @@
 [3] data_hora_pedido
 [4] status
 [5] criado_por_email
-[6] criado_em</pre>
+[6] criado_em
+[7] urgente          ← SIM/NAO
+[8] atualizado_em    ← v296 — gravado ao editar campos da solicitação</pre>
               </div>
               <div>
                 <strong>Erros</strong>
@@ -6088,6 +6100,31 @@
 
       function gerarHistoricoVersoesHTML() {
         const versoes = [
+          {
+            v: 'v301', data: 'Abr/2026', tipo: 'docs', cor: '#7c3aed',
+            titulo: 'Documentação atualizada — Ajuda, Documentação Técnica e API',
+            desc: 'Aba Ajuda: schema Solicitacoes atualizado com [7]urgente e [8]atualizado_em; getOpenErros documenta retorno de CORRIGIDO; updateSolicitacao documenta permissões via permissoes.actions; guia Resposta detalha botão Salvar bloqueado, responsável obrigatório, regra diferença de valor e decimal virgula; campo Solicitante documenta filtro por usuário logado; nota de segurança atualizada. Documentação Técnica: tabela de planilhas reescrita com schema real. API Reference: seção de endpoints fictícios substituída pelos endpoints reais do sistema (submitRequest, submitResponse, getOpenErros, updateSolicitacao, deleteSolicitacao, getDashboardRecords, relatorioSolicitacoesNaoPreenchidas, CRUD usuários e config).'
+          },
+          {
+            v: 'v300', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Fix — Diferença R$ gravada com vírgula como separador decimal',
+            desc: 'Campos de diferença de valor eram salvos na planilha com ponto decimal (ex: 1.23) por conta do input type="number" do browser. A normalização agora ocorre no backend em todos os pontos de escrita (insertResposta_, updateResposta_, updateSolicitacao insert e update), convertendo ponto para vírgula (ex: 1,23) antes de gravar na planilha.'
+          },
+          {
+            v: 'v299', data: 'Abr/2026', tipo: 'feat', cor: '#059669',
+            titulo: 'Modal de edição — botão Salvar bloqueado até haver alteração + responsável obrigatório',
+            desc: 'Botão "Salvar Alterações" inicia desabilitado e só é habilitado quando ao menos um campo do modal é alterado em relação ao valor original. Ao fechar o modal o estado é resetado. Nova validação: se qualquer campo de resposta (Diferença R$ ou Observações) for preenchido sem informar o Responsável pelo Erro, o formulário bloqueia com mensagem de erro.'
+          },
+          {
+            v: 'v298', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Gerar/Limpar Dados de Teste — schema atualizado',
+            desc: 'Gerar Dados de Teste atualizado com o schema atual: Solicitacoes inclui urgente [7] e atualizado_em [8]; Erros inclui confirmacao_medica [7]; Usuarios agora grava coluna permissoes [4] vazia. Dados gerados com 15% urgentes, 20% confirmação médica, atualizado_em em 30% dos CORRIGIDOS. Regra diferença de valor respeitada: registros com diferencaNoValor=SIM sempre têm valorDif preenchido.'
+          },
+          {
+            v: 'v297', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Fix — Registros Corrigidos visíveis no frontend + permissões editar/responder alinhadas + regra diferença de valor',
+            desc: 'Registros com status CORRIGIDO voltam a aparecer na aba Resposta (o backend parava de retorná-los; agora só ARQUIVADO é excluído). Campo "status" incluído no objeto retornado para que calculateStatus use como fallback para registros históricos sem Respostas vinculada. Permissões de "editar solicitação" e "responder erro" agora verificadas via permissoes.actions no backend (alinhado com frontend). Nova regra: erros com "Diferença no Valor = SIM" exigem o campo "Diferença R$" preenchido ao informar o responsável.'
+          },
           {
             v: 'v291', data: 'Abr/2026', tipo: 'feat', cor: '#059669',
             titulo: 'Solicitação — Farmacêutica Solicitante filtrada pelo usuário logado',
@@ -7029,33 +7066,55 @@
 ├── appsscript.json  # Configurações do projeto
 └── .clasp.json      # Configuração do CLASP</code></pre>
 
-        <h3>Planilhas do Sistema</h3>
+        <h3>Planilhas do Sistema (Schema atual)</h3>
+        <p style="color:#555;margin-bottom:12px;">Colunas lidas por índice numérico no backend. Nunca reordene — adicione sempre ao final.</p>
         <div class="table-container">
           <table>
-            <tr>
-              <th>Aba</th>
-              <th>Função</th>
-              <th>Campos Principais</th>
-            </tr>
+            <tr><th>Aba</th><th>Função</th><th>Schema (índices)</th></tr>
             <tr>
               <td><span class="badge badge-info">Solicitacoes</span></td>
-              <td>Armazena todas as solicitações</td>
-              <td>ID, Data, Solicitante, Setor, Descrição, Status, Fotos</td>
+              <td>Registros de solicitações</td>
+              <td><code>[0]id [1]requisicao [2]solicitante [3]data_hora_pedido [4]status [5]criado_por_email [6]criado_em [7]urgente [8]atualizado_em</code></td>
             </tr>
             <tr>
-              <td><span class="badge badge-success">Usuarios</span></td>
-              <td>Cadastro de usuários</td>
-              <td>Email, Nome, Permissão, Setor, Ativo</td>
+              <td><span class="badge badge-warning">Erros</span></td>
+              <td>Erros vinculados a cada solicitação</td>
+              <td><code>[0]id_solicitacao [1]sequencia_erro [2]erro [3]detalhamento [4]setor_local [5]diferenca_valor [6]criado_em [7]confirmacao_medica</code></td>
             </tr>
             <tr>
-              <td><span class="badge badge-warning">Config</span></td>
-              <td>Configurações do sistema</td>
-              <td>Tipos de Erro, Setores, Templates de Email</td>
+              <td><span class="badge badge-success">Respostas</span></td>
+              <td>Respostas/correções registradas</td>
+              <td><code>[0]id_resposta [1]id_solicitacao [2]sequencia_erro [3]nome_responsavel [4]email_responsavel [5]erro_corrigido [6]houve_diferenca_valor [7]diferenca_valor_resposta [8]observacoes [9]data_hora_correcao [10]criado_em</code></td>
             </tr>
             <tr>
-              <td><span class="badge badge-danger">Log</span></td>
-              <td>Registro de atividades</td>
-              <td>Data, Usuário, Ação, Detalhes</td>
+              <td><span class="badge badge-info">Usuarios</span></td>
+              <td>Cadastro de usuários e permissões</td>
+              <td><code>[0]email [1]nome [2]perfil [3]setores [4]permissoes (JSON {tabs, actions, dashTabs})</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-danger">Auditoria</span></td>
+              <td>Log imutável de todas as escritas</td>
+              <td><code>timestamp, email, operação, tabela, campo, valor_anterior, novo_valor</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-warning">Erros_Cadastro</span></td>
+              <td>Tipos de erro cadastráveis</td>
+              <td><code>[0]nome [1]classificacao (NA/Leve/Grave/Gravíssimo)</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-success">Solicitantes</span></td>
+              <td>Farmácias/unidades solicitantes</td>
+              <td><code>[0]nome</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-info">Setores_Local</span></td>
+              <td>Setores/locais disponíveis</td>
+              <td><code>[0]nome</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-warning">Limiares_SLA</span></td>
+              <td>Configuração de SLA</td>
+              <td><code>[0]warn_minutes [1]critical_minutes [2]timezone</code></td>
             </tr>
           </table>
         </div>
@@ -7064,33 +7123,44 @@
       <section id="funcionalidades" class="section">
         <h2>⚙️ Funcionalidades Detalhadas</h2>
 
-        <h3>📝 Módulo de Solicitações</h3>
+        <h3>📝 Aba Solicitação</h3>
         <ul style="line-height: 2; color: #444; padding-left: 20px;">
-          <li><strong>Nova Solicitação:</strong> Formulário completo com validação de campos</li>
-          <li><strong>Upload de Fotos:</strong> Suporte a múltiplas imagens com preview</li>
-          <li><strong>Histórico:</strong> Registro de todas as alterações com timestamp</li>
-          <li><strong>Busca Avançada:</strong> Filtros por data, status, setor e responsável</li>
-          <li><strong>Exportação:</strong> Download individual ou em lote das fotos</li>
+          <li><strong>Registrar Erro:</strong> Formulário com validação completa — requisição, solicitante, tipo de erro, detalhamento, setor, diferença de valor e confirmação médica</li>
+          <li><strong>Solicitante filtrado:</strong> Campo exibe apenas o nome do usuário logado (se na lista); ADMIN sem nome na lista vê todos (v291)</li>
+          <li><strong>Anti-duplicata:</strong> Botão bloqueado após o primeiro clique</li>
+          <li><strong>Múltiplos erros:</strong> Permite adicionar sequências extras à mesma requisição</li>
+          <li><strong>Urgente:</strong> Checkbox para marcar a solicitação como urgente (destaque visual na aba Resposta)</li>
         </ul>
 
-        <h3>📊 Módulo Dashboard</h3>
-        <p>O dashboard oferece 4 visualizações principais:</p>
+        <h3>✅ Aba Resposta</h3>
+        <ul style="line-height: 2; color: #444; padding-left: 20px;">
+          <li><strong>Visualização por setor:</strong> RESPOSTA vê só os seus setores; ADMIN/CONFERENTE veem tudo</li>
+          <li><strong>Status exibidos:</strong> Pendente, Atrasada, Corrigida, Alt. Técnica, Alt. Tec. Verificada — inclui registros CORRIGIDOS desde v297</li>
+          <li><strong>Filtros persistentes:</strong> Salvos no localStorage; badge indica quantos filtros estão ativos</li>
+          <li><strong>Modal de resposta:</strong> Salva responsável, diferença de valor e observações</li>
+          <li><strong>Modal de edição:</strong> Botão Salvar bloqueado até haver alteração real (v299); permissões editSolicitation e respond são independentes (v297)</li>
+          <li><strong>Validação resposta:</strong> Responsável obrigatório se qualquer campo de resposta for preenchido; Diferença R$ obrigatória quando diferencaNoValor=SIM (v297/v299)</li>
+          <li><strong>Decimal:</strong> Diferença R$ gravada com vírgula (ex: 1,23) independente do separador digitado (v300)</li>
+        </ul>
+
+        <h3>📊 Dashboard</h3>
+        <p>Painel com 4 sub-abas e filtros de período:</p>
         <div class="feature-grid">
           <div class="feature-card">
-            <h4>👷 Colaboradores</h4>
-            <p>Análise de desempenho por responsável com gráfico de erros cometidos.</p>
+            <h4>👥 Colaboradores</h4>
+            <p>Erros por responsável, tempo médio de resolução, ranking por volume e taxa de atendimento.</p>
           </div>
           <div class="feature-card">
-            <h4>📈 Solicitações</h4>
-            <p>Distribuição de solicitações por tipo de erro com gráfico de pizza.</p>
+            <h4>🏪 Solicitantes</h4>
+            <p>Erros por farmácia/unidade, tipos mais frequentes por solicitante.</p>
           </div>
           <div class="feature-card">
             <h4>🏆 Ranking</h4>
-            <p>Ranking dos responsáveis mais acionados com estatísticas.</p>
+            <p>Comparativo de colaboradores e solicitantes por volume, tempo médio e taxa.</p>
           </div>
           <div class="feature-card">
-            <h4>⚠️ Tipos de Erro</h4>
-            <p>Análise detalhada por categoria de erro.</p>
+            <h4>⚠️ Erros</h4>
+            <p>Análise por tipo e classificação (NA / Leve / Grave / Gravíssimo). Identifica os mais recorrentes.</p>
           </div>
         </div>
 
@@ -7489,8 +7559,209 @@
       </section>
 
       <section id="solicitacoes" class="section">
-        <h2>📝 Solicitações</h2>
+        <h2>📝 Endpoints Principais</h2>
+        <p style="color:#94a3b8;margin-bottom:20px;">Todas as funções retornam <code>{ ok: boolean, data: any, errors: string[], debugId: string }</code>. Chamadas de escrita exigem a ação correspondente em <code>permissoes.actions</code> do usuário.</p>
 
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method method-get">GET</span>
+            <span class="endpoint-path">getBootstrapData()</span>
+          </div>
+          <div class="endpoint-body">
+            <p>Carrega todos os dados necessários para inicializar o app em uma única chamada: usuario, config, listas, responsáveis, configGeral, usuarios, openErros e dashboard. Qualquer perfil.</p>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method method-post">POST</span>
+            <span class="endpoint-path">submitRequest(payload)</span>
+          </div>
+          <div class="endpoint-body">
+            <p>Registra uma nova solicitação de conserto. Ação: <code>submitRequest</code>.</p>
+            <h4>Payload obrigatório</h4>
+            <pre>{ requisicao, solicitante, erro, detalhamento, setorLocal,
+  diferencaNoValor: "SIM"|"NAO",
+  confirmacaoMedica: "SIM"|"NAO",
+  dataHoraPedido: ISO string }</pre>
+            <h4>Retorno</h4>
+            <pre>{ ok: true, solicitacaoId, erroSeq }</pre>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method method-post">POST</span>
+            <span class="endpoint-path">submitResponse(payload)</span>
+          </div>
+          <div class="endpoint-body">
+            <p>Registra ou atualiza a resposta de um erro. Ação: <code>respond</code>.</p>
+            <h4>Payload</h4>
+            <pre>{ solicitacaoId, erroSeq, nomeResponsavel,
+  houveDiferencaValor: "SIM"|"NAO",
+  diferencaValorResposta,  // obrigatório se houveDiferencaValor=SIM
+  observacoes,             // opcional
+  dataHoraCorrecao: ISO string,
+  isUpdate?: boolean }</pre>
+            <h4>Retorno</h4>
+            <pre>{ ok: true, respostaId }</pre>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method method-get">GET</span>
+            <span class="endpoint-path">getOpenErros(limit?)</span>
+          </div>
+          <div class="endpoint-body">
+            <p>Retorna erros do setor do usuário (ABERTO, EM_CORRECAO e CORRIGIDO; apenas ARQUIVADO excluído). Desde v297 inclui campo <code>status</code> e <code>urgente</code>. Qualquer perfil.</p>
+            <h4>Retorno por registro</h4>
+            <pre>{ solicitacaoId, erroSeq, requisicao, solicitante, erro, detalhamento,
+  setorLocal, diferencaNoValor, confirmacaoMedica, urgente,
+  status,          // valor da planilha Solicitacoes[4]
+  dataHoraPedido, slaStatus,
+  responsavel, dataHoraCorrecao, correcaoFinalizada,
+  houveDiferencaValorResposta, diferencaValorResposta, observacoesResposta }</pre>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method method-put">PUT</span>
+            <span class="endpoint-path">updateSolicitacao(payload)</span>
+          </div>
+          <div class="endpoint-body">
+            <p>Edita campos da solicitação (ação <code>editSolicitation</code>) e/ou dados da resposta (ação <code>respond</code>). As duas seções são verificadas de forma independente via <code>permissoes.actions</code> (v297).</p>
+            <h4>Payload</h4>
+            <pre>{ solicitacaoId, erroSeq,
+  // Seção solicitação (requer editSolicitation):
+  requisicao?, solicitante?, erro?, setorLocal?,
+  diferencaNoValor?, detalhamento?,
+  originalValues?: { ... },
+  // Seção resposta (requer respond):
+  responseData?: {
+    responsavel,             // obrigatório ao informar qualquer campo
+    diferencaValorResposta,  // obrigatório se diferencaNoValor=SIM (v297)
+    observacoes              // opcional
+  } }</pre>
+            <h4>Comportamento</h4>
+            <pre>- Grava atualizado_em [col 8] ao alterar campos da solicitação
+- Cria linha em Respostas apenas quando responsavel for preenchido
+- diferencaValorResposta normalizado (ponto→vírgula) antes de gravar (v300)</pre>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method method-delete">DELETE</span>
+            <span class="endpoint-path">deleteSolicitacao(payload)</span>
+          </div>
+          <div class="endpoint-body">
+            <p>Remove solicitação e todos os erros/respostas vinculados. Ação: <code>delete</code>.</p>
+            <h4>Payload</h4>
+            <pre>{ solicitacaoId }</pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="usuarios" class="section">
+        <h2>👥 Usuários e Configurações (ADMIN)</h2>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method method-get">GET</span>
+            <span class="endpoint-path">getUsuarios()</span>
+          </div>
+          <div class="endpoint-body">
+            <p>Retorna lista de usuários com email, nome, perfil, setores e permissoes (JSON). Apenas ADMIN.</p>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method method-post">POST</span>
+            <span class="endpoint-path">addUsuario(payload) · updateUsuario(payload) · deleteUsuario(payload)</span>
+          </div>
+          <div class="endpoint-body">
+            <p>CRUD de usuários. Payload: <code>{ email, nome, perfil, setores, permissoes{tabs, actions, dashTabs} }</code>. Invalidam o cache do usuário alterado. Apenas ADMIN.</p>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method method-post">POST</span>
+            <span class="endpoint-path">addConfigItem · deleteConfigItem · updateErrorClassification</span>
+          </div>
+          <div class="endpoint-body">
+            <p>Gerencia listas de tipos de erro, setores e solicitantes. <code>addConfigItem/deleteConfigItem</code>: <code>{ type: "solicitante"|"setor"|"erro", value }</code>. <code>updateErrorClassification</code>: <code>{ nome, classificacao: "NA"|"Leve"|"Grave"|"Gravíssimo" }</code>. Invalidam <code>invalidateConfigCache_()</code>. Apenas ADMIN.</p>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method method-post">POST</span>
+            <span class="endpoint-path">atualizarLimiares · limparCache · healthCheck · executarArquivamentoMensal</span>
+          </div>
+          <div class="endpoint-body">
+            <p>Operações administrativas do sistema. <code>atualizarLimiares</code>: <code>{ minutosAlerta, minutosCritico }</code>. <code>healthCheck</code>: <code>{ autoFix: boolean }</code>. <code>executarArquivamentoMensal</code>: <code>{ mes, ano }</code>. Apenas ADMIN.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="dashboard" class="section">
+        <h2>📊 Dashboard e Relatórios</h2>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method method-get">GET</span>
+            <span class="endpoint-path">getDashboardRecords(limit?)</span>
+          </div>
+          <div class="endpoint-body">
+            <p>Retorna registros completos para o dashboard (padrão: 3000). Campos: id, requisicao, solicitante, erro, classificacao, setorLocal, diferencaNoValor, confirmacaoMedica, nomeResponsavel, diferencaValorResposta, dataHoraPedido, dataHoraCorrecao, slaStatus. Qualquer perfil.</p>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method method-post">POST</span>
+            <span class="endpoint-path">relatorioSolicitacoesNaoPreenchidas()</span>
+          </div>
+          <div class="endpoint-body">
+            <p>Gera o relatório de incompletos: erros sem resposta, com responsável vazio (exceto Alteração Técnica), ou sem data de correção. Exclui CORRIGIDO e ARQUIVADO. Ação: <code>viewRelatorioIncompleto</code> (padrão: ADMIN).</p>
+            <h4>Retorno por item</h4>
+            <pre>{ solicitacaoId, erroSeq, requisicao, solicitante, erro,
+  setorLocal, dataHoraPedido, camposFaltando: string[] }</pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="autenticacao" class="section">
+        <h2>🔑 Autenticação e Segurança</h2>
+
+        <div class="endpoint">
+          <div class="endpoint-header">
+            <span class="method method-get">GET</span>
+            <span class="endpoint-path">getBootstrapData() → usuario</span>
+          </div>
+          <div class="endpoint-body">
+            <p>Identifica o usuário pelo e-mail da sessão Google OAuth (<code>Session.getActiveUser().getEmail()</code>). Usuários não cadastrados recebem perfil ESPECTADOR com permissões vazias. Cache de 5 min por e-mail.</p>
+            <h4>Objeto usuario</h4>
+            <pre>{ email, nome, perfil: "ADMIN"|"CONFERENTE"|"RESPOSTA"|"ESPECTADOR",
+  setores: string[]|["*"],
+  permissoes: { tabs: string[], actions: string[], dashTabs: string[] },
+  cadastrado: boolean }</pre>
+          </div>
+        </div>
+
+        <p style="color:#94a3b8;margin-top:16px;">⏱️ <strong>Rate limit:</strong> máximo 15 chamadas de escrita por minuto por usuário. Exceder retorna erro temporário.</p>
+        <p style="color:#94a3b8;margin-top:8px;">🔒 <strong>Permissões no backend:</strong> verificadas via <code>permissoes.actions</code> (não apenas por perfil). Operações críticas (exclusão, gerenciamento) exigem perfil ADMIN.</p>
+      </section>
+
+      <!-- placeholder para compatibilidade com nav -->
+      <section id="config" class="section" style="display:none;"></section>
+
+      <div class="section" style="display:none;">
+        <!-- seção antiga getSolicitacoes fictícia — removida em v301 -->
         <div class="endpoint">
           <div class="endpoint-header">
             <span class="method method-get">GET</span>
@@ -7639,131 +7910,16 @@
             <span class="endpoint-path">getUsuarios()</span>
           </div>
           <div class="endpoint-body">
-            <p>Retorna lista de todos os usuários (apenas ADMIN).</p>
-            <h4>Resposta</h4>
-            <pre>{
-  "success": true,
-  "data": [
-    {
-      "email": "usuario@empresa.com",
-      "nome": "João Silva",
-      "permissao": "RESPONSAVEL",
-      "setor": "Manutenção",
-      "ativo": true
-    }
-  ]
-}</pre>
-          </div>
-        </div>
-
-        <div class="endpoint">
-          <div class="endpoint-header">
-            <span class="method method-post">POST</span>
-            <span class="endpoint-path">salvarUsuario(dados)</span>
-          </div>
-          <div class="endpoint-body">
-            <p>Cria ou atualiza um usuário (apenas ADMIN).</p>
-            <h4>Parâmetros</h4>
-            <table class="params-table">
-              <tr>
-                <th>Parâmetro</th>
-                <th>Tipo</th>
-                <th>Descrição</th>
-              </tr>
-              <tr>
-                <td><code>email</code></td>
-                <td>string</td>
-                <td>E-mail do usuário <span class="required">obrigatório</span></td>
-              </tr>
-              <tr>
-                <td><code>nome</code></td>
-                <td>string</td>
-                <td>Nome completo <span class="required">obrigatório</span></td>
-              </tr>
-              <tr>
-                <td><code>permissao</code></td>
-                <td>string</td>
-                <td>ADMIN, RESPONSAVEL, USUARIO, VISITANTE <span class="required">obrigatório</span></td>
-              </tr>
-              <tr>
-                <td><code>setor</code></td>
-                <td>string</td>
-                <td>Setor do usuário <span class="required">obrigatório</span></td>
-              </tr>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section id="config" class="section">
-        <h2>⚙️ Configurações</h2>
-
-        <div class="endpoint">
-          <div class="endpoint-header">
-            <span class="method method-get">GET</span>
-            <span class="endpoint-path">getConfig()</span>
-          </div>
-          <div class="endpoint-body">
-            <p>Retorna configurações do sistema.</p>
-            <h4>Resposta</h4>
-            <pre>{
-  "success": true,
-  "data": {
-    "tiposErro": ["Falha Mecânica", "Problema Elétrico", ...],
-    "setores": ["Produção", "Manutenção", ...],
-    "responsaveis": ["João Silva", "Maria Santos", ...]
-  }
-}</pre>
-          </div>
-        </div>
-      </section>
-
-      <section id="dashboard" class="section">
-        <h2>📊 Dashboard</h2>
-
-        <div class="endpoint">
-          <div class="endpoint-header">
-            <span class="method method-get">GET</span>
-            <span class="endpoint-path">getDashboardData(tipo, filtros)</span>
-          </div>
-          <div class="endpoint-body">
-            <p>Retorna dados para os gráficos do dashboard.</p>
-            <h4>Parâmetros</h4>
-            <table class="params-table">
-              <tr>
-                <th>Parâmetro</th>
-                <th>Tipo</th>
-                <th>Descrição</th>
-              </tr>
-              <tr>
-                <td><code>tipo</code></td>
-                <td>string</td>
-                <td>"colaboradores", "solicitacoes", "ranking", "erros" <span class="required">obrigatório</span></td>
-              </tr>
-              <tr>
-                <td><code>filtros</code></td>
-                <td>object</td>
-                <td>Objeto com filtros aplicáveis <span class="optional">opcional</span></td>
-              </tr>
-            </table>
-            <h4>Resposta (exemplo: colaboradores)</h4>
-            <pre>{
-  "success": true,
-  "data": {
-    "labels": ["João", "Maria", "Pedro"],
-    "values": [15, 12, 8],
-    "total": 35
-  }
-}</pre>
+            <p>Ver seção acima — seções antigas removidas em v301.</p>
           </div>
         </div>
       </section>
     </div>
 
     <div class="footer">
-      <p><strong>API do Sistema de Solicitação de Consertos</strong></p>
-      <p>Versão 2.8.71 | Documentação gerada automaticamente</p>
-      <p style="margin-top: 15px; font-size: 0.9rem;">© 2024 - Todos os direitos reservados</p>
+      <p><strong>API do Sistema de Solicitação de Consertos — NeoFormula</strong></p>
+      <p>v301 | Documentação atualizada</p>
+      <p style="margin-top: 15px; font-size: 0.9rem;">© 2025 NeoFormula</p>
     </div>
   </div>
   <script>
@@ -11366,30 +11522,27 @@
       }
 
       // Calculate status from record
+      // Regras:
+      // CORRIGIDO          → responsável preenchido (independente de dataHoraCorrecao)
+      // ALT_TEC_VERIFICADA → Alteração Técnica com responsável preenchido
+      // ALTERACAO_TECNICA  → Alteração Técnica sem responsável ainda
+      // ATRASADA           → sem responsável e SLA vencido
+      // ABERTO             → sem responsável dentro do SLA
       function calculateStatus(record) {
-        // Alteração Técnica: verificada se já tem resposta, pendente se não tem
         if (isAlteracaoTecnica(record.erro)) {
-          return record.dataHoraCorrecao ? 'ALT_TEC_VERIFICADA' : 'ALTERACAO_TECNICA';
+          return record.responsavel ? 'ALT_TEC_VERIFICADA' : 'ALTERACAO_TECNICA';
         }
-
-        // Check if correction is finalized
-        if (record.correcaoFinalizada) {
+        if (record.responsavel) {
           return 'CORRIGIDO';
         }
-
-        // Check if has dataHoraCorrecao (has been answered)
-        if (record.dataHoraCorrecao) {
+        // Fallback: respeita o status gravado na planilha (ex: registros históricos sem Respostas vinculada)
+        const stored = String(record.status || '').toUpperCase();
+        if (stored === 'CORRIGIDO' || stored === 'CORRIGIDA') {
           return 'CORRIGIDO';
         }
-
-        // Check if SLA is in warning or critical state (Atrasada)
-        // This takes priority over "pending" for open items
-        // Values are 'ALERTA' and 'CRITICO' from backend
         if (record.slaStatus === 'ALERTA' || record.slaStatus === 'CRITICO') {
           return 'ATRASADA';
         }
-
-        // Otherwise, it's pending (normal SLA)
         return 'ABERTO';
       }
 
@@ -11764,14 +11917,68 @@
       // - ESPECTADOR: Somente visualização (não abre modal de edição)
       // ============================================
       let editingSolicitacao = null;
+      let _editModalInitialState = null;
+
+      function _captureEditModalState_() {
+        const canEditSolicitation = hasAction_('editSolicitation');
+        const canEditResponse = hasAction_('respond');
+        const state = {};
+        if (canEditSolicitation) {
+          state.requisicao   = document.getElementById('editModalRequisicao').value;
+          state.solicitante  = document.getElementById('editModalSolicitante').value;
+          state.erro         = document.getElementById('editModalErro').value;
+          state.setorLocal   = document.getElementById('editModalSetorLocal').value;
+          state.diferencaNoValor = document.getElementById('editModalDiferencaNoValor').value;
+          state.detalhamento = document.getElementById('editModalDetalhamento').value;
+        }
+        if (canEditResponse) {
+          state.responsavel            = document.getElementById('editModalResponsavelEdit').value;
+          state.diferencaValorResposta = document.getElementById('editModalDiferencaValorRespostaEdit').value;
+          state.observacoes            = document.getElementById('editModalObservacoesEdit').value;
+        }
+        return state;
+      }
+
+      function _checkEditModalChanged_() {
+        if (!_editModalInitialState) return false;
+        const cur = _captureEditModalState_();
+        return Object.keys(cur).some(k => cur[k] !== _editModalInitialState[k]);
+      }
+
+      function _updateEditSaveBtn_() {
+        const btn = document.getElementById('editSolicitacaoModalSubmit');
+        if (!btn) return;
+        const changed = _checkEditModalChanged_();
+        btn.disabled = !changed;
+        btn.title = changed ? '' : 'Altere ao menos um campo para habilitar o salvamento.';
+      }
+
+      function _setupEditModalListeners_() {
+        const ids = [
+          'editModalRequisicao', 'editModalSolicitante', 'editModalErro',
+          'editModalSetorLocal', 'editModalDiferencaNoValor', 'editModalDetalhamento',
+          'editModalResponsavelEdit', 'editModalDiferencaValorRespostaEdit', 'editModalObservacoesEdit'
+        ];
+        ids.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.removeEventListener('input',  _updateEditSaveBtn_);
+            el.removeEventListener('change', _updateEditSaveBtn_);
+            el.addEventListener('input',  _updateEditSaveBtn_);
+            el.addEventListener('change', _updateEditSaveBtn_);
+          }
+        });
+      }
 
       function openEditSolicitacaoModal(record) {
         const backdrop = document.getElementById('editSolicitacaoModalBackdrop');
         editingSolicitacao = record;
 
         // Determine permissions based on user actions
+        // "editSolicitation" → editar campos da solicitação (requisição, erro, setor, detalhamento...)
+        // "respond"          → preencher/editar seção de resposta (responsável, observações...)
         const canEditSolicitation = hasAction_('editSolicitation');
-        const canEditResponse = hasAction_('respond') || hasAction_('editSolicitation');
+        const canEditResponse = hasAction_('respond');
         const hasResponse = record.responsavel || record.dataHoraCorrecao;
 
         // Update modal title based on profile
@@ -11801,7 +12008,9 @@
           // Fill editable fields
           document.getElementById('editModalRequisicao').value = record.requisicao || '';
           document.getElementById('editModalDetalhamento').value = record.detalhamento || '';
-          document.getElementById('editModalDiferencaNoValor').value = record.diferencaNoValor || 'NAO';
+          // Normaliza valor vindo do banco (pode ser "NÃO"/"não"/vazio → "NAO")
+          const _dNVRaw = String(record.diferencaNoValor || '').trim().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+          document.getElementById('editModalDiferencaNoValor').value = (_dNVRaw === 'SIM') ? 'SIM' : 'NAO';
           updateEditModalDetalhamentoCount();
 
           // Populate solicitante dropdown (uses config.pharmaceuticas - lista de Solicitantes)
@@ -11875,9 +12084,8 @@
           const diferencaValorField = document.getElementById('editModalDiferencaValorRespostaEdit');
           diferencaValorField.value = record.diferencaValorResposta || '';
 
-          // Enable/disable difference value field based on "Houve diferença no valor?"
-          // The value comes from record.diferencaNoValor (which is also set in the select if editable)
-          const hasDifference = String(record.diferencaNoValor || '').trim().toLowerCase() === 'sim';
+          // Enable/disable difference value field based on "Houve diferença no valor?" (normalizado)
+          const hasDifference = String(record.diferencaNoValor || '').trim().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '') === 'SIM';
           diferencaValorField.disabled = !hasDifference;
           logUI('editModal', 'diferencaNoValor_init', { value: record.diferencaNoValor, hasDifference: hasDifference });
 
@@ -11895,6 +12103,12 @@
         // Clear error
         document.getElementById('editModalError').classList.add('hidden');
 
+        // Detecção de alterações: captura estado inicial e desabilita botão salvar
+        _editModalInitialState = _captureEditModalState_();
+        _setupEditModalListeners_();
+        const _saveBtn = document.getElementById('editSolicitacaoModalSubmit');
+        if (_saveBtn) { _saveBtn.disabled = true; _saveBtn.title = 'Altere ao menos um campo para habilitar o salvamento.'; }
+
         backdrop.classList.remove('hidden');
       }
 
@@ -11902,6 +12116,9 @@
         const backdrop = document.getElementById('editSolicitacaoModalBackdrop');
         backdrop.classList.add('hidden');
         editingSolicitacao = null;
+        _editModalInitialState = null;
+        const _saveBtn = document.getElementById('editSolicitacaoModalSubmit');
+        if (_saveBtn) { _saveBtn.disabled = false; _saveBtn.title = ''; }
       }
 
       function updateEditModalDetalhamentoCount() {
@@ -11920,7 +12137,7 @@
 
         // Determine permissions based on user actions
         const canEditSolicitation = hasAction_('editSolicitation');
-        const canEditResponse = hasAction_('respond') || hasAction_('editSolicitation');
+        const canEditResponse = hasAction_('respond');
 
         const payload = {
           solicitacaoId: editingSolicitacao.solicitacaoId,
@@ -11935,7 +12152,7 @@
           payload.solicitante = document.getElementById('editModalSolicitante').value;
           payload.erro = document.getElementById('editModalErro').value;
           payload.setorLocal = document.getElementById('editModalSetorLocal').value;
-          payload.diferencaNoValor = document.getElementById('editModalDiferencaNoValor').value;
+          payload.diferencaNoValor = document.getElementById('editModalDiferencaNoValor').value || 'NAO';
           payload.detalhamento = document.getElementById('editModalDetalhamento').value.trim();
 
           // Original values for audit
@@ -11957,24 +12174,44 @@
           if (!payload.detalhamento) errors.push('Informe o detalhamento do erro.');
         }
 
-        // Add response data for ADMIN, CONFERENTE, RESPOSTA profiles
+        // Add response data apenas quando o responsável for preenchido ou já existir resposta a atualizar
         if (canEditResponse) {
-          // Data/Hora da Correção e Correção Finalizada são preenchidos automaticamente
-          payload.responseData = {
-            responsavel: document.getElementById('editModalResponsavelEdit').value,
-            dataHoraCorrecao: new Date().toISOString(), // Preenchido automaticamente com data/hora atual
-            correcaoFinalizada: 'SIM', // Preenchido automaticamente como SIM
-            diferencaValorResposta: document.getElementById('editModalDiferencaValorRespostaEdit').value,
-            observacoes: document.getElementById('editModalObservacoesEdit').value.trim()
-          };
-          // Original response values for audit
-          payload.originalResponseValues = {
-            responsavel: editingSolicitacao.responsavel || '',
-            dataHoraCorrecao: editingSolicitacao.dataHoraCorrecao || '',
-            correcaoFinalizada: editingSolicitacao.correcaoFinalizada === true || editingSolicitacao.correcaoFinalizada === 'SIM' ? 'SIM' : '',
-            diferencaValorResposta: editingSolicitacao.diferencaValorResposta || '',
-            observacoes: editingSolicitacao.observacoesResposta || ''
-          };
+          const _respVal = document.getElementById('editModalResponsavelEdit').value;
+          const _obsVal = document.getElementById('editModalObservacoesEdit').value.trim();
+          const _difVal = document.getElementById('editModalDiferencaValorRespostaEdit').value;
+          const _temRespostaExistente = !!(editingSolicitacao.responsavel);
+
+          // Regra: se qualquer campo de resposta foi alterado, responsável é obrigatório
+          if (!_respVal && (_difVal || _obsVal)) {
+            errors.push('Responsável pelo Erro é obrigatório ao preencher dados da resposta.');
+          }
+
+          // Regra: diferencaNoValor=SIM + responsável preenchido requer diferencaValorResposta
+          const _dNVAtual = canEditSolicitation
+            ? (document.getElementById('editModalDiferencaNoValor').value || 'NAO')
+            : String(editingSolicitacao.diferencaNoValor || 'NAO').trim().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+          if (_respVal && _dNVAtual === 'SIM' && !_difVal) {
+            errors.push('Diferença de valor (R$) é obrigatória: este erro exige o valor da diferença para ser marcado como corrigido.');
+          }
+
+          // Só inclui responseData se: responsável preenchido agora, OU existe resposta e algo mudou
+          if (_respVal || _temRespostaExistente) {
+            payload.responseData = {
+              responsavel: _respVal,
+              // dataHoraCorrecao só é definida se responsável estiver preenchido
+              dataHoraCorrecao: _respVal ? new Date().toISOString() : (editingSolicitacao.dataHoraCorrecao || ''),
+              correcaoFinalizada: _respVal ? 'SIM' : '',
+              diferencaValorResposta: _difVal,
+              observacoes: _obsVal
+            };
+            payload.originalResponseValues = {
+              responsavel: editingSolicitacao.responsavel || '',
+              dataHoraCorrecao: editingSolicitacao.dataHoraCorrecao || '',
+              correcaoFinalizada: editingSolicitacao.correcaoFinalizada === true || editingSolicitacao.correcaoFinalizada === 'SIM' ? 'SIM' : '',
+              diferencaValorResposta: editingSolicitacao.diferencaValorResposta || '',
+              observacoes: editingSolicitacao.observacoesResposta || ''
+            };
+          }
         }
 
         if (errors.length) {

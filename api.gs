@@ -1283,10 +1283,10 @@ function updateSolicitacao(payload) {
     const usuario = getUsuarioContexto_(userEmail);
     const perfil = usuario.perfil ? usuario.perfil.toUpperCase() : "";
 
-    // Check permissions based on profile
-    // ADMIN/CONFERENTE can edit solicitation AND response; RESPOSTA can edit response only
-    const canEditSolicitation = perfil === "ADMIN" || perfil === "CONFERENTE";
-    const canEditResponse = perfil === "ADMIN" || perfil === "CONFERENTE" || perfil === "RESPOSTA";
+    // Check permissions via permissoes.actions (alinhado com frontend hasAction_)
+    const _actions = (usuario.permissoes && usuario.permissoes.actions) ? usuario.permissoes.actions : [];
+    const canEditSolicitation = _actions.indexOf('editSolicitation') >= 0;
+    const canEditResponse = _actions.indexOf('respond') >= 0;
 
     if (!canEditSolicitation && !canEditResponse) {
       return { ok: false, errors: ["Sem permissão para editar."], debugId: debugId };
@@ -1313,8 +1313,10 @@ function updateSolicitacao(payload) {
       if (!payload.setorLocal || config.setores.indexOf(payload.setorLocal) === -1) {
         errors.push("Selecione um setor/local válido.");
       }
+      // Normaliza e aplica fallback (banco pode ter "NÃO" com acento ou vazio)
+      payload.diferencaNoValor = (payload.diferencaNoValor || 'NAO').toString().trim().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       if (payload.diferencaNoValor !== "SIM" && payload.diferencaNoValor !== "NAO") {
-        errors.push("Diferença no valor deve ser SIM ou NAO.");
+        payload.diferencaNoValor = 'NAO'; // fallback seguro
       }
       if (!payload.detalhamento) errors.push("Detalhamento é obrigatório.");
       if (String(payload.detalhamento || "").length > MAX_DETALHAMENTO_LEN) {
@@ -1327,7 +1329,7 @@ function updateSolicitacao(payload) {
     }
 
     // Find and update the solicitation
-    // Schema Solicitacoes: [0]id_solicitacao [1]requisicao [2]solicitante [3]data_hora_pedido [4]status [5]criado_por_email [6]criado_em
+    // Schema Solicitacoes: [0]id_solicitacao [1]requisicao [2]solicitante [3]data_hora_pedido [4]status [5]criado_por_email [6]criado_em [7]urgente [8]atualizado_em
     const solicitacoesSheet = getSheet_(CONFIG.SHEETS.SOLICITACOES);
     const solicitacoes = solicitacoesSheet.getDataRange().getValues();
 
@@ -1348,15 +1350,18 @@ function updateSolicitacao(payload) {
     const originalValues = payload.originalValues || {};
     const recordKey = payload.solicitacaoId;
 
-    // Update Solicitacoes sheet (cols [1]=requisicao, [2]=solicitante — apenas esses dois existem aqui)
+    // Update Solicitacoes sheet (cols [1]=requisicao, [2]=solicitante, [7]=atualizado_em)
     if (canEditSolicitation) {
+      var solicitacaoAlterada = false;
       if (originalValues.requisicao !== payload.requisicao) {
         solicitacoesSheet.getRange(solicitacaoRowIndex, 2).setValue(payload.requisicao);  // col [1]
         auditLog_("UPDATE", "Solicitacoes", recordKey, "requisicao", originalValues.requisicao, payload.requisicao);
+        solicitacaoAlterada = true;
       }
       if (originalValues.solicitante !== payload.solicitante) {
         solicitacoesSheet.getRange(solicitacaoRowIndex, 3).setValue(payload.solicitante);  // col [2]
         auditLog_("UPDATE", "Solicitacoes", recordKey, "solicitante", originalValues.solicitante, payload.solicitante);
+        solicitacaoAlterada = true;
       }
 
       // Update Erros sheet
@@ -1392,12 +1397,18 @@ function updateSolicitacao(payload) {
 
           // Escreve todos os campos modificados em uma única chamada ao Sheets
           errosSheet.getRange(erroRowIndex, 1, 1, rowCopy.length).setValues([rowCopy]);
+          solicitacaoAlterada = true;
           break;
         }
       }
+      // Grava atualizado_em [col 7] sempre que a solicitação for alterada
+      if (solicitacaoAlterada) {
+        solicitacoesSheet.getRange(solicitacaoRowIndex, 9).setValue(new Date()); // col [8] atualizado_em
+        auditLog_("UPDATE", "Solicitacoes", recordKey, "atualizado_em", null, new Date().toISOString());
+      }
     }
 
-    // Update Respostas sheet (only if user can edit response and responseData is provided)
+    // Update Respostas sheet (only if user can edit response, responseData is provided, AND responsável preenchido)
     if (canEditResponse && payload.responseData) {
       const respostasSheet = getSheet_(CONFIG.SHEETS.RESPOSTAS);
       const respostas = respostasSheet.getDataRange().getValues();
@@ -1426,6 +1437,26 @@ function updateSolicitacao(payload) {
         }
       }
 
+      // Regra: se o erro exige diferença de valor (diferencaNoValor=SIM), responsável preenchido requer diferencaValorResposta
+      if (newResp.responsavel) {
+        let errosDiferencaNoValor = "";
+        try {
+          const errosSheetResp = getSheet_(CONFIG.SHEETS.ERROS);
+          const errosResp = errosSheetResp.getDataRange().getValues();
+          for (let ei = 1; ei < errosResp.length; ei++) {
+            if (String(errosResp[ei][0]) === String(payload.solicitacaoId) &&
+                String(errosResp[ei][1]) === String(payload.erroSeq)) {
+              errosDiferencaNoValor = String(errosResp[ei][5] || "").trim().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+              break;
+            }
+          }
+        } catch(e) { /* ignora erro de leitura */ }
+
+        if (errosDiferencaNoValor === "SIM" && !newResp.diferencaValorResposta) {
+          return { ok: false, errors: ["Este erro exige diferença de valor (R$). Informe o valor antes de marcar como corrigido."], debugId: debugId };
+        }
+      }
+
       // If response exists, update it
       if (respostaRowIndex > 0) {
         // Update responsavel
@@ -1448,31 +1479,34 @@ function updateSolicitacao(payload) {
         }
         // Update diferencaValorResposta
         if (origResp.diferencaValorResposta !== newResp.diferencaValorResposta) {
-          respostasSheet.getRange(respostaRowIndex, respColDiferencaValor + 1).setValue(newResp.diferencaValorResposta || "");
-          auditLog_("UPDATE", "Respostas", respostaRecordKey, "diferencaValorResposta", origResp.diferencaValorResposta, newResp.diferencaValorResposta);
+          const _difValNorm = String(newResp.diferencaValorResposta || "").replace(/\./g, ',');
+          respostasSheet.getRange(respostaRowIndex, respColDiferencaValor + 1).setValue(_difValNorm);
+          auditLog_("UPDATE", "Respostas", respostaRecordKey, "diferencaValorResposta", origResp.diferencaValorResposta, _difValNorm);
         }
         // Update observacoes
         if (origResp.observacoes !== newResp.observacoes) {
           respostasSheet.getRange(respostaRowIndex, respColObservacoes + 1).setValue(newResp.observacoes || "");
           auditLog_("UPDATE", "Respostas", respostaRecordKey, "observacoes", origResp.observacoes, newResp.observacoes);
         }
-      } else if (newResp.responsavel || newResp.dataHoraCorrecao || newResp.observacoes) {
-        // Create new response if data is provided and no existing response
+      } else if (newResp.responsavel) {
+        // Cria nova resposta apenas quando o responsável for preenchido
         const newRespostaId = Utilities.getUuid();
         const now = new Date();
         respostasSheet.appendRow([
           newRespostaId,
           payload.solicitacaoId,
           payload.erroSeq,
-          newResp.responsavel || "",
+          newResp.responsavel,
           userEmail,
-          newResp.correcaoFinalizada || "",
-          "", // houveDiferencaValor (legacy, unused)
-          newResp.diferencaValorResposta || "",
+          "SIM",                                                           // erro_corrigido
+          "",                                                              // houveDiferencaValor (legacy)
+          String(newResp.diferencaValorResposta || "").replace(/\./g, ','),
           newResp.observacoes || "",
-          newResp.dataHoraCorrecao ? new Date(newResp.dataHoraCorrecao) : "",
+          new Date(),                                                      // data_hora_correcao = agora
           now
         ]);
+        // Atualiza status da solicitação para CORRIGIDO / EM_CORRECAO
+        updateSolicitacaoStatus_(payload.solicitacaoId);
         auditLog_("CREATE", "Respostas", respostaRecordKey, null, null, "Nova resposta criada via edição");
       }
     }
@@ -2774,8 +2808,8 @@ function getOpenErrosForUsuario_(usuario, limit) {
     const solicitacaoData = solicitacoesMap[solicitacaoId];
     if (!solicitacaoData) continue;
 
-    // Pula registros já CORRIGIDOS — evita transferir dados desnecessários ao frontend
-    if (solicitacaoData[4] === "CORRIGIDO") continue;
+    // Registros ARQUIVADOS são sempre pulados; CORRIGIDOS são incluídos para permitir filtro no frontend
+    if (solicitacaoData[4] === "ARQUIVADO") continue;
 
     const setorLocal = erros[i][4];
     if (!usuarioPodeVerSetor_(usuario, setorLocal)) {
@@ -2868,6 +2902,7 @@ function getOpenErrosForUsuario_(usuario, limit) {
       confirmacaoMedica: erros[i][7] || "NAO",
       urgente: solicitacaoData[7] === "SIM" ? "SIM" : "NAO",
       dataHoraPedido: dataHoraPedidoStr,
+      status: solicitacaoData[4] || "",
       slaStatus: slaStatus,
       responsavel: responsavel,
       dataHoraCorrecao: dataHoraCorrecaoStr,

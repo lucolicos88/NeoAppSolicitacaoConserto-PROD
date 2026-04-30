@@ -371,7 +371,7 @@ function insertResposta_(payload, userEmail) {
       userEmail,
       "SIM",
       payload.houveDiferencaValor || "",
-      payload.diferencaValorResposta || "",
+      String(payload.diferencaValorResposta || "").replace(/\./g, ','),
       payload.observacoes || "",
       payload.dataHoraCorrecao ? new Date(payload.dataHoraCorrecao) : "",
       now
@@ -449,7 +449,7 @@ function updateResposta_(payload, userEmail) {
       userEmail,                                                               // col 5: email_responsavel
       "SIM",                                                                   // col 6: erro_corrigido (mantém SIM)
       payload.houveDiferencaValor || "",                                      // col 7: houve_diferenca_valor
-      payload.diferencaValorResposta || "",                                   // col 8: diferenca_valor_resposta
+      String(payload.diferencaValorResposta || "").replace(/\./g, ','),        // col 8: diferenca_valor_resposta
       payload.observacoes || "",                                               // col 9: observacoes
       payload.dataHoraCorrecao ? new Date(payload.dataHoraCorrecao) : "",    // col 10: data_hora_correcao
       now                                                                      // col 11: criado_em (timestamp update)
