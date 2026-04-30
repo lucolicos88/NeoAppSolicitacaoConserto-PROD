@@ -5757,7 +5757,7 @@
           <h4 class="modal-title">✏️ Editar Dados da Resposta</h4>
           <div class="form-grid">
             <div class="form-group">
-              <label for="editModalResponsavelEdit">Responsável pela Correção</label>
+              <label for="editModalResponsavelEdit">Responsável pelo Erro</label>
               <select id="editModalResponsavelEdit" class="form-control"></select>
             </div>
             <div class="form-group" id="editModalDiferencaValorWrapper">
@@ -6088,6 +6088,11 @@
 
       function gerarHistoricoVersoesHTML() {
         const versoes = [
+          {
+            v: 'v291', data: 'Abr/2026', tipo: 'feat', cor: '#059669',
+            titulo: 'Solicitação — Farmacêutica Solicitante filtrada pelo usuário logado',
+            desc: 'O campo "Farmacêutica Solicitante" agora exibe apenas o nome do usuário logado (se ele estiver na lista de solicitantes). Se o nome não constar na lista, o campo fica vazio. O modal de edição (ADMIN/CONFERENTE) continua exibindo todos os solicitantes. Label "Responsável pela Correção" renomeado para "Responsável pelo Erro" no modal de edição de resposta.'
+          },
           {
             v: 'v290', data: 'Abr/2026', tipo: 'feat', cor: '#059669',
             titulo: 'Relatório de Incompletos — exportar PDF',
@@ -8665,7 +8670,7 @@
 
           erroSeq: selectedErro.erroSeq,
 
-          nomeResponsavel: document.getElementById('nomeResponsavel').value,          houveDiferencaValor: selectedErro ? selectedErro.diferencaNoValor : '',          diferencaValorResposta: document.getElementById('diferencaValorResposta').value,
+          nomeResponsavel: document.getElementById('nomeResponsavel').value,          houveDiferencaValor: selectedErro ? (selectedErro.diferencaNoValor || 'NAO') : 'NAO',          diferencaValorResposta: document.getElementById('diferencaValorResposta').value,
 
           dataHoraCorrecao: new Date().toISOString(),
 
@@ -9943,11 +9948,30 @@
         return div;
       }
 
+      // Regras do select "Farmacêutica Solicitante":
+      // 1. Nome do usuário está na lista → exibe só o nome dele (qualquer perfil)
+      // 2. Nome NÃO está na lista + perfil ADMIN → exibe todos
+      // 3. Nome NÃO está na lista + outros perfis → lista vazia
+      function applyFiltroSolicitante_() {
+        if (!config || !config.pharmaceuticas) return;
+        const nome = currentUser && currentUser.nome ? currentUser.nome.trim() : '';
+        const isAdmin = currentUser && currentUser.perfil && currentUser.perfil.toUpperCase() === 'ADMIN';
+        let lista;
+        if (nome && config.pharmaceuticas.indexOf(nome) !== -1) {
+          lista = [nome];
+        } else if (isAdmin) {
+          lista = config.pharmaceuticas;
+        } else {
+          lista = [];
+        }
+        fillSelect('solicitante', lista);
+      }
+
       function fillConfig(configData) {
         // Store config globally for use in other functions
         config = configData;
 
-        fillSelect('solicitante', config.pharmaceuticas);
+        applyFiltroSolicitante_();
         // For error dropdown, extract just the names
         const errorNames = (config.erros || []).map(e => typeof e === 'object' ? e.nome : e);
         fillSelect('erro', errorNames);
@@ -10093,6 +10117,7 @@
 
         // Store user info globally for permissions checking
         currentUser = usuario;
+        applyFiltroSolicitante_();
 
         // Show notice if user is not registered in the Usuarios sheet
         const naoCadastradoNotice = document.getElementById('userNaoCadastradoNotice');
@@ -11776,7 +11801,7 @@
           // Fill editable fields
           document.getElementById('editModalRequisicao').value = record.requisicao || '';
           document.getElementById('editModalDetalhamento').value = record.detalhamento || '';
-          document.getElementById('editModalDiferencaNoValor').value = record.diferencaNoValor || '';
+          document.getElementById('editModalDiferencaNoValor').value = record.diferencaNoValor || 'NAO';
           updateEditModalDetalhamentoCount();
 
           // Populate solicitante dropdown (uses config.pharmaceuticas - lista de Solicitantes)

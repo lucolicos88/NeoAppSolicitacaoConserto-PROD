@@ -74,7 +74,7 @@ const CONFIG = {
     CRITICAL_MINUTES: 30,
     TIMEZONE: "America/Sao_Paulo"
   },
-  APP_VERSION: "v290",
+  APP_VERSION: "v293",
   APP_ENV: "PROD"
 };
 // DEBUG_ENABLED automático: ativo em DEV, desativado em PROD

@@ -232,10 +232,12 @@ function validateResponsePayload_(payload, config) {
   if (!payload.nomeResponsavel) {
     errors.push("Informe o responsável pelo erro.");
   }
-  if (payload.houveDiferencaValor !== "SIM" && payload.houveDiferencaValor !== "NAO") {
+  // Vazio ou ausente é tratado como "NAO" (sem diferença de valor)
+  const houveDif = payload.houveDiferencaValor || "NAO";
+  if (houveDif !== "SIM" && houveDif !== "NAO") {
     errors.push("Informe se houve diferença no valor.");
   }
-  if (payload.houveDiferencaValor === "SIM") {
+  if (houveDif === "SIM") {
     if (payload.diferencaValorResposta === "" || payload.diferencaValorResposta === null || payload.diferencaValorResposta === undefined) {
       errors.push("Informe a diferença do valor.");
     } else if (isNaN(Number(payload.diferencaValorResposta))) {
