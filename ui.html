@@ -1663,48 +1663,45 @@
       /* Impede quebra de linha nos cabeçalhos da tabela */
       #openErrorsTable th { white-space: nowrap; }
 
-      /* col:   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18       */
-      /* %:     2 + 2 + 5 + 6 + 5 +14 + 5 + 3 + 3 + 6 + 3 + 4 + 7 + 9 + 4 + 7 +12 + 3 = 100 */
+      /* col:   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17      */
+      /* %:     2 + 5 + 7 + 5 +10 + 6 + 3 + 3 + 7 + 3 + 4 + 6 + 9 + 5 + 7 + 9 + 4 = 100 */
       #openErrorsTable th:nth-child(1),
       #openErrorsTable td:nth-child(1) { width: 2%; text-align: center; }  /* Selecionar */
       /* === DADOS DA SOLICITAÇÃO (fundo verde claro) === */
       #openErrorsTable th:nth-child(2),
-      #openErrorsTable td:nth-child(2) { width: 2%; text-align: center; } /* Urgente */
-      #openErrorsTable th:nth-child(2) { white-space: normal; line-height: 1.2; }
+      #openErrorsTable td:nth-child(2) { width: 5%; } /* Requisição */
       #openErrorsTable th:nth-child(3),
-      #openErrorsTable td:nth-child(3) { width: 5%; }  /* Requisição */
+      #openErrorsTable td:nth-child(3) { width: 7%; } /* Solicitante */
       #openErrorsTable th:nth-child(4),
-      #openErrorsTable td:nth-child(4) { width: 6%; } /* Solicitante */
+      #openErrorsTable td:nth-child(4) { width: 5%; } /* Erro */
       #openErrorsTable th:nth-child(5),
-      #openErrorsTable td:nth-child(5) { width: 5%; } /* Erro */
+      #openErrorsTable td:nth-child(5) { width: 10%; } /* Detalhamento */
       #openErrorsTable th:nth-child(6),
-      #openErrorsTable td:nth-child(6) { width: 14%; } /* Detalhamento */
+      #openErrorsTable td:nth-child(6) { width: 6%; } /* Setor/Local */
       #openErrorsTable th:nth-child(7),
-      #openErrorsTable td:nth-child(7) { width: 5%; } /* Setor/Local */
+      #openErrorsTable td:nth-child(7) { width: 3%; text-align: center; } /* Dif. Val? */
       #openErrorsTable th:nth-child(8),
-      #openErrorsTable td:nth-child(8) { width: 3%; text-align: center; }  /* Dif. Val? */
+      #openErrorsTable td:nth-child(8) { width: 3%; text-align: center; } /* Conf. Méd? */
+      #openErrorsTable th:nth-child(8) { white-space: normal; line-height: 1.2; } /* permite quebra no cabeçalho */
       #openErrorsTable th:nth-child(9),
-      #openErrorsTable td:nth-child(9) { width: 3%; text-align: center; } /* Conf. Méd? */
-      #openErrorsTable th:nth-child(9) { white-space: normal; line-height: 1.2; } /* permite quebra no cabeçalho */
+      #openErrorsTable td:nth-child(9) { width: 7%; } /* Data/Hora */
       #openErrorsTable th:nth-child(10),
-      #openErrorsTable td:nth-child(10) { width: 6%; } /* Data/Hora */
+      #openErrorsTable td:nth-child(10) { width: 3%; text-align: center; } /* SLA */
       #openErrorsTable th:nth-child(11),
-      #openErrorsTable td:nth-child(11) { width: 3%; text-align: center; } /* SLA */
-      #openErrorsTable th:nth-child(12),
-      #openErrorsTable td:nth-child(12) { width: 4%; text-align: center; } /* Tempo */
+      #openErrorsTable td:nth-child(11) { width: 4%; text-align: center; } /* Tempo */
       /* === DADOS DA RESPOSTA (fundo laranja claro) === */
+      #openErrorsTable th:nth-child(12),
+      #openErrorsTable td:nth-child(12) { width: 6%; text-align: center; } /* Status */
       #openErrorsTable th:nth-child(13),
-      #openErrorsTable td:nth-child(13) { width: 7%; text-align: center; }  /* Status */
+      #openErrorsTable td:nth-child(13) { width: 9%; } /* Responsável */
       #openErrorsTable th:nth-child(14),
-      #openErrorsTable td:nth-child(14) { width: 9%; } /* Responsável */
+      #openErrorsTable td:nth-child(14) { width: 5%; text-align: center; } /* Dif. R$ */
       #openErrorsTable th:nth-child(15),
-      #openErrorsTable td:nth-child(15) { width: 4%; text-align: center; } /* Dif. R$ */
+      #openErrorsTable td:nth-child(15) { width: 7%; } /* Data Correção */
       #openErrorsTable th:nth-child(16),
-      #openErrorsTable td:nth-child(16) { width: 7%; } /* Data Correção */
+      #openErrorsTable td:nth-child(16) { width: 9%; } /* Observações */
       #openErrorsTable th:nth-child(17),
-      #openErrorsTable td:nth-child(17) { width: 12%; } /* Observações ↑ */
-      #openErrorsTable th:nth-child(18),
-      #openErrorsTable td:nth-child(18) { width: 3%; text-align: center; } /* Ações */
+      #openErrorsTable td:nth-child(17) { width: 4%; text-align: center; } /* Ações */
 
 
 
@@ -2647,8 +2644,8 @@
 
       @media (max-width: 480px) {
         /* Compact table view: hide least-critical columns, keep essential data visible */
-        #openErrorsTable th:nth-child(6), #openErrorsTable td:nth-child(6),
-        #openErrorsTable th:nth-child(17), #openErrorsTable td:nth-child(17) { display: none; }
+        #openErrorsTable th:nth-child(5), #openErrorsTable td:nth-child(5),
+        #openErrorsTable th:nth-child(16), #openErrorsTable td:nth-child(16) { display: none; }
         #openErrorsTable { font-size: 11px; }
       }
 
@@ -3356,7 +3353,6 @@
                 <tr>
                   <th></th>
                   <!-- Dados da Solicitação -->
-                  <th style="background:#ffccbc;color:#bf360c;" title="Solicitação marcada como urgente">🚨 Urg.</th>
                   <th style="background:#e0f2f1;color:#00796b;">Requisição</th>
                   <th style="background:#e0f2f1;color:#00796b;">Solicitante</th>
                   <th style="background:#e0f2f1;color:#00796b;">Erro</th>
@@ -6105,6 +6101,16 @@
       function gerarHistoricoVersoesHTML() {
         const versoes = [
           {
+            v: 'v304', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Fix — colunas da tabela Resposta realinhadas após remoção da coluna Urg',
+            desc: 'A remoção da coluna Urg (v303) deslocou todos os índices nth-child do CSS em 1 posição: a coluna Ações herdou width:12% (das Observações) e Detalhamento ficou com 5%. Todo o bloco de CSS nth-child foi reescrito com os 17 índices corretos e larguras proporcionais: Requisição 5%, Solicitante 7%, Erro 5%, Detalhamento 10%, Setor 6%, Dif.Val 3%, Conf.Méd 3%, Data/Hora 7%, SLA 3%, Tempo 4%, Status 6%, Responsável 9%, Dif.R$ 5%, Data Correção 7%, Observações 9%, Ações 4%. Media query mobile também corrigida.'
+          },
+          {
+            v: 'v303', data: 'Abr/2026', tipo: 'feat', cor: '#059669',
+            titulo: 'Remover coluna Urg da tabela da Aba Resposta',
+            desc: 'Coluna "🚨 Urg." removida da tabela de solicitações — o destaque visual já é dado pela cor vermelha de fundo da linha. O filtro de urgentes (botão 🚨 Urgentes) e a lógica de urgente permanecem intactos. Libera espaço horizontal para os demais dados.'
+          },
+          {
             v: 'v302', data: 'Abr/2026', tipo: 'feat', cor: '#059669',
             titulo: 'Filtro Detalhamento na Aba Resposta',
             desc: 'Adicionado campo de texto "Detalhamento" na barra de filtros da Aba Resposta, funcionando igual ao filtro de Requisição (busca parcial, case-insensitive). Integrado ao sistema de tags de filtros ativos, contador de filtros, localStorage (persistência entre sessões) e botão Limpar Filtros.'
@@ -7927,7 +7933,7 @@
 
     <div class="footer">
       <p><strong>API do Sistema de Solicitação de Consertos — NeoFormula</strong></p>
-      <p>v302 | Filtro Detalhamento na Aba Resposta</p>
+      <p>v304 | Fix colunas tabela Resposta</p>
       <p style="margin-top: 15px; font-size: 0.9rem;">© 2025 NeoFormula</p>
     </div>
   </div>
@@ -11409,7 +11415,7 @@
           const emptyAction = temFiltroAtivo
             ? '<br><button class="btn secondary" style="margin-top:12px;font-size:0.8rem;" onclick="limparFiltrosResposta()">Limpar filtros</button>'
             : '';
-          tbody.innerHTML = `<tr><td colspan="18" style="padding:40px 20px;text-align:center;">
+          tbody.innerHTML = `<tr><td colspan="17" style="padding:40px 20px;text-align:center;">
             <div style="font-size:2.5rem;margin-bottom:8px;">📋</div>
             <div style="font-weight:600;color:var(--text);margin-bottom:4px;">${emptyMsg}</div>
             <div style="font-size:0.85rem;color:var(--text-secondary);">As solicitações respondidas aparecem na aba Dashboard.</div>
@@ -11507,7 +11513,6 @@
           return `<tr data-index="${startIndex + index}">
             <td><input type="radio" name="selecionarErro"></td>
             <!-- Dados da Solicitação -->
-            <td style="background:${bgSolicitacao};text-align:center;">${urgenteBadge}</td>
             <td style="background:${bgSolicitacao};">${escapeHtml(item.requisicao)}</td>
             <td style="background:${bgSolicitacao};">${escapeHtml(item.solicitante)}</td>
             <td style="background:${bgSolicitacao};">${escapeHtml(item.erro)}</td>
