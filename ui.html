@@ -664,15 +664,12 @@
       }
 
       .user-badges {
-
         display: flex;
-
         gap: 0.35rem;
-
         align-items: center;
-
-        flex-wrap: nowrap;
-
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        max-width: 220px;
       }
 
       .user-badge {
@@ -702,9 +699,12 @@
         border-radius: 6px;
         font-size: 0.688rem;
         font-weight: 600;
-
+        white-space: nowrap;
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
         box-shadow: 0 1px 2px rgba(0, 150, 136, 0.2);
-
+        cursor: default;
       }
 
       .user-nao-cadastrado-notice {
@@ -6101,6 +6101,16 @@
       function gerarHistoricoVersoesHTML() {
         const versoes = [
           {
+            v: 'v306', data: 'Mai/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Fix — chip de setores no header não estoura mais a área',
+            desc: 'O chip de setores no header exibia todos os nomes em join(", ") sem white-space:nowrap, fazendo o badge crescer verticalmente e sobrepor a navegação. Agora: 1 setor → exibe o nome; 2+ setores → exibe "N setores" com tooltip (title) listando todos. CSS: white-space:nowrap + max-width:160px + text-overflow:ellipsis no .user-badge-setor; flex-wrap:wrap no .user-badges.'
+          },
+          {
+            v: 'v305', data: 'Mai/2026', tipo: 'feat', cor: '#059669',
+            titulo: 'Opção "Alteração Técnica" no dropdown de Responsável pelo Erro',
+            desc: 'Adicionada opção fixa "Alteração Técnica" no topo da lista de responsáveis (modais de Resposta e de Editar). Para erros do tipo Alteração Técnica sem responsável definido, o campo é pré-selecionado automaticamente com esse valor, permitindo finalizar a correção mesmo sem um responsável individual.'
+          },
+          {
             v: 'v304', data: 'Abr/2026', tipo: 'fix', cor: '#0891b2',
             titulo: 'Fix — colunas da tabela Resposta realinhadas após remoção da coluna Urg',
             desc: 'A remoção da coluna Urg (v303) deslocou todos os índices nth-child do CSS em 1 posição: a coluna Ações herdou width:12% (das Observações) e Detalhamento ficou com 5%. Todo o bloco de CSS nth-child foi reescrito com os 17 índices corretos e larguras proporcionais: Requisição 5%, Solicitante 7%, Erro 5%, Detalhamento 10%, Setor 6%, Dif.Val 3%, Conf.Méd 3%, Data/Hora 7%, SLA 3%, Tempo 4%, Status 6%, Responsável 9%, Dif.R$ 5%, Data Correção 7%, Observações 9%, Ações 4%. Media query mobile também corrigida.'
@@ -7933,7 +7943,7 @@
 
     <div class="footer">
       <p><strong>API do Sistema de Solicitação de Consertos — NeoFormula</strong></p>
-      <p>v304 | Fix colunas tabela Resposta</p>
+      <p>v306 | Fix chip setores no header</p>
       <p style="margin-top: 15px; font-size: 0.9rem;">© 2025 NeoFormula</p>
     </div>
   </div>
@@ -10330,10 +10340,17 @@
           badge.className = 'user-badge-setor';
           badge.textContent = 'Todos os setores';
           badges.appendChild(badge);
-        } else if (setores.length) {
+        } else if (setores.length === 1) {
           const badge = document.createElement('span');
           badge.className = 'user-badge-setor';
-          badge.textContent = setores.join(', ');
+          badge.textContent = setores[0];
+          badge.title = setores[0];
+          badges.appendChild(badge);
+        } else if (setores.length > 1) {
+          const badge = document.createElement('span');
+          badge.className = 'user-badge-setor';
+          badge.textContent = setores.length + ' setores';
+          badge.title = setores.join(', ');
           badges.appendChild(badge);
         }
 
@@ -11718,23 +11735,26 @@
         const modalResponsavel = document.getElementById('modalNomeResponsavel');
         const responsavelWrapper = modalResponsavel.closest('.form-group');
 
-        // Hide/show responsável field based on error type
-        if (ehAlteracaoTecnica) {
-          responsavelWrapper.style.display = 'none';
-          modalResponsavel.value = '';
-        } else {
-          responsavelWrapper.style.display = 'block';
-          modalResponsavel.innerHTML = '<option value="">Selecione...</option>';
-          const responsaveis = listasData && listasData.colaboradores ? listasData.colaboradores : [];
-          responsaveis.forEach((resp) => {
-            const opt = document.createElement('option');
-            opt.value = resp;
-            opt.textContent = resp;
-            if (record.responsavel && record.responsavel === resp) {
-              opt.selected = true;
-            }
-            modalResponsavel.appendChild(opt);
-          });
+        // Populate responsável field
+        responsavelWrapper.style.display = 'block';
+        modalResponsavel.innerHTML = '<option value="">Selecione...</option>';
+        // Opção fixa para erros sem responsável individual
+        const optAt = document.createElement('option');
+        optAt.value = 'Alteração Técnica';
+        optAt.textContent = 'Alteração Técnica';
+        modalResponsavel.appendChild(optAt);
+        const responsaveis = listasData && listasData.colaboradores ? listasData.colaboradores : [];
+        responsaveis.forEach((resp) => {
+          const opt = document.createElement('option');
+          opt.value = resp;
+          opt.textContent = resp;
+          modalResponsavel.appendChild(opt);
+        });
+        // Pré-selecionar: se já existe responsável gravado, usar ele; se for Alteração Técnica, pré-selecionar
+        if (record.responsavel) {
+          modalResponsavel.value = record.responsavel;
+        } else if (ehAlteracaoTecnica) {
+          modalResponsavel.value = 'Alteração Técnica';
         }
 
         // Handle diferenca valor
@@ -12102,14 +12122,24 @@
           // Populate responsavel dropdown
           const responsavelSelect = document.getElementById('editModalResponsavelEdit');
           responsavelSelect.innerHTML = '<option value="">Selecione...</option>';
+          // Opção fixa para erros sem responsável individual
+          const optAtEdit = document.createElement('option');
+          optAtEdit.value = 'Alteração Técnica';
+          optAtEdit.textContent = 'Alteração Técnica';
+          responsavelSelect.appendChild(optAtEdit);
           const responsaveisList = listasData && listasData.colaboradores ? listasData.colaboradores : [];
           responsaveisList.forEach(resp => {
             const opt = document.createElement('option');
             opt.value = resp;
             opt.textContent = resp;
-            if (record.responsavel === resp) opt.selected = true;
             responsavelSelect.appendChild(opt);
           });
+          // Pré-selecionar valor existente ou Alteração Técnica se o erro for desse tipo
+          if (record.responsavel) {
+            responsavelSelect.value = record.responsavel;
+          } else if (isAlteracaoTecnica(record.erro)) {
+            responsavelSelect.value = 'Alteração Técnica';
+          }
 
           // Fill response editable fields (Data/Hora e Correção Finalizada são auto-preenchidos ao salvar)
           const diferencaValorField = document.getElementById('editModalDiferencaValorRespostaEdit');
