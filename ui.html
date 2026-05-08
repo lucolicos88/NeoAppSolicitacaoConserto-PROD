@@ -2705,8 +2705,8 @@
       .min-w-200 { min-width: 200px; }
       .border-bottom-2 { border-bottom: 2px solid #e0e0e0; }
       .print-btn { margin-bottom: 20px; padding: 0.5rem 1rem; font-size: 0.875rem; }
-      .max-h-300 { max-height: 300px; }
-      .max-h-350 { max-height: 350px; }
+      .max-h-300 { max-height: 420px; }
+      .max-h-350 { max-height: 480px; }
       .grid-auto-180 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
       .grid-auto-150 { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
       .grid-2col { grid-template-columns: 1fr 1fr; }
@@ -3329,6 +3329,18 @@
                 <label>🩺 Conf. Médica?</label>
                 <div id="filterRespostaConfMedica"></div>
               </div>
+              <div class="form-group" style="margin: 0; min-width: 160px;">
+                <label>👤 Responsável</label>
+                <div id="filterRespostaResponsavel"></div>
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label>📅 Data Início</label>
+                <input type="date" id="filterRespostaDataInicial" class="form-control" onchange="filterOpenErrors()" style="width: 140px;">
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label>📅 Data Fim</label>
+                <input type="date" id="filterRespostaDataFinal" class="form-control" onchange="filterOpenErrors()" style="width: 140px;">
+              </div>
               <div class="form-group" style="margin: 0;">
                 <label style="visibility: hidden;">Urgente</label>
                 <button type="button" id="btnFiltroUrgente" onclick="toggleFiltroUrgente()" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; height: 38px; background:#fff3e0; border:2px solid #ff8f00; color:#bf360c; font-weight:600; border-radius:6px; cursor:pointer;" title="Mostrar apenas solicitações urgentes">
@@ -3571,7 +3583,7 @@
                 </select>
               </div>
             </div>
-            <canvas id="chartTimelineColab" class="max-h-350" style="width:100%;height:220px;display:block;"></canvas>
+            <canvas id="chartTimelineColab" class="max-h-350" style="width:100%;height:300px;display:block;"></canvas>
           </div>
 
           <!-- Gráficos Principais -->
@@ -3760,7 +3772,7 @@
             <div class="d-flex justify-between align-center mb-1">
               <h3>📈 Timeline de Erros (Solicitantes)</h3>
             </div>
-            <canvas id="chartTimelineSol" class="max-h-350" style="width:100%;height:220px;display:block;"></canvas>
+            <canvas id="chartTimelineSol" class="max-h-350" style="width:100%;height:300px;display:block;"></canvas>
           </div>
 
           <!-- Gráficos Principais -->
@@ -6101,6 +6113,16 @@
       function gerarHistoricoVersoesHTML() {
         const versoes = [
           {
+            v: 'v308', data: 'Mai/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Fix PDF — data do período correta + tabela dentro das margens',
+            desc: '(1) Data no cabeçalho do PDF mostrava 1 dia anterior (ex: filtro 07/05 → PDF exibia 06/05) pelo mesmo bug UTC: new Date("YYYY-MM-DD") interpretava como UTC midnight. Corrigido com +"T00:00:00" em todos os 3 PDFs (Colaboradores, Solicitantes, Erros) e na função generateRankingPDF. (2) Tabela do PDF ultrapassava as margens da página: adicionado table-layout:fixed, colgroup com larguras proporcionais (%), word-break:break-word em todas as células, padding reduzido para 4px/3px, font-size 7px, e box-sizing:border-box no container raiz.'
+          },
+          {
+            v: 'v307', data: 'Mai/2026', tipo: 'feat', cor: '#059669',
+            titulo: 'Filtros Responsável + Data na Aba Resposta; fix data Dashboard; tabela PDF completa; gráficos maiores',
+            desc: '(1) Aba Resposta: adicionados filtros de Responsável (multiselect), Data Início e Data Final (filtram por dataHoraPedido com hora). (2) Dashboard: corrigido bug de fuso horário — new Date("YYYY-MM-DD") interpretava como UTC midnight deslocando o filtro 1 dia. Agora usa new Date("YYYY-MM-DD"+"T00:00:00") para manter horário local. Aplicado nas 4 funções de filtro. (3) PDF: tabela de detalhamento agora exibe todos os registros (era limitado a 25). (4) Gráficos: max-height aumentado de 300→420px e 350→480px; timeline de 220→300px.'
+          },
+          {
             v: 'v306', data: 'Mai/2026', tipo: 'fix', cor: '#0891b2',
             titulo: 'Fix — chip de setores no header não estoura mais a área',
             desc: 'O chip de setores no header exibia todos os nomes em join(", ") sem white-space:nowrap, fazendo o badge crescer verticalmente e sobrepor a navegação. Agora: 1 setor → exibe o nome; 2+ setores → exibe "N setores" com tooltip (title) listando todos. CSS: white-space:nowrap + max-width:160px + text-overflow:ellipsis no .user-badge-setor; flex-wrap:wrap no .user-badges.'
@@ -7943,7 +7965,7 @@
 
     <div class="footer">
       <p><strong>API do Sistema de Solicitação de Consertos — NeoFormula</strong></p>
-      <p>v306 | Fix chip setores no header</p>
+      <p>v308 | Fix PDF data + tabela nas margens</p>
       <p style="margin-top: 15px; font-size: 0.9rem;">© 2025 NeoFormula</p>
     </div>
   </div>
@@ -11094,6 +11116,10 @@
         createMultiSelect('filterRespostaDiferencaValor', ['SIM', 'NÃO'], () => filterOpenErrors(), 'Todos');
         createMultiSelect('filterRespostaConfMedica', ['SIM', 'NÃO'], () => filterOpenErrors(), 'Todos');
 
+        // Create multi-select for responsáveis
+        const responsaveis = [...new Set(allOpenErros.map(item => item.responsavel).filter(r => r))].sort();
+        createMultiSelect('filterRespostaResponsavel', responsaveis, () => filterOpenErrors(), 'Todos');
+
         // Restore saved filter state (overrides defaults if user had saved filters)
         restoreFilterState_();
       }
@@ -11167,6 +11193,13 @@
       function filterOpenErrors() {
         const filterRequisicao = document.getElementById('filterRespostaRequisicao').value.trim().toLowerCase();
         const filterDetalhamento = document.getElementById('filterRespostaDetalhamento').value.trim().toLowerCase();
+        const filterDataInicial = document.getElementById('filterRespostaDataInicial').value;
+        const filterDataFinal = document.getElementById('filterRespostaDataFinal').value;
+
+        // Pre-compute date boundaries (local time — avoid UTC offset bug)
+        let _startTime = null, _endTime = null;
+        if (filterDataInicial) { const d = new Date(filterDataInicial + 'T00:00:00'); d.setHours(0,0,0,0); _startTime = d.getTime(); }
+        if (filterDataFinal)   { const d = new Date(filterDataFinal   + 'T00:00:00'); d.setHours(23,59,59,999); _endTime = d.getTime(); }
 
         // Get multi-select values
         const filterSolicitantes = multiSelectInstances['filterRespostaSolicitante']?.getValues() || [];
@@ -11174,6 +11207,7 @@
         const filterStatus = multiSelectInstances['filterRespostaStatus']?.getValues() || [];
         const filterDiferencaValor = multiSelectInstances['filterRespostaDiferencaValor']?.getValues() || [];
         const filterConfMedica = multiSelectInstances['filterRespostaConfMedica']?.getValues() || [];
+        const filterResponsaveis = multiSelectInstances['filterRespostaResponsavel']?.getValues() || [];
 
         // Apply all filters
         filteredOpenErros = allOpenErros.filter(item => {
@@ -11218,6 +11252,17 @@
             if (!filterConfMedica.includes(val)) return false;
           }
 
+          // Filter by date range (data/hora do pedido)
+          if (_startTime !== null || _endTime !== null) {
+            const raw = String(item.dataHoraPedido || '');
+            const itemTime = new Date(raw.includes('T') ? raw : raw.replace(' ', 'T')).getTime();
+            if (_startTime !== null && itemTime < _startTime) return false;
+            if (_endTime   !== null && itemTime > _endTime)   return false;
+          }
+
+          // Filter by responsavel (multi-select)
+          if (filterResponsaveis.length > 0 && !filterResponsaveis.includes(item.responsavel)) return false;
+
           // Filtro urgente — mostra apenas itens marcados como urgente
           if (filtroUrgenteAtivo && item.urgente !== 'SIM') return false;
 
@@ -11241,11 +11286,14 @@
           const state = {
             requisicao: document.getElementById('filterRespostaRequisicao').value.trim(),
             detalhamento: document.getElementById('filterRespostaDetalhamento').value.trim(),
+            dataInicial: document.getElementById('filterRespostaDataInicial').value,
+            dataFinal: document.getElementById('filterRespostaDataFinal').value,
             solicitantes: multiSelectInstances['filterRespostaSolicitante']?.getValues() || [],
             setores: multiSelectInstances['filterRespostaSetor']?.getValues() || [],
             status: multiSelectInstances['filterRespostaStatus']?.getValues() || [],
             diferencaValor: multiSelectInstances['filterRespostaDiferencaValor']?.getValues() || [],
             confMedica: multiSelectInstances['filterRespostaConfMedica']?.getValues() || [],
+            responsaveis: multiSelectInstances['filterRespostaResponsavel']?.getValues() || [],
             urgente: filtroUrgenteAtivo
           };
           localStorage.setItem(FILTER_STORAGE_KEY_, JSON.stringify(state));
@@ -11265,9 +11313,18 @@
             const el = document.getElementById('filterRespostaDetalhamento');
             if (el) el.value = state.detalhamento;
           }
-          ['solicitantes','setores','status','diferencaValor','confMedica'].forEach(key => {
+          if (state.dataInicial) {
+            const el = document.getElementById('filterRespostaDataInicial');
+            if (el) el.value = state.dataInicial;
+          }
+          if (state.dataFinal) {
+            const el = document.getElementById('filterRespostaDataFinal');
+            if (el) el.value = state.dataFinal;
+          }
+          ['solicitantes','setores','status','diferencaValor','confMedica','responsaveis'].forEach(key => {
             const idMap = { solicitantes:'filterRespostaSolicitante', setores:'filterRespostaSetor',
-              status:'filterRespostaStatus', diferencaValor:'filterRespostaDiferencaValor', confMedica:'filterRespostaConfMedica' };
+              status:'filterRespostaStatus', diferencaValor:'filterRespostaDiferencaValor', confMedica:'filterRespostaConfMedica',
+              responsaveis:'filterRespostaResponsavel' };
             if (state[key] && state[key].length && multiSelectInstances[idMap[key]]) {
               multiSelectInstances[idMap[key]].setValues(state[key]);
             }
@@ -11277,9 +11334,11 @@
       }
 
       function limparFiltrosResposta() {
-        // Clear requisição e detalhamento
+        // Clear requisição, detalhamento e datas
         document.getElementById('filterRespostaRequisicao').value = '';
         document.getElementById('filterRespostaDetalhamento').value = '';
+        document.getElementById('filterRespostaDataInicial').value = '';
+        document.getElementById('filterRespostaDataFinal').value = '';
 
         // Clear multi-selects
         if (multiSelectInstances['filterRespostaSolicitante']) {
@@ -11296,6 +11355,9 @@
         }
         if (multiSelectInstances['filterRespostaConfMedica']) {
           multiSelectInstances['filterRespostaConfMedica'].clear();
+        }
+        if (multiSelectInstances['filterRespostaResponsavel']) {
+          multiSelectInstances['filterRespostaResponsavel'].clear();
         }
 
         // Reset filtro urgente
@@ -11330,16 +11392,21 @@
         const countInfo = document.getElementById('respostaCountInfo');
         const filterRequisicao = document.getElementById('filterRespostaRequisicao').value.trim();
         const filterDetalhamento = document.getElementById('filterRespostaDetalhamento').value.trim();
+        const filterDataInicial = document.getElementById('filterRespostaDataInicial').value;
+        const filterDataFinal = document.getElementById('filterRespostaDataFinal').value;
         const filterSolicitantes = multiSelectInstances['filterRespostaSolicitante']?.getValues() || [];
         const filterSetores = multiSelectInstances['filterRespostaSetor']?.getValues() || [];
         const filterStatus = multiSelectInstances['filterRespostaStatus']?.getValues() || [];
         const filterDiferencaValor = multiSelectInstances['filterRespostaDiferencaValor']?.getValues() || [];
         const filterConfMedica = multiSelectInstances['filterRespostaConfMedica']?.getValues() || [];
+        const filterResponsaveis = multiSelectInstances['filterRespostaResponsavel']?.getValues() || [];
 
         // Build filter description - show actual names
         const filtrosAtivos = [];
         if (filterRequisicao) filtrosAtivos.push(`req: ${filterRequisicao}`);
         if (filterDetalhamento) filtrosAtivos.push(`det: ${filterDetalhamento}`);
+        if (filterDataInicial) filtrosAtivos.push(`de: ${filterDataInicial.split('-').reverse().join('/')}`);
+        if (filterDataFinal) filtrosAtivos.push(`até: ${filterDataFinal.split('-').reverse().join('/')}`);
         if (filterSolicitantes.length > 0) {
           const solNames = filterSolicitantes.map(s => s.split(' ')[0]).join(', ');
           filtrosAtivos.push(`sol: ${solNames}`);
@@ -11356,7 +11423,7 @@
 
         // Update visual filter tags area
         const filtrosContainer = document.getElementById('respostaFiltrosAtivos');
-        const hasFilters = filterRequisicao || filterDetalhamento || filterSolicitantes.length > 0 || filterSetores.length > 0 || filterStatus.length > 0 || filterDiferencaValor.length > 0 || filterConfMedica.length > 0;
+        const hasFilters = filterRequisicao || filterDetalhamento || filterDataInicial || filterDataFinal || filterSolicitantes.length > 0 || filterSetores.length > 0 || filterStatus.length > 0 || filterDiferencaValor.length > 0 || filterConfMedica.length > 0 || filterResponsaveis.length > 0;
 
         if (hasFilters) {
           let tagsHTML = '<span class="filtros-ativos-label">🏷️ Filtros:</span>';
@@ -11382,6 +11449,11 @@
           filterConfMedica.forEach(v => {
             tagsHTML += `<span class="filtro-tag" style="background:#dbeafe;color:#1e40af;border-color:#bfdbfe;">🩺 Conf. Médica: ${v}</span>`;
           });
+          filterResponsaveis.forEach(r => {
+            tagsHTML += `<span class="filtro-tag" style="background:#ede9fe;color:#5b21b6;border-color:#c4b5fd;">👤 ${r.split(' ')[0]}</span>`;
+          });
+          if (filterDataInicial) tagsHTML += `<span class="filtro-tag">📅 De: ${filterDataInicial.split('-').reverse().join('/')}</span>`;
+          if (filterDataFinal)   tagsHTML += `<span class="filtro-tag">📅 Até: ${filterDataFinal.split('-').reverse().join('/')}</span>`;
 
           tagsHTML += `<button class="btn-limpar-filtros" onclick="limparFiltrosResposta()">✕ Limpar</button>`;
           filtrosContainer.innerHTML = tagsHTML;
@@ -11393,8 +11465,8 @@
         // Update filter count badge
         const filtrosBadge = document.getElementById('filtrosBadge');
         if (filtrosBadge) {
-          const nFiltros = (filterRequisicao ? 1 : 0) + (filterDetalhamento ? 1 : 0) + filterSolicitantes.length + filterSetores.length +
-            filterStatus.length + filterDiferencaValor.length + filterConfMedica.length + (filtroUrgenteAtivo ? 1 : 0);
+          const nFiltros = (filterRequisicao ? 1 : 0) + (filterDetalhamento ? 1 : 0) + (filterDataInicial ? 1 : 0) + (filterDataFinal ? 1 : 0) + filterSolicitantes.length + filterSetores.length +
+            filterStatus.length + filterDiferencaValor.length + filterConfMedica.length + filterResponsaveis.length + (filtroUrgenteAtivo ? 1 : 0);
           if (nFiltros > 0) {
             filtrosBadge.textContent = nFiltros + ' filtro' + (nFiltros !== 1 ? 's' : '');
             filtrosBadge.style.display = 'inline-block';
@@ -12849,7 +12921,7 @@
         if (isColab) {
           viewType = 'colaboradores';
           dashboardName = 'Relatório de Erros - Colaboradores';
-          filteredRecords = filteredColabRecords.length > 0 ? filteredColabRecords : allDashboardRecords;
+          filteredRecords = filteredColabRecords;
           timelineChartId = 'chartTimelineColab';
           const tiposErro = multiSelectInstances['filterColabTipoErro']?.getValues() || [];
           const responsaveis = multiSelectInstances['filterColabResponsavel']?.getValues() || [];
@@ -12864,7 +12936,7 @@
         } else if (isSol) {
           viewType = 'solicitantes';
           dashboardName = 'Relatório de Erros - Solicitantes';
-          filteredRecords = filteredSolRecords.length > 0 ? filteredSolRecords : allDashboardRecords;
+          filteredRecords = filteredSolRecords;
           timelineChartId = 'chartTimelineSol';
           const tiposErro = multiSelectInstances['filterSolTipoErro']?.getValues() || [];
           const solicitantes = multiSelectInstances['filterSolSolicitante']?.getValues() || [];
@@ -12879,7 +12951,7 @@
         } else if (isRank) {
           viewType = 'ranking';
           dashboardName = 'Relatório de Ranking - Colaboradores';
-          filteredRecords = filteredRankRecords.length > 0 ? filteredRankRecords : allDashboardRecords;
+          filteredRecords = filteredRankRecords;
           const setores = multiSelectInstances['filterRankSetor']?.getValues() || [];
           filters = {
             dataInicial: document.getElementById('filterRankDataInicial').value,
@@ -12889,7 +12961,7 @@
         } else if (isErros) {
           viewType = 'erros';
           dashboardName = 'Relatório de Análise de Erros';
-          filteredRecords = filteredErrosRecords.length > 0 ? filteredErrosRecords : allDashboardRecords;
+          filteredRecords = filteredErrosRecords;
           const tiposErro = multiSelectInstances['filterErrosTipo']?.getValues() || [];
           const setores = multiSelectInstances['filterErrosSetor']?.getValues() || [];
           filters = {
@@ -12900,6 +12972,11 @@
           };
         } else {
           showModal('Erro', 'Nenhum dashboard ativo para imprimir.');
+          return;
+        }
+
+        if (!filteredRecords || filteredRecords.length === 0) {
+          showModal('Sem dados', 'Nenhum registro encontrado para os filtros selecionados. O relatório não foi gerado.');
           return;
         }
 
@@ -13028,7 +13105,7 @@
 
         // Build PDF HTML
         const pdfHtml = `
-          <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 6px 12px; background: #fff; color: #333;">
+          <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 6px 8px; background: #fff; color: #333; box-sizing: border-box; width: 100%;">
 
             <!-- HEADER WITH LOGO -->
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 2px solid #009688; margin-bottom: 8px;">
@@ -13046,7 +13123,7 @@
             <div style="background: #e8f5e9; padding: 4px 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #009688;">
               <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 9px; color: #333; align-items: center;">
                 <span style="font-weight: 600; color: #00796b;">Filtros:</span>
-                <span><strong>Período:</strong> ${filters.dataInicial ? new Date(filters.dataInicial).toLocaleDateString('pt-BR') : 'Início'} até ${filters.dataFinal ? new Date(filters.dataFinal).toLocaleDateString('pt-BR') : 'Atual'}</span>
+                <span><strong>Período:</strong> ${filters.dataInicial ? new Date(filters.dataInicial + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início'} até ${filters.dataFinal ? new Date(filters.dataFinal + 'T00:00:00').toLocaleDateString('pt-BR') : 'Atual'}</span>
                 <span><strong>Tipo de Erro:</strong> ${filters.tipoErro || 'Todos'}</span>
                 <span><strong>${isColab ? 'Responsável' : 'Solicitante'}:</strong> ${(isColab ? filters.responsavel : filters.solicitante) || 'Todos'}</span>
                 <span><strong>Setor:</strong> ${filters.setor || 'Todos'}</span>
@@ -13174,23 +13251,33 @@
             </div>
 
             <!-- DETAILED TABLE - Always on page 2 -->
-            <div style="page-break-before: always; padding-top: 10px;">
+            <div style="page-break-before: always; padding-top: 10px; width: 100%; box-sizing: border-box;">
               <h3 style="margin: 0 0 8px 0; font-size: 12px; color: #333; border-bottom: 2px solid #009688; padding-bottom: 4px;">Detalhamento das Solicitações e Respostas</h3>
-              <table style="width: 100%; border-collapse: collapse; font-size: 8px;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 7px; table-layout: fixed;">
+                <colgroup>
+                  <col style="width: 8%;">  <!-- Requisição -->
+                  <col style="width: 14%;">  <!-- Solicitante -->
+                  <col style="width: 15%;">  <!-- Tipo de Erro -->
+                  <col style="width: 9%;">   <!-- Setor -->
+                  <col style="width: 7%;">   <!-- Status -->
+                  <col style="width: 6%;">   <!-- SLA -->
+                  <col style="width: 16%;">  <!-- Responsável -->
+                  <col style="width: 11%;">  <!-- Data Correção -->
+                </colgroup>
                 <thead>
                   <tr style="background: linear-gradient(135deg, #009688 0%, #00796b 100%); color: white;">
-                    <th style="padding: 8px 5px; border: 1px solid #00796b; text-align: center; width: 55px;">Requisição</th>
-                    <th style="padding: 8px 5px; border: 1px solid #00796b; text-align: left;">Solicitante</th>
-                    <th style="padding: 8px 5px; border: 1px solid #00796b; text-align: left;">Tipo de Erro</th>
-                    <th style="padding: 8px 5px; border: 1px solid #00796b; text-align: left;">Setor</th>
-                    <th style="padding: 8px 5px; border: 1px solid #00796b; text-align: center; width: 50px;">Status</th>
-                    <th style="padding: 8px 5px; border: 1px solid #00796b; text-align: center; width: 45px;">SLA</th>
-                    <th style="padding: 8px 5px; border: 1px solid #00796b; text-align: left;">Responsável</th>
-                    <th style="padding: 8px 5px; border: 1px solid #00796b; text-align: left; width: 90px;">Data Correção</th>
+                    <th style="padding: 5px 3px; border: 1px solid #00796b; text-align: center; overflow: hidden; word-break: break-word;">Requisição</th>
+                    <th style="padding: 5px 3px; border: 1px solid #00796b; text-align: left; overflow: hidden; word-break: break-word;">Solicitante</th>
+                    <th style="padding: 5px 3px; border: 1px solid #00796b; text-align: left; overflow: hidden; word-break: break-word;">Tipo de Erro</th>
+                    <th style="padding: 5px 3px; border: 1px solid #00796b; text-align: left; overflow: hidden; word-break: break-word;">Setor</th>
+                    <th style="padding: 5px 3px; border: 1px solid #00796b; text-align: center;">Status</th>
+                    <th style="padding: 5px 3px; border: 1px solid #00796b; text-align: center;">SLA</th>
+                    <th style="padding: 5px 3px; border: 1px solid #00796b; text-align: left; overflow: hidden; word-break: break-word;">Responsável</th>
+                    <th style="padding: 5px 3px; border: 1px solid #00796b; text-align: left; overflow: hidden; word-break: break-word;">Data Correção</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${filteredRecords.slice(0, 25).map((r, i) => {
+                  ${filteredRecords.map((r, i) => {
                     const bgColor = i % 2 === 0 ? '#ffffff' : '#f8fafc';
                     const status = r.dataHoraCorrecao ? 'Corrigido' : 'Aberto';
                     const statusBg = r.dataHoraCorrecao ? '#d1fae5' : '#fef3c7';
@@ -13199,20 +13286,20 @@
                     const slaColor = r.slaStatus === 'OK' ? '#065f46' : (r.slaStatus === 'ALERTA' ? '#92400e' : '#991b1b');
                     return `
                       <tr style="background: ${bgColor};">
-                        <td style="padding: 6px 4px; border: 1px solid #e2e8f0; text-align: center; font-weight: bold; color: #009688;">${r.requisicao || '-'}</td>
-                        <td style="padding: 6px 4px; border: 1px solid #e2e8f0;">${r.solicitante || '-'}</td>
-                        <td style="padding: 6px 4px; border: 1px solid #e2e8f0;">${r.erro || '-'}</td>
-                        <td style="padding: 6px 4px; border: 1px solid #e2e8f0;">${r.setorLocal || '-'}</td>
-                        <td style="padding: 6px 4px; border: 1px solid #e2e8f0; text-align: center; background: ${statusBg}; color: ${statusColor}; font-weight: bold;">${status}</td>
-                        <td style="padding: 6px 4px; border: 1px solid #e2e8f0; text-align: center; background: ${slaBg}; color: ${slaColor}; font-weight: bold;">${r.slaStatus || 'OK'}</td>
-                        <td style="padding: 6px 4px; border: 1px solid #e2e8f0;">${r.responsavel || '-'}</td>
-                        <td style="padding: 6px 4px; border: 1px solid #e2e8f0; font-size: 7px; white-space: nowrap;">${formatDateShort(r.dataHoraCorrecao)}</td>
+                        <td style="padding: 4px 3px; border: 1px solid #e2e8f0; text-align: center; font-weight: bold; color: #009688; word-break: break-all;">${r.requisicao || '-'}</td>
+                        <td style="padding: 4px 3px; border: 1px solid #e2e8f0; word-break: break-word; overflow: hidden;">${r.solicitante || '-'}</td>
+                        <td style="padding: 4px 3px; border: 1px solid #e2e8f0; word-break: break-word; overflow: hidden;">${r.erro || '-'}</td>
+                        <td style="padding: 4px 3px; border: 1px solid #e2e8f0; word-break: break-word; overflow: hidden;">${r.setorLocal || '-'}</td>
+                        <td style="padding: 4px 3px; border: 1px solid #e2e8f0; text-align: center; background: ${statusBg}; color: ${statusColor}; font-weight: bold;">${status}</td>
+                        <td style="padding: 4px 3px; border: 1px solid #e2e8f0; text-align: center; background: ${slaBg}; color: ${slaColor}; font-weight: bold;">${r.slaStatus || 'OK'}</td>
+                        <td style="padding: 4px 3px; border: 1px solid #e2e8f0; word-break: break-word; overflow: hidden;">${r.responsavel || '-'}</td>
+                        <td style="padding: 4px 3px; border: 1px solid #e2e8f0; word-break: break-word; overflow: hidden;">${formatDateShort(r.dataHoraCorrecao)}</td>
                       </tr>
                     `;
                   }).join('')}
                 </tbody>
               </table>
-              ${filteredRecords.length > 25 ? `<p style="font-size: 9px; color: #64748b; margin-top: 8px; text-align: center;">Exibindo 25 de ${filteredRecords.length} registros</p>` : ''}
+              <p style="font-size: 9px; color: #64748b; margin-top: 8px; text-align: center;">Total: ${filteredRecords.length} registro(s)</p>
             </div>
 
             <!-- FOOTER -->
@@ -13253,8 +13340,8 @@
       // Generate PDF for Ranking View
       function generateRankingPDF(records, filters, logoUrl) {
         // Calculate ranking data
-        const startTime = filters.dataInicial ? new Date(filters.dataInicial) : null;
-        const endTime = filters.dataFinal ? new Date(filters.dataFinal) : null;
+        const startTime = filters.dataInicial ? new Date(filters.dataInicial + 'T00:00:00') : null;
+        const endTime = filters.dataFinal ? new Date(filters.dataFinal + 'T00:00:00') : null;
         const diasPeriodo = startTime && endTime ? calcularDiasUteis(startTime, endTime) : 26;
 
         const colabStats = {};
@@ -13350,7 +13437,7 @@
             <div style="background: #e8f5e9; padding: 4px 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #009688;">
               <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 9px; color: #333; align-items: center;">
                 <span style="font-weight: 600; color: #00796b;">Filtros:</span>
-                <span><strong>Período:</strong> ${filters.dataInicial ? new Date(filters.dataInicial).toLocaleDateString('pt-BR') : 'Início'} até ${filters.dataFinal ? new Date(filters.dataFinal).toLocaleDateString('pt-BR') : 'Atual'}</span>
+                <span><strong>Período:</strong> ${filters.dataInicial ? new Date(filters.dataInicial + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início'} até ${filters.dataFinal ? new Date(filters.dataFinal + 'T00:00:00').toLocaleDateString('pt-BR') : 'Atual'}</span>
                 <span><strong>Setor:</strong> ${filters.setor || 'Todos'}</span>
                 <span><strong>Dias Úteis:</strong> ${diasPeriodo} (excl. domingos)</span>
               </div>
@@ -13438,7 +13525,7 @@
             <div style="background: #e8f5e9; padding: 4px 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #009688;">
               <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 9px; color: #333; align-items: center;">
                 <span style="font-weight: 600; color: #00796b;">Filtros:</span>
-                <span><strong>Período:</strong> ${filters.dataInicial ? new Date(filters.dataInicial).toLocaleDateString('pt-BR') : 'Início'} até ${filters.dataFinal ? new Date(filters.dataFinal).toLocaleDateString('pt-BR') : 'Atual'}</span>
+                <span><strong>Período:</strong> ${filters.dataInicial ? new Date(filters.dataInicial + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início'} até ${filters.dataFinal ? new Date(filters.dataFinal + 'T00:00:00').toLocaleDateString('pt-BR') : 'Atual'}</span>
                 <span><strong>Tipo de Erro:</strong> ${filters.tipoErro || 'Todos'}</span>
                 <span><strong>Setor:</strong> ${filters.setor || 'Todos'}</span>
               </div>
@@ -13647,12 +13734,12 @@
         let startTime = null;
         let endTime = null;
         if (dataInicial) {
-          const startDate = new Date(dataInicial);
+          const startDate = new Date(dataInicial + 'T00:00:00');
           startDate.setHours(0, 0, 0, 0);
           startTime = startDate.getTime();
         }
         if (dataFinal) {
-          const endDate = new Date(dataFinal);
+          const endDate = new Date(dataFinal + 'T00:00:00');
           endDate.setHours(23, 59, 59, 999);
           endTime = endDate.getTime();
         }
@@ -13700,12 +13787,12 @@
         let startTime = null;
         let endTime = null;
         if (dataInicial) {
-          const startDate = new Date(dataInicial);
+          const startDate = new Date(dataInicial + 'T00:00:00');
           startDate.setHours(0, 0, 0, 0);
           startTime = startDate.getTime();
         }
         if (dataFinal) {
-          const endDate = new Date(dataFinal);
+          const endDate = new Date(dataFinal + 'T00:00:00');
           endDate.setHours(23, 59, 59, 999);
           endTime = endDate.getTime();
         }
@@ -13773,12 +13860,12 @@
         let startTime = null;
         let endTime = null;
         if (dataInicial) {
-          const startDate = new Date(dataInicial);
+          const startDate = new Date(dataInicial + 'T00:00:00');
           startDate.setHours(0, 0, 0, 0);
           startTime = startDate.getTime();
         }
         if (dataFinal) {
-          const endDate = new Date(dataFinal);
+          const endDate = new Date(dataFinal + 'T00:00:00');
           endDate.setHours(23, 59, 59, 999);
           endTime = endDate.getTime();
         }
@@ -13926,12 +14013,12 @@
         let startTime = null;
         let endTime = null;
         if (dataInicial) {
-          const startDate = new Date(dataInicial);
+          const startDate = new Date(dataInicial + 'T00:00:00');
           startDate.setHours(0, 0, 0, 0);
           startTime = startDate.getTime();
         }
         if (dataFinal) {
-          const endDate = new Date(dataFinal);
+          const endDate = new Date(dataFinal + 'T00:00:00');
           endDate.setHours(23, 59, 59, 999);
           endTime = endDate.getTime();
         }
