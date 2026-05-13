@@ -6113,6 +6113,51 @@
       function gerarHistoricoVersoesHTML() {
         const versoes = [
           {
+            v: 'v320', data: 'Mai/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Fix — Data inicial padrão do dashboard: 1º dia do mês vigente',
+            desc: 'A data inicial dos filtros do dashboard agora inicia no 1º dia do mês corrente (em vez de 30 dias atrás), e a data final continua sendo o dia de hoje.'
+          },
+          {
+            v: 'v319', data: 'Mai/2026', tipo: 'fix', cor: '#dc2626',
+            titulo: 'Fix — Dashboard: payload menor + paginação + fallback timer',
+            desc: 'Causa raiz: v318 retornava 891 registros em um único chunk (~620KB) — extensão Chrome interceptava mensagem grande e fechava o canal sem disparar nenhum handler (nem sucesso nem erro), deixando datas e filtros vazios. v317 tinha timeout porque cache.putAll com 30 shards (630KB) levava 1,4s extras. v319: (1) remove campos detalhamento e observacoes do registro do dashboard (~300 bytes economizados/registro → payload ~362KB); (2) paginação de 300 registros/chunk (~120KB, seguro para extensões); (3) shard size 100 → 9 shards no putAll (~0,3s vs 1,4s); (4) fallback timer de 8s no frontend garante que datas e filtros são sempre inicializados.'
+          },
+          {
+            v: 'v318', data: 'Mai/2026', tipo: 'fix', cor: '#dc2626',
+            titulo: 'Fix — Dashboard carrega sem timeout: sem paginação nem cache',
+            desc: 'getDashboardRecords retornava dados em chunks de 300 + gravava cache (putAll com 30 shards = ~1,4s). Somado ao tempo de leitura (~2,3s), total ~3,7s + overhead de rede ultrapassava o timeout do postMessage do iframe GAS. Solução: retorna todos os registros em uma única chamada sem cache (~2,3s total). Payload de ~620KB está bem abaixo do limite de 1MB do GAS.'
+          },
+          {
+            v: 'v317', data: 'Mai/2026', tipo: 'perf', cor: '#16a34a',
+            titulo: 'Performance — cache.putAll() elimina timeout no Dashboard',
+            desc: 'getDashboardRecords e getOpenErros gravavam shards individualmente (45 × cache.put() ≈ 6,7s), ultrapassando o timeout de ~5s do postMessage do iframe GAS — dashboard recebia null e mostrava 0 dados. Substituído por cache.putAll() (gravação em lote, ~0,5s). Shard size aumentado de 20 para 30 registros. Tempo total de execução: ~1,5s.'
+          },
+          {
+            v: 'v316', data: 'Mai/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Fix — Aba Resposta carrega todos registros para usuários com setores [*]',
+            desc: 'Usuários ADMIN com setores ["*"] não conseguiam carregar dados na Aba Resposta (retornava 0 registros). Corrigido o filtro de setor para aceitar wildcard, e removido totalCount referenciado antes de ser declarado (ReferenceError em v314).'
+          },
+          {
+            v: 'v315', data: 'Mai/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'Fix — Carregamento sequencial: erros primeiro, depois dashboard',
+            desc: 'Dois google.script.run simultâneos (erros + dashboard) causavam "dropping postMessage from host null" — um dos dois canais era descartado pelo sandbox GAS, resultando em withSuccessHandler(null) e tela vazia. Agora erros carregam primeiro (chunks via cache); dashboard inicia somente após erros terminarem (ou falharem). Com cache v314, erros: chunk 1 ~3s + chunks 2/3 ~0.1s cada; dashboard: chunk 1 ~8s + chunks rápidos = total ~11s.'
+          },
+          {
+            v: 'v314', data: 'Mai/2026', tipo: 'perf', cor: '#d97706',
+            titulo: 'Performance — Cache em shards para chunks sem releitura de planilha',
+            desc: 'Corrige timeout no 2º/3º chunk: na v313, cada chunk re-lia todas as planilhas. Agora o 1º chunk lê as planilhas uma única vez, grava todos os registros em shards de 20 itens no CacheService (chave versionada, TTL 5 min) e retorna a 1ª página. Chunks seguintes são servidos do cache (~100ms vs. ~20s antes).'
+          },
+          {
+            v: 'v313', data: 'Mai/2026', tipo: 'perf', cor: '#d97706',
+            titulo: 'Performance — Paginação chunked para Aba Resposta e Dashboard',
+            desc: 'Aba Resposta e Dashboard carregam dados em blocos de 300 registros, evitando o limite de ~1MB do postMessage do iframe GAS. Frontend acumula chunks progressivamente com aviso de progresso.'
+          },
+          {
+            v: 'v312', data: 'Mai/2026', tipo: 'perf', cor: '#d97706',
+            titulo: 'Performance — leitura limitada de colunas; Dashboard ordena mais recentes primeiro',
+            desc: 'Leitura das planilhas limitada às colunas necessárias (8 para Erros/Solicitacoes, 11 para Respostas) para evitar lentidão com colunas extras importadas do PROD. Dashboard passa a ordenar registros do mais recente para o mais antigo antes de aplicar o limite, garantindo que dados recentes apareçam mesmo com grande volume histórico.'
+          },
+          {
             v: 'v308', data: 'Mai/2026', tipo: 'fix', cor: '#0891b2',
             titulo: 'Fix PDF — data do período correta + tabela dentro das margens',
             desc: '(1) Data no cabeçalho do PDF mostrava 1 dia anterior (ex: filtro 07/05 → PDF exibia 06/05) pelo mesmo bug UTC: new Date("YYYY-MM-DD") interpretava como UTC midnight. Corrigido com +"T00:00:00" em todos os 3 PDFs (Colaboradores, Solicitantes, Erros) e na função generateRankingPDF. (2) Tabela do PDF ultrapassava as margens da página: adicionado table-layout:fixed, colgroup com larguras proporcionais (%), word-break:break-word em todas as células, padding reduzido para 4px/3px, font-size 7px, e box-sizing:border-box no container raiz.'
@@ -9856,31 +9901,98 @@
       let refreshDataTimeout = null;
       let isRefreshing = false;
 
+      // Carregamento paginado de erros — chama getOpenErros em chunks de 300 até hasMore=false.
+      // onProgress(buffer, totalCount, isLast) chamado a cada chunk; onDone(buffer) no fim.
+      function loadErrosChunked_(onProgress, onDone, onError) {
+        let buffer = [];
+        function loadChunk(offset) {
+          google.script.run
+            .withSuccessHandler(function(res) {
+              if (!res) { onError && onError('timeout'); return; }
+              if (!res.ok) { onError && onError(res.error || 'Erro desconhecido'); return; }
+              buffer = buffer.concat(res.openErros || []);
+              const isLast = !res.hasMore;
+              onProgress && onProgress(buffer, res.totalCount, isLast);
+              if (res.hasMore) {
+                loadChunk(res.nextOffset);
+              } else {
+                onDone && onDone(buffer);
+              }
+            })
+            .withFailureHandler(function(err) {
+              onError && onError(String(err));
+            })
+            .getOpenErros(300, offset);
+        }
+        loadChunk(0);
+      }
+
+      // Carregamento paginado do Dashboard — chama getDashboardRecords em chunks de 300.
+      function loadDashboardChunked_(onDone, onError) {
+        let buffer = [];
+        function loadChunk(offset) {
+          let responded = false;
+          // Fallback: se extensão Chrome fechar o canal sem disparar nenhum handler, garante cleanup
+          const fallbackTimer = setTimeout(function() {
+            if (!responded) { responded = true; onError && onError('timeout'); }
+          }, 8000);
+          google.script.run
+            .withSuccessHandler(function(res) {
+              clearTimeout(fallbackTimer);
+              if (responded) return;
+              responded = true;
+              if (!res || !res.ok) { onError && onError(res ? res.error : 'timeout'); return; }
+              buffer = buffer.concat(res.records || []);
+              if (res.hasMore) {
+                loadChunk(res.nextOffset);
+              } else {
+                onDone && onDone(buffer);
+              }
+            })
+            .withFailureHandler(function(err) {
+              clearTimeout(fallbackTimer);
+              if (responded) return;
+              responded = true;
+              onError && onError(String(err));
+            })
+            .getDashboardRecords(300, offset);
+        }
+        loadChunk(0);
+      }
+
       // PERF E1: refresh leve — apenas getOpenErros(), sem recarregar config/usuarios/dashboard.
       // Usado após submitRequest e submitResponse para evitar 3 round-trips desnecessários.
       function refreshOpenErrosOnly() {
         showLoading('Atualizando lista...');
-        google.script.run
-          .withSuccessHandler((res) => {
-            hideLoading();
-            if (res && res.ok) {
-              openErros = res.openErros || [];
-              allOpenErros = openErros;
-              fillOpenErros(openErros);
-              showOpenErrosHasMoreNotice_(res.hasMore, res.totalCount, openErros.length);
-              logUI('refreshOpenErrosOnly.done', { total: openErros.length });
-            } else {
-              logUI('refreshOpenErrosOnly.error', res);
-              // fallback: recarregamento completo se a chamada leve falhar
-              refreshData();
+        loadErrosChunked_(
+          function(buffer, totalCount, isLast) {
+            allOpenErros = buffer;
+            filterOpenErrors();
+            renderPage();
+            if (!isLast) {
+              const notice = document.getElementById('openErrosHasMoreNotice');
+              if (notice) {
+                notice.style.display = '';
+                notice.style.background = '#e8f4fd';
+                notice.style.color = '#1565c0';
+                notice.style.borderColor = '#1e88e5';
+                notice.innerHTML = '⏳ Carregando... ' + buffer.length + (totalCount ? ' de ' + totalCount : '') + ' registros';
+              }
             }
-          })
-          .withFailureHandler((err) => {
+          },
+          function(buffer) {
             hideLoading();
-            logUI('refreshOpenErrosOnly.failure', err);
+            allOpenErros = buffer;
+            fillOpenErros(buffer);
+            showOpenErrosHasMoreNotice_(false, buffer.length, buffer.length);
+            logUI('refreshOpenErrosOnly.done', { total: buffer.length });
+          },
+          function(err) {
+            hideLoading();
+            logUI('refreshOpenErrosOnly.error', err);
             refreshData();
-          })
-          .getOpenErros();
+          }
+        );
       }
 
       // PERF E2: Atualiza openErros em memória imediatamente após salvar resposta,
@@ -9999,72 +10111,64 @@
 
           fillDashboard(res.dashboard, res.solicitacoes);
 
-          // Load openErros separately (not included in bootstrap to avoid timeout)
-          google.script.run.withSuccessHandler((openErrosRes) => {
-            logUI('getOpenErros.response', openErrosRes);
-            // Log debug info from server
-            if (openErrosRes && openErrosRes._debug) {
-              logUI('getOpenErros.DEBUG', openErrosRes._debug);
-            }
-            if (openErrosRes && openErrosRes.ok) {
-              openErros = openErrosRes.openErros || [];
-              logUI('openErros.loaded', { total: openErros.length, totalCount: openErrosRes.totalCount, hasMore: openErrosRes.hasMore });
-              fillOpenErros(openErros);
-              showOpenErrosHasMoreNotice_(openErrosRes.hasMore, openErrosRes.totalCount, openErros.length);
-            } else {
-              logUI('getOpenErros.error', openErrosRes);
-            }
-          }).withFailureHandler((error) => {
-            logUI('getOpenErros.failure', error);
-          }).getOpenErros();
-
-          // Load dashboard records for charts
-          google.script.run.withSuccessHandler((dashRes) => {
-
-            logUI('getDashboardRecords.response', dashRes);
-
-            if (dashRes && dashRes.ok) {
-
-              allDashboardRecords = dashRes.records || [];
-
-              populateFilterDropdowns(allDashboardRecords);
-
-              renderCharts(allDashboardRecords);
-
-              // Re-apply filters to update filtered views
-              const colabView = document.getElementById('viewColaboradores');
-              if (colabView && colabView.style.display !== 'none') {
-                applyColabFilters();
-              } else {
-                applySolFilters();
+          // Helper: carrega dashboard após erros (sempre sequencial — evita conflito de postMessage)
+          function _startDashboardLoad_() {
+            loadDashboardChunked_(
+              function(buffer) {
+                logUI('getDashboardRecords.loaded', { total: buffer.length });
+                allDashboardRecords = buffer;
+                populateFilterDropdowns(allDashboardRecords);
+                renderCharts(allDashboardRecords);
+                const colabView = document.getElementById('viewColaboradores');
+                if (colabView && colabView.style.display !== 'none') {
+                  applyColabFilters();
+                } else {
+                  applySolFilters();
+                }
+              },
+              function(err) {
+                logUI('getDashboardRecords.error', err);
+                allDashboardRecords = [];
+                populateFilterDropdowns([]);
+                renderCharts([]);
               }
+            );
+          }
 
-            } else {
-
-              logUI('getDashboardRecords.error', {
-                hasDashRes: !!dashRes,
-                dashResOk: dashRes ? dashRes.ok : null,
-                error: dashRes && dashRes.error ? dashRes.error : 'unknown',
-                debugId: dashRes && dashRes.debugId ? dashRes.debugId : 'none',
-                dashRes: dashRes
-              });
-
-              // Initialize with empty data so app still works
-              allDashboardRecords = [];
-              populateFilterDropdowns([]);
-              renderCharts([]);
-
+          // Carrega erros primeiro; dashboard inicia APÓS erros terminarem (evita 2 google.script.run simultâneos)
+          loadErrosChunked_(
+            function(buffer, totalCount, isLast) {
+              allOpenErros = buffer;
+              filterOpenErrors();
+              renderPage();
+              const notice = document.getElementById('openErrosHasMoreNotice');
+              if (notice && !isLast) {
+                notice.style.display = '';
+                notice.style.background = '#e8f4fd';
+                notice.style.color = '#1565c0';
+                notice.style.borderColor = '#1e88e5';
+                notice.innerHTML = '⏳ Carregando... ' + buffer.length + (totalCount ? ' de ' + totalCount : '') + ' registros';
+              }
+            },
+            function(buffer) {
+              logUI('openErros.loaded', { total: buffer.length });
+              fillOpenErros(buffer);
+              showOpenErrosHasMoreNotice_(false, buffer.length, buffer.length);
+              _startDashboardLoad_(); // inicia dashboard só após erros completos
+            },
+            function(err) {
+              logUI('getOpenErros.error', err);
+              const notice = document.getElementById('openErrosHasMoreNotice');
+              if (notice) {
+                notice.style.display = '';
+                notice.style.background = '#fce8e8';
+                notice.style.color = '#b71c1c';
+                notice.style.borderColor = '#e53935';
+                notice.innerHTML = '⚠️ Não foi possível carregar as solicitações (servidor lento). Clique em <strong>Atualizar</strong> para tentar novamente.';
+              }
+              _startDashboardLoad_(); // tenta dashboard mesmo se erros falhou
             }
-
-          }).withFailureHandler((error) => {
-
-            logUI('getDashboardRecords.failure', error);
-
-            // Initialize with empty data so app still works
-            allDashboardRecords = [];
-            populateFilterDropdowns([]);
-
-          }).getDashboardRecords();
+          );
 
         }).withFailureHandler((error) => {
           isRefreshing = false;
@@ -11136,38 +11240,35 @@
 
         logUI('atualizarSolicitacoes.start', {});
 
-        google.script.run
-          .withSuccessHandler(function(res) {
-            logUI('atualizarSolicitacoes.response', { ok: res.ok, count: res.openErros?.length });
-
-            if (res.ok && res.openErros) {
-              allOpenErros = res.openErros;
-              filteredOpenErros = [...allOpenErros];
-              filterOpenErrors();
-              renderPage();
-              showOpenErrosHasMoreNotice_(res.hasMore, res.totalCount, allOpenErros.length);
-
-              const count = allOpenErros.length;
-              showModal('✅ Atualizado', `Lista atualizada com sucesso!<br><br>📋 <strong>${count}</strong> solicitação(ões) carregada(s).`);
-            } else {
-              showModal('Erro', 'Não foi possível atualizar: ' + (res.errors?.join(', ') || res.error || 'Erro desconhecido'));
+        loadErrosChunked_(
+          function(buffer, totalCount, isLast) {
+            allOpenErros = buffer;
+            filterOpenErrors();
+            renderPage();
+            const notice = document.getElementById('openErrosHasMoreNotice');
+            if (notice && !isLast) {
+              notice.style.display = '';
+              notice.style.background = '#e8f4fd';
+              notice.style.color = '#1565c0';
+              notice.style.borderColor = '#1e88e5';
+              notice.innerHTML = '⏳ Carregando... ' + buffer.length + (totalCount ? ' de ' + totalCount : '') + ' registros';
             }
-
-            if (btn) {
-              btn.disabled = false;
-              btn.innerHTML = originalText;
-            }
-          })
-          .withFailureHandler(function(error) {
-            logUI('atualizarSolicitacoes.error', error);
-            showModal('Erro', 'Falha ao atualizar: ' + error);
-
-            if (btn) {
-              btn.disabled = false;
-              btn.innerHTML = originalText;
-            }
-          })
-          .getOpenErros();
+          },
+          function(buffer) {
+            allOpenErros = buffer;
+            filteredOpenErros = [...allOpenErros];
+            filterOpenErrors();
+            renderPage();
+            showOpenErrosHasMoreNotice_(false, buffer.length, buffer.length);
+            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+            showModal('✅ Atualizado', 'Lista atualizada com sucesso!<br><br>📋 <strong>' + buffer.length + '</strong> solicitação(ões) carregada(s).');
+          },
+          function(err) {
+            logUI('atualizarSolicitacoes.error', err);
+            showModal('Erro', 'Falha ao atualizar: ' + err);
+            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+          }
+        );
       }
 
       let filtroUrgenteAtivo = false;
@@ -11507,7 +11608,7 @@
           tbody.innerHTML = `<tr><td colspan="17" style="padding:40px 20px;text-align:center;">
             <div style="font-size:2.5rem;margin-bottom:8px;">📋</div>
             <div style="font-weight:600;color:var(--text);margin-bottom:4px;">${emptyMsg}</div>
-            <div style="font-size:0.85rem;color:var(--text-secondary);">As solicitações respondidas aparecem na aba Dashboard.</div>
+            <div style="font-size:0.85rem;color:var(--text-secondary);">Solicitações corrigidas (finalizadas) aparecem na aba Dashboard.</div>
             ${emptyAction}
           </td></tr>`;
           return;
@@ -12588,36 +12689,25 @@
           btn.innerHTML = '⏳ Atualizando...';
         }
 
-        google.script.run.withSuccessHandler((dashRes) => {
-          if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '🔄 Atualizar';
-          }
-
-          if (dashRes && dashRes.ok) {
-            allDashboardRecords = dashRes.records || [];
+        loadDashboardChunked_(
+          function(buffer) {
+            if (btn) { btn.disabled = false; btn.innerHTML = '🔄 Atualizar'; }
+            allDashboardRecords = buffer;
             populateFilterDropdowns(allDashboardRecords);
             renderCharts(allDashboardRecords);
-
-            // Re-apply current filters
             const colabView = document.getElementById('viewColaboradores');
             if (colabView && colabView.style.display !== 'none') {
               applyColabFilters();
             } else {
               applySolFilters();
             }
-
             logUI('dashboard', 'atualizado', { total: allDashboardRecords.length });
-          } else {
-            showModal('Erro', 'Falha ao atualizar dashboard: ' + (dashRes?.error || 'Erro desconhecido'));
+          },
+          function(err) {
+            if (btn) { btn.disabled = false; btn.innerHTML = '🔄 Atualizar'; }
+            showModal('Erro', 'Falha ao atualizar dashboard: ' + err);
           }
-        }).withFailureHandler((error) => {
-          if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '🔄 Atualizar';
-          }
-          showModal('Erro', 'Falha ao atualizar dashboard: ' + error);
-        }).getDashboardRecords();
+        );
       }
 
       // Store multi-select instances
@@ -12802,11 +12892,11 @@
         createMultiSelect('filterErrosTipo', errorTypes, () => applyErrosFilters(), 'Todos os tipos');
         createMultiSelect('filterErrosSetor', setores, () => applyErrosFilters(), 'Todos os setores');
 
-        // Set default dates (last 30 days)
+        // Set default dates (first day of current month → today)
         const today = new Date();
-        const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+        const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
         const todayStr = today.toISOString().split('T')[0];
-        const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+        const thirtyDaysAgoStr = firstOfMonth.toISOString().split('T')[0];
 
         // Set dates for Colaboradores
         const colabDataInicial = document.getElementById('filterColabDataInicial');

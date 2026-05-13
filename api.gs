@@ -616,27 +616,77 @@ function getBootstrapLite() {
  * - Calcula SLA em batch (não por registro)
  * - Ordena por data de pedido (mais antigos primeiro)
  */
-function getOpenErros(limit) {
+// Registros por shard de cache — 20 × ~4KB max/registro = 80KB < 100KB limite CacheService
+var OE_SHARD_SIZE_ = 30;
+
+function getOpenErros(limit, offset) {
   const debugId = Utilities.getUuid();
   const startTime = new Date().getTime();
-  const MAX_LIMIT = limit || 3000; // Default limit increased to handle more records
+  const PAGE_SIZE = (limit && limit > 0) ? Math.min(limit, 500) : 300;
+  const PAGE_OFFSET = offset || 0;
 
   try {
     ensureSheets_();
     const userEmail = Session.getActiveUser().getEmail() || "";
+    const cache = CacheService.getScriptCache();
+    const ver = getDataVersion_();
+    const emailKey = userEmail.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 40);
+    const bKey = "oe3_" + ver + "_" + emailKey;
+
+    // Para chunks além do primeiro, tentar servir do cache (sem leitura de planilha)
+    if (PAGE_OFFSET > 0) {
+      try {
+        const nStr = cache.get(bKey + "_n");
+        if (nStr) {
+          const totalCount = parseInt(nStr);
+          const shardStart = Math.floor(PAGE_OFFSET / OE_SHARD_SIZE_);
+          const shardEnd = Math.ceil((PAGE_OFFSET + PAGE_SIZE) / OE_SHARD_SIZE_);
+          const combined = [];
+          let cacheOk = true;
+          for (let s = shardStart; s < shardEnd; s++) {
+            const sData = cache.get(bKey + "_s" + s);
+            if (!sData) { cacheOk = false; break; }
+            const parsed = JSON.parse(sData);
+            for (let k = 0; k < parsed.length; k++) combined.push(parsed[k]);
+          }
+          if (cacheOk) {
+            const sliceFrom = PAGE_OFFSET - shardStart * OE_SHARD_SIZE_;
+            const openErros = combined.slice(sliceFrom, sliceFrom + PAGE_SIZE);
+            const nextOffset = PAGE_OFFSET + openErros.length;
+            const hasMore = nextOffset < totalCount;
+            safeLogDebug_("getOpenErros", "cache_hit", { offset: PAGE_OFFSET, returned: openErros.length, totalCount: totalCount, elapsedMs: new Date().getTime() - startTime });
+            return { ok: true, debugId: debugId, openErros: openErros, totalCount: totalCount, hasMore: hasMore, nextOffset: nextOffset, _debug: { fromCache: true } };
+          }
+        }
+      } catch(e) { /* cache miss — fallback to full read */ }
+    }
+
+    // Leitura completa das planilhas (primeira chamada ou cache miss)
     const usuario = getUsuarioContexto_(userEmail);
+    const { records: allRecords, totalCount } = getOpenErrosForUsuario_(usuario);
 
-    // Debug: count rows in each sheet
-    const errosSheet = getSheet_(CONFIG.SHEETS.ERROS);
-    const solicitacoesSheet = getSheet_(CONFIG.SHEETS.SOLICITACOES);
-    const errosCount = errosSheet ? errosSheet.getLastRow() - 1 : 0;
-    const solicitacoesCount = solicitacoesSheet ? solicitacoesSheet.getLastRow() - 1 : 0;
+    // Gravar todos os registros em shards de cache para servir chunks seguintes sem ler planilha
+    try {
+      const numShards = Math.ceil(allRecords.length / OE_SHARD_SIZE_);
+      const cacheMap = {};
+      cacheMap[bKey + "_n"] = String(totalCount);
+      let shardsOk = 0;
+      for (let s = 0; s < numShards; s++) {
+        const shard = allRecords.slice(s * OE_SHARD_SIZE_, (s + 1) * OE_SHARD_SIZE_);
+        const shardJson = JSON.stringify(shard);
+        if (shardJson.length <= 98000) {
+          cacheMap[bKey + "_s" + s] = shardJson;
+          shardsOk++;
+        }
+      }
+      cache.putAll(cacheMap, 300);
+      safeLogDebug_("getOpenErros", "cached", { shards: shardsOk, total: allRecords.length });
+    } catch(e) { /* cache write não-fatal */ }
 
-    const { records: openErros, totalCount } = getOpenErrosForUsuario_(usuario, MAX_LIMIT);
+    const openErros = allRecords.slice(PAGE_OFFSET, PAGE_OFFSET + PAGE_SIZE);
+    const nextOffset = PAGE_OFFSET + openErros.length;
+    const hasMore = nextOffset < totalCount;
     const elapsed = new Date().getTime() - startTime;
-    // hasMore: true indica que há mais registros no servidor do que foram retornados
-    // Frontend exibe aviso quando totalCount > MAX_LIMIT (paginação server-side — F3)
-    const hasMore = totalCount > openErros.length;
 
     return {
       ok: true,
@@ -644,14 +694,12 @@ function getOpenErros(limit) {
       openErros: openErros,
       totalCount: totalCount,
       hasMore: hasMore,
+      nextOffset: nextOffset,
       _debug: {
-        usuarioPerfil: usuario ? usuario.perfil : null,
-        errosSheetRows: errosCount,
-        solicitacoesSheetRows: solicitacoesCount,
-        returnedCount: openErros.length,
-        totalCount: totalCount,
-        hasMore: hasMore,
-        limit: MAX_LIMIT,
+        fromCache: false,
+        totalBuilt: allRecords.length,
+        offset: PAGE_OFFSET,
+        limit: PAGE_SIZE,
         elapsedMs: elapsed
       }
     };
@@ -674,26 +722,83 @@ function getOpenErros(limit) {
  * - Dados da resposta (responsável, data correção, observações)
  * - Status SLA calculado
  */
-function getDashboardRecords(limit) {
+// Shard size 100: ~15 fields × ~25 bytes = ~375 bytes/record × 100 = ~37KB/shard < 100KB limit
+// 891 records / 100 = ~9 shards → putAll with 9 keys ≈ 0.3s (vs 30 keys = 1.4s)
+var DASH_SHARD_SIZE_ = 100;
+
+function getDashboardRecords(limit, offset) {
   const debugId = Utilities.getUuid();
   const startTime = new Date().getTime();
-  const MAX_LIMIT = limit || 3000; // Default limit increased to handle more records
+  const PAGE_SIZE = (limit && limit > 0) ? Math.min(limit, 500) : 300;
+  const PAGE_OFFSET = offset || 0;
 
   try {
     ensureSheets_();
-    // With O(n) lookup maps optimization, we can load records efficiently
-    const records = getDashboardRecords_(MAX_LIMIT);
+    const userEmail = Session.getActiveUser().getEmail() || "";
+    const cache = CacheService.getScriptCache();
+    const ver = getDataVersion_();
+    const emailKey = userEmail.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 40);
+    const bKey = "dsh4_" + ver + "_" + emailKey;
+
+    if (PAGE_OFFSET > 0) {
+      try {
+        const nStr = cache.get(bKey + "_n");
+        if (nStr) {
+          const totalCount = parseInt(nStr);
+          const shardStart = Math.floor(PAGE_OFFSET / DASH_SHARD_SIZE_);
+          const shardEnd = Math.ceil((PAGE_OFFSET + PAGE_SIZE) / DASH_SHARD_SIZE_);
+          const combined = [];
+          let cacheOk = true;
+          for (let s = shardStart; s < shardEnd; s++) {
+            const sData = cache.get(bKey + "_s" + s);
+            if (!sData) { cacheOk = false; break; }
+            const parsed = JSON.parse(sData);
+            for (let k = 0; k < parsed.length; k++) combined.push(parsed[k]);
+          }
+          if (cacheOk) {
+            const sliceFrom = PAGE_OFFSET - shardStart * DASH_SHARD_SIZE_;
+            const records = combined.slice(sliceFrom, sliceFrom + PAGE_SIZE);
+            const nextOffset = PAGE_OFFSET + records.length;
+            const hasMore = nextOffset < totalCount;
+            safeLogDebug_("getDashboardRecords", "cache_hit", { offset: PAGE_OFFSET, returned: records.length, totalCount: totalCount });
+            return { ok: true, debugId: debugId, records: records, totalCount: totalCount, hasMore: hasMore, nextOffset: nextOffset, _debug: { fromCache: true } };
+          }
+        }
+      } catch(e) { /* cache miss — fallback */ }
+    }
+
+    const { records: allRecords, totalCount } = getDashboardRecords_();
+
+    try {
+      const numShards = Math.ceil(allRecords.length / DASH_SHARD_SIZE_);
+      const cacheMap = {};
+      cacheMap[bKey + "_n"] = String(totalCount);
+      let shardsOk = 0;
+      for (let s = 0; s < numShards; s++) {
+        const shard = allRecords.slice(s * DASH_SHARD_SIZE_, (s + 1) * DASH_SHARD_SIZE_);
+        const shardJson = JSON.stringify(shard);
+        if (shardJson.length <= 98000) {
+          cacheMap[bKey + "_s" + s] = shardJson;
+          shardsOk++;
+        }
+      }
+      cache.putAll(cacheMap, 300);
+      safeLogDebug_("getDashboardRecords", "cached", { shards: shardsOk, total: allRecords.length });
+    } catch(e) { /* cache write não-fatal */ }
+
+    const records = allRecords.slice(PAGE_OFFSET, PAGE_OFFSET + PAGE_SIZE);
+    const nextOffset = PAGE_OFFSET + records.length;
+    const hasMore = nextOffset < totalCount;
     const elapsed = new Date().getTime() - startTime;
 
     return {
       ok: true,
       debugId: debugId,
       records: records,
-      _debug: {
-        limit: MAX_LIMIT,
-        returnedCount: records.length,
-        elapsedMs: elapsed
-      }
+      totalCount: totalCount,
+      hasMore: hasMore,
+      nextOffset: nextOffset,
+      _debug: { fromCache: false, totalBuilt: allRecords.length, elapsedMs: elapsed }
     };
   } catch (error) {
     return { ok: false, error: String(error), stack: error.stack, debugId: debugId };
@@ -2741,40 +2846,32 @@ function executarLimpeza(payload) {
  * - Cálculo de SLA em batch usando thresholds pré-carregados
  * - Ordenação por timestamp para priorização de SLA
  */
-function getOpenErrosForUsuario_(usuario, limit) {
+function getOpenErrosForUsuario_(usuario) {
   const startTime = new Date().getTime();
-  const MAX_LIMIT = limit || 3000;
-
-  // Cache por versão + email — invalidado em qualquer escrita de dado (submitRequest/Response/delete/update)
-  if (usuario && usuario.email) {
-    try {
-      const ver = getDataVersion_();
-      const emailKey = usuario.email.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 40);
-      const cacheKey = "app_oe_" + ver + "_" + emailKey;
-      const cached = CacheService.getScriptCache().get(cacheKey);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        safeLogDebug_("getOpenErrosForUsuario_", "cache_hit", { email: usuario.email, count: parsed.records.length });
-        return parsed;
-      }
-    } catch(e) { /* cache miss — continua */ }
-  }
 
   // Log user info for debugging
   safeLogDebug_("getOpenErrosForUsuario_", "usuario", {
     email: usuario ? usuario.email : "null",
     perfil: usuario ? usuario.perfil : "null",
-    setores: usuario ? usuario.setores : "null",
-    limit: MAX_LIMIT
+    setores: usuario ? usuario.setores : "null"
   });
 
   const errosSheet = getSheet_(CONFIG.SHEETS.ERROS);
   const respostasSheet = getSheet_(CONFIG.SHEETS.RESPOSTAS);
   const solicitacoesSheet = getSheet_(CONFIG.SHEETS.SOLICITACOES);
 
-  const erros = errosSheet.getDataRange().getValues();
-  const respostas = respostasSheet.getDataRange().getValues();
-  const solicitacoesValues = solicitacoesSheet.getDataRange().getValues();
+  // Lê apenas as colunas necessárias para evitar lentidão com colunas extras importadas do PROD.
+  // O cabeçalho (linha 1) é sempre incluído; linhas com col[0] vazia são puladas no loop.
+  function readSheetSafe_(sheet, maxCols) {
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 1) return [[]];
+    const actualCols = Math.min(sheet.getLastColumn(), maxCols);
+    return sheet.getRange(1, 1, lastRow, actualCols).getValues();
+  }
+
+  const erros = readSheetSafe_(errosSheet, 8);
+  const respostas = readSheetSafe_(respostasSheet, 11);
+  const solicitacoesValues = readSheetSafe_(solicitacoesSheet, 8);
 
   // OPTIMIZATION: Read thresholds ONCE (not for each record)
   const thresholds = getThresholds_();
@@ -2804,11 +2901,12 @@ function getOpenErrosForUsuario_(usuario, limit) {
   let filteredBySetor = 0;
 
   for (let i = 1; i < erros.length; i++) {
+    if (!erros[i][0]) continue; // pula linhas vazias importadas com formatação
     const solicitacaoId = erros[i][0];
     const solicitacaoData = solicitacoesMap[solicitacaoId];
     if (!solicitacaoData) continue;
 
-    // Registros ARQUIVADOS são sempre pulados; CORRIGIDOS são incluídos para permitir filtro no frontend
+    // ARQUIVADO: sempre excluído. CORRIGIDO: incluído para ADMIN ver histórico recente.
     if (solicitacaoData[4] === "ARQUIVADO") continue;
 
     const setorLocal = erros[i][4];
@@ -2838,22 +2936,16 @@ function getOpenErrosForUsuario_(usuario, limit) {
     return a.ts - b.ts;
   });
 
-  // totalCount = registros do setor do usuário antes de paginar
-  const totalCount = minimalList.length;
-
-  // Take only the records we need
-  const limitedList = minimalList.slice(0, MAX_LIMIT);
-
   const sortTime = new Date().getTime();
   safeLogDebug_("getOpenErrosForUsuario_", "sorted", {
     elapsed: sortTime - filterTime,
-    limited: limitedList.length
+    total: minimalList.length
   });
 
-  // OPTIMIZATION: Second pass - build full objects only for limited records
+  // Second pass - build full objects for all records
   const result = [];
-  for (let j = 0; j < limitedList.length; j++) {
-    const i = limitedList[j].idx;
+  for (let j = 0; j < minimalList.length; j++) {
+    const i = minimalList[j].idx;
     const solicitacaoId = erros[i][0];
     const erroSeq = erros[i][1];
     const setorLocal = erros[i][4];
@@ -2916,23 +3008,10 @@ function getOpenErrosForUsuario_(usuario, limit) {
   const endTime = new Date().getTime();
   safeLogDebug_("getOpenErrosForUsuario_", "complete", {
     totalElapsed: endTime - startTime,
-    returned: result.length,
-    totalCount: totalCount
+    returned: result.length
   });
 
-  const output = { records: result, totalCount: totalCount };
-
-  // Gravar no cache (por versão + email)
-  if (usuario && usuario.email) {
-    try {
-      const ver = getDataVersion_();
-      const emailKey = usuario.email.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 40);
-      const cacheKey = "app_oe_" + ver + "_" + emailKey;
-      CacheService.getScriptCache().put(cacheKey, JSON.stringify(output), CACHE_TTL_OPEN_ERROS_);
-    } catch(e) { /* cache write ignorado (dado muito grande ou erro de serviço) */ }
-  }
-
-  return output;
+  return { records: result, totalCount: result.length };
 }
 
 function getSolicitacoesList_() {
@@ -3079,19 +3158,26 @@ function getUsuarios_() {
   return list;
 }
 
-function getDashboardRecords_(limit) {
+function getDashboardRecords_() {
   try {
     const startTime = new Date().getTime();
-    const MAX_LIMIT = limit || 3000;
-    safeLogDebug_("getDashboardRecords_", "start", { limit: MAX_LIMIT });
+    safeLogDebug_("getDashboardRecords_", "start", {});
 
     const errosSheet = getSheet_(CONFIG.SHEETS.ERROS);
     const respostasSheet = getSheet_(CONFIG.SHEETS.RESPOSTAS);
     const solicitacoesSheet = getSheet_(CONFIG.SHEETS.SOLICITACOES);
 
-    const erros = errosSheet.getDataRange().getValues();
-    const respostas = respostasSheet.getDataRange().getValues();
-    const solicitacoesValues = solicitacoesSheet.getDataRange().getValues();
+    // Lê apenas colunas necessárias — evita lentidão com colunas extras importadas do PROD
+    function readSheetSafeDash_(sheet, maxCols) {
+      const lastRow = sheet.getLastRow();
+      if (lastRow < 1) return [[]];
+      const actualCols = Math.min(sheet.getLastColumn(), maxCols);
+      return sheet.getRange(1, 1, lastRow, actualCols).getValues();
+    }
+
+    const erros = readSheetSafeDash_(errosSheet, 8);
+    const respostas = readSheetSafeDash_(respostasSheet, 11);
+    const solicitacoesValues = readSheetSafeDash_(solicitacoesSheet, 8);
 
     // OPTIMIZATION: Read thresholds ONCE (not for each record)
     const thresholds = getThresholds_();
@@ -3100,11 +3186,13 @@ function getDashboardRecords_(limit) {
     // Create lookup maps
     const solicitacoesMap = {};
     for (let i = 1; i < solicitacoesValues.length; i++) {
+      if (!solicitacoesValues[i][0]) continue;
       solicitacoesMap[solicitacoesValues[i][0]] = solicitacoesValues[i];
     }
 
     const respostasMap = {};
     for (let i = 1; i < respostas.length; i++) {
+      if (!respostas[i][1]) continue;
       const key = respostas[i][1] + "_" + respostas[i][2];
       respostasMap[key] = respostas[i];
     }
@@ -3118,6 +3206,7 @@ function getDashboardRecords_(limit) {
     // OPTIMIZATION: First pass - collect only minimal data for sorting
     const minimalList = [];
     for (let i = 1; i < erros.length; i++) {
+      if (!erros[i][0]) continue; // pula linhas vazias importadas com formatação
       const solicitacaoId = erros[i][0];
       const solicitacaoData = solicitacoesMap[solicitacaoId];
       if (!solicitacaoData) continue;
@@ -3133,11 +3222,10 @@ function getDashboardRecords_(limit) {
       count: minimalList.length
     });
 
-    // Sort by timestamp (oldest first for SLA priority)
-    minimalList.sort((a, b) => a.ts - b.ts);
+    // Sort by timestamp (newest first)
+    minimalList.sort((a, b) => b.ts - a.ts);
 
-    // Take only the records we need
-    const limitedList = minimalList.slice(0, MAX_LIMIT);
+    const limitedList = minimalList;
 
     const sortTime = new Date().getTime();
     safeLogDebug_("getDashboardRecords_", "sorted", {
@@ -3181,14 +3269,12 @@ function getDashboardRecords_(limit) {
         dataHoraPedido: dataHoraPedidoStr,
         statusSolicitacao: solicitacaoData[4],
         erro: erros[i][2],
-        detalhamento: erros[i][3],
         setorLocal: erros[i][4],
         diferencaNoValor: erros[i][5],
         confirmacaoMedica: erros[i][7] || "NAO",
         responsavel: resposta ? resposta[3] : "",
         houveDiferencaValorResposta: resposta ? resposta[6] : "",
         diferencaValorResposta: resposta ? resposta[7] : "",
-        observacoes: resposta ? resposta[8] : "",
         dataHoraCorrecao: dataHoraCorrecaoStr,
         slaStatus: slaStatus
       });
@@ -3200,7 +3286,7 @@ function getDashboardRecords_(limit) {
       returned: result.length
     });
 
-    return result;
+    return { records: result, totalCount: result.length };
 
   } catch (error) {
     safeLogDebug_("getDashboardRecords_", "error", { error: String(error) });
