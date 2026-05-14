@@ -6113,6 +6113,11 @@
       function gerarHistoricoVersoesHTML() {
         const versoes = [
           {
+            v: 'v323', data: 'Mai/2026', tipo: 'fix', cor: '#dc2626',
+            titulo: 'Fix — Aba Resposta: timeout em contas com GAS lento + Dashboard filtra por setor',
+            desc: 'Aba Resposta: contas Google pouco usadas têm startup GAS de 3-4s; somado à leitura de planilhas (~1.5s) ultrapassava o timeout do browser (~5s). Fix: (1) cache compartilhado (shared) por versão de dados — primeiro usuário lê planilhas, demais usuários filtram do cache em memória (~0.3s); (2) getOpenErros agora usa cache mesmo no offset=0, evitando leitura de planilha em sessões recentes. Dashboard: getDashboardRecords_ filtra por setor do usuário logado antes de retornar os dados.'
+          },
+          {
             v: 'v322', data: 'Mai/2026', tipo: 'perf', cor: '#16a34a',
             titulo: 'Perf — Filtro server-side por data no Dashboard',
             desc: 'getDashboardRecords agora aceita dataInicio/dataFim e filtra os registros no servidor antes do join, reduzindo o dataset de 3000+ para ~300 registros do mês corrente. Carga inicial usa 1º do mês → hoje. Se o usuário altera a data para um período anterior ao carregado, o frontend detecta automaticamente e recarrega do servidor com o novo intervalo. Elimina o risco de timeout por volume de dados históricos.'
