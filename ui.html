@@ -3450,11 +3450,11 @@
             <div class="form-grid" class="grid-auto-180 gap-10">
               <div class="form-group">
                 <label>📅 Data Inicial</label>
-                <input type="date" id="filterColabDataInicial" class="form-control" onchange="applyColabFilters()">
+                <input type="date" id="filterColabDataInicial" class="form-control" onchange="applyColabFilters(true)">
               </div>
               <div class="form-group">
                 <label>📅 Data Final</label>
-                <input type="date" id="filterColabDataFinal" class="form-control" onchange="applyColabFilters()">
+                <input type="date" id="filterColabDataFinal" class="form-control" onchange="applyColabFilters(true)">
               </div>
               <div class="form-group">
                 <label>⚠️ Tipo de Erro</label>
@@ -3648,11 +3648,11 @@
             <div class="form-grid" class="grid-auto-180 gap-10">
               <div class="form-group">
                 <label>📅 Data Inicial</label>
-                <input type="date" id="filterSolDataInicial" class="form-control" onchange="applySolFilters()">
+                <input type="date" id="filterSolDataInicial" class="form-control" onchange="applySolFilters(true)">
               </div>
               <div class="form-group">
                 <label>📅 Data Final</label>
-                <input type="date" id="filterSolDataFinal" class="form-control" onchange="applySolFilters()">
+                <input type="date" id="filterSolDataFinal" class="form-control" onchange="applySolFilters(true)">
               </div>
               <div class="form-group">
                 <label>⚠️ Tipo de Erro</label>
@@ -3837,11 +3837,11 @@
             <div class="form-grid" class="grid-auto-180 gap-10">
               <div class="form-group">
                 <label>📅 Data Inicial</label>
-                <input type="date" id="filterRankDataInicial" class="form-control" onchange="applyRankingFilters()">
+                <input type="date" id="filterRankDataInicial" class="form-control" onchange="applyRankingFilters(true)">
               </div>
               <div class="form-group">
                 <label>📅 Data Final</label>
-                <input type="date" id="filterRankDataFinal" class="form-control" onchange="applyRankingFilters()">
+                <input type="date" id="filterRankDataFinal" class="form-control" onchange="applyRankingFilters(true)">
               </div>
               <div class="form-group">
                 <label>🏢 Setor</label>
@@ -3919,11 +3919,11 @@
             <div class="form-grid" class="grid-auto-180 gap-10">
               <div class="form-group">
                 <label>📅 Data Inicial</label>
-                <input type="date" id="filterErrosDataInicial" class="form-control" onchange="applyErrosFilters()">
+                <input type="date" id="filterErrosDataInicial" class="form-control" onchange="applyErrosFilters(true)">
               </div>
               <div class="form-group">
                 <label>📅 Data Final</label>
-                <input type="date" id="filterErrosDataFinal" class="form-control" onchange="applyErrosFilters()">
+                <input type="date" id="filterErrosDataFinal" class="form-control" onchange="applyErrosFilters(true)">
               </div>
               <div class="form-group">
                 <label>⚠️ Tipo de Erro</label>
@@ -6112,6 +6112,16 @@
 
       function gerarHistoricoVersoesHTML() {
         const versoes = [
+          {
+            v: 'v322', data: 'Mai/2026', tipo: 'perf', cor: '#16a34a',
+            titulo: 'Perf — Filtro server-side por data no Dashboard',
+            desc: 'getDashboardRecords agora aceita dataInicio/dataFim e filtra os registros no servidor antes do join, reduzindo o dataset de 3000+ para ~300 registros do mês corrente. Carga inicial usa 1º do mês → hoje. Se o usuário altera a data para um período anterior ao carregado, o frontend detecta automaticamente e recarrega do servidor com o novo intervalo. Elimina o risco de timeout por volume de dados históricos.'
+          },
+          {
+            v: 'v321', data: 'Mai/2026', tipo: 'fix', cor: '#dc2626',
+            titulo: 'Fix — Cache shardEnd: corrige cache miss no último chunk',
+            desc: 'Com 955+ registros e shard size 100, o chunk do offset=900 calculava shardEnd=10 tentando ler shards 9–10, mas só existiam 0–9 (10 shards para 955 registros). Shard 10 inexistente → cacheOk=false → re-leitura completa da planilha (~4,9s) → timeout. Fix: shardEnd = min(calculado, totalShards). Aplicado em getOpenErros e getDashboardRecords.'
+          },
           {
             v: 'v320', data: 'Mai/2026', tipo: 'fix', cor: '#0891b2',
             titulo: 'Fix — Data inicial padrão do dashboard: 1º dia do mês vigente',
@@ -9928,7 +9938,8 @@
       }
 
       // Carregamento paginado do Dashboard — chama getDashboardRecords em chunks de 300.
-      function loadDashboardChunked_(onDone, onError) {
+      // dataInicio/dataFim: YYYY-MM-DD — filtro server-side para não carregar 3000+ registros.
+      function loadDashboardChunked_(onDone, onError, dataInicio, dataFim) {
         let buffer = [];
         function loadChunk(offset) {
           let responded = false;
@@ -9955,7 +9966,7 @@
               responded = true;
               onError && onError(String(err));
             })
-            .getDashboardRecords(300, offset);
+            .getDashboardRecords(300, offset, dataInicio || null, dataFim || null);
         }
         loadChunk(0);
       }
@@ -10113,9 +10124,12 @@
 
           // Helper: carrega dashboard após erros (sempre sequencial — evita conflito de postMessage)
           function _startDashboardLoad_() {
+            const dates = _getDefaultDashDates_();
+            _dashLoadedFrom = dates.from;
+            _dashLoadedTo = dates.to;
             loadDashboardChunked_(
               function(buffer) {
-                logUI('getDashboardRecords.loaded', { total: buffer.length });
+                logUI('getDashboardRecords.loaded', { total: buffer.length, from: _dashLoadedFrom, to: _dashLoadedTo });
                 allDashboardRecords = buffer;
                 populateFilterDropdowns(allDashboardRecords);
                 renderCharts(allDashboardRecords);
@@ -10131,7 +10145,8 @@
                 allDashboardRecords = [];
                 populateFilterDropdowns([]);
                 renderCharts([]);
-              }
+              },
+              dates.from, dates.to
             );
           }
 
@@ -12553,6 +12568,13 @@
 
       let allDashboardRecords = [];
       let currentPeriodDays = 30;
+      var _dashLoadedFrom = null;
+      var _dashLoadedTo = null;
+      function _getDefaultDashDates_() {
+        const today = new Date();
+        const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        return { from: firstOfMonth.toISOString().split('T')[0], to: today.toISOString().split('T')[0] };
+      }
 
       // Color mapping for consistent chart colors
       const CHART_COLORS = {
@@ -12689,24 +12711,46 @@
           btn.innerHTML = '⏳ Atualizando...';
         }
 
+        // Usa datas da sub-aba ativa; se não alteradas, usa o período padrão
+        const colabView = document.getElementById('viewColaboradores');
+        const solView = document.getElementById('viewSolicitantes');
+        const rankView = document.getElementById('viewRanking');
+        let activeFrom, activeTo;
+        if (colabView && colabView.style.display !== 'none') {
+          activeFrom = document.getElementById('filterColabDataInicial')?.value;
+          activeTo   = document.getElementById('filterColabDataFinal')?.value;
+        } else if (solView && solView.style.display !== 'none') {
+          activeFrom = document.getElementById('filterSolDataInicial')?.value;
+          activeTo   = document.getElementById('filterSolDataFinal')?.value;
+        } else if (rankView && rankView.style.display !== 'none') {
+          activeFrom = document.getElementById('filterRankDataInicial')?.value;
+          activeTo   = document.getElementById('filterRankDataFinal')?.value;
+        } else {
+          activeFrom = document.getElementById('filterErrosDataInicial')?.value;
+          activeTo   = document.getElementById('filterErrosDataFinal')?.value;
+        }
+        const defaults = _getDefaultDashDates_();
+        _dashLoadedFrom = activeFrom || defaults.from;
+        _dashLoadedTo   = activeTo   || defaults.to;
+
         loadDashboardChunked_(
           function(buffer) {
             if (btn) { btn.disabled = false; btn.innerHTML = '🔄 Atualizar'; }
             allDashboardRecords = buffer;
             populateFilterDropdowns(allDashboardRecords);
             renderCharts(allDashboardRecords);
-            const colabView = document.getElementById('viewColaboradores');
             if (colabView && colabView.style.display !== 'none') {
               applyColabFilters();
             } else {
               applySolFilters();
             }
-            logUI('dashboard', 'atualizado', { total: allDashboardRecords.length });
+            logUI('dashboard', 'atualizado', { total: allDashboardRecords.length, from: _dashLoadedFrom, to: _dashLoadedTo });
           },
           function(err) {
             if (btn) { btn.disabled = false; btn.innerHTML = '🔄 Atualizar'; }
             showModal('Erro', 'Falha ao atualizar dashboard: ' + err);
-          }
+          },
+          _dashLoadedFrom, _dashLoadedTo
         );
       }
 
@@ -12892,35 +12936,34 @@
         createMultiSelect('filterErrosTipo', errorTypes, () => applyErrosFilters(), 'Todos os tipos');
         createMultiSelect('filterErrosSetor', setores, () => applyErrosFilters(), 'Todos os setores');
 
-        // Set default dates (first day of current month → today)
-        const today = new Date();
-        const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        const todayStr = today.toISOString().split('T')[0];
-        const thirtyDaysAgoStr = firstOfMonth.toISOString().split('T')[0];
+        // Usa o período carregado do servidor; fallback para 1º do mês → hoje
+        const _defaults = _getDefaultDashDates_();
+        const fromStr = _dashLoadedFrom || _defaults.from;
+        const toStr   = _dashLoadedTo   || _defaults.to;
 
         // Set dates for Colaboradores
         const colabDataInicial = document.getElementById('filterColabDataInicial');
         const colabDataFinal = document.getElementById('filterColabDataFinal');
-        if (colabDataInicial) colabDataInicial.value = thirtyDaysAgoStr;
-        if (colabDataFinal) colabDataFinal.value = todayStr;
+        if (colabDataInicial) colabDataInicial.value = fromStr;
+        if (colabDataFinal) colabDataFinal.value = toStr;
 
         // Set dates for Solicitantes
         const solDataInicial = document.getElementById('filterSolDataInicial');
         const solDataFinal = document.getElementById('filterSolDataFinal');
-        if (solDataInicial) solDataInicial.value = thirtyDaysAgoStr;
-        if (solDataFinal) solDataFinal.value = todayStr;
+        if (solDataInicial) solDataInicial.value = fromStr;
+        if (solDataFinal) solDataFinal.value = toStr;
 
         // Set dates for Ranking
         const rankDataInicial = document.getElementById('filterRankDataInicial');
         const rankDataFinal = document.getElementById('filterRankDataFinal');
-        if (rankDataInicial) rankDataInicial.value = thirtyDaysAgoStr;
-        if (rankDataFinal) rankDataFinal.value = todayStr;
+        if (rankDataInicial) rankDataInicial.value = fromStr;
+        if (rankDataFinal) rankDataFinal.value = toStr;
 
         // Set dates for Erros
         const errosDataInicial = document.getElementById('filterErrosDataInicial');
         const errosDataFinal = document.getElementById('filterErrosDataFinal');
-        if (errosDataInicial) errosDataInicial.value = thirtyDaysAgoStr;
-        if (errosDataFinal) errosDataFinal.value = todayStr;
+        if (errosDataInicial) errosDataInicial.value = fromStr;
+        if (errosDataFinal) errosDataFinal.value = toStr;
 
         logUI('populateFilterDropdowns', {
           errorTypes: errorTypes.size,
@@ -13811,9 +13854,17 @@
       }
 
       // Apply filters for Colaboradores dashboard
-      function applyColabFilters() {
+      function applyColabFilters(reloadIfNeeded) {
         const dataInicial = document.getElementById('filterColabDataInicial').value;
         const dataFinal = document.getElementById('filterColabDataFinal').value;
+
+        // Se data inicial anterior ao período carregado, recarrega do servidor antes de filtrar
+        if (reloadIfNeeded && dataInicial && _dashLoadedFrom && dataInicial < _dashLoadedFrom) {
+          _dashLoadedFrom = dataInicial;
+          if (dataFinal && dataFinal > (_dashLoadedTo || '')) _dashLoadedTo = dataFinal;
+          loadDashboardChunked_(function(buf) { allDashboardRecords = buf; applyColabFilters(); }, function() { applyColabFilters(); }, _dashLoadedFrom, _dashLoadedTo);
+          return;
+        }
 
         // Get multi-select values
         const tiposErro = multiSelectInstances['filterColabTipoErro']?.getValues() || [];
@@ -13864,9 +13915,17 @@
       }
 
       // Apply filters for Solicitantes dashboard
-      function applySolFilters() {
+      function applySolFilters(reloadIfNeeded) {
         const dataInicial = document.getElementById('filterSolDataInicial').value;
         const dataFinal = document.getElementById('filterSolDataFinal').value;
+
+        // Se data inicial anterior ao período carregado, recarrega do servidor antes de filtrar
+        if (reloadIfNeeded && dataInicial && _dashLoadedFrom && dataInicial < _dashLoadedFrom) {
+          _dashLoadedFrom = dataInicial;
+          if (dataFinal && dataFinal > (_dashLoadedTo || '')) _dashLoadedTo = dataFinal;
+          loadDashboardChunked_(function(buf) { allDashboardRecords = buf; applySolFilters(); }, function() { applySolFilters(); }, _dashLoadedFrom, _dashLoadedTo);
+          return;
+        }
 
         // Get multi-select values
         const tiposErro = multiSelectInstances['filterSolTipoErro']?.getValues() || [];
@@ -13938,10 +13997,18 @@
       // ========== RANKING VIEW ==========
       let filteredRankRecords = [];
 
-      function applyRankingFilters() {
+      function applyRankingFilters(reloadIfNeeded) {
         const dataInicial = document.getElementById('filterRankDataInicial').value;
         const dataFinal = document.getElementById('filterRankDataFinal').value;
         const ordenar = document.getElementById('filterRankOrdenar').value;
+
+        // Se data inicial anterior ao período carregado, recarrega do servidor antes de filtrar
+        if (reloadIfNeeded && dataInicial && _dashLoadedFrom && dataInicial < _dashLoadedFrom) {
+          _dashLoadedFrom = dataInicial;
+          if (dataFinal && dataFinal > (_dashLoadedTo || '')) _dashLoadedTo = dataFinal;
+          loadDashboardChunked_(function(buf) { allDashboardRecords = buf; applyRankingFilters(); }, function() { applyRankingFilters(); }, _dashLoadedFrom, _dashLoadedTo);
+          return;
+        }
 
         // Get multi-select values
         const setores = multiSelectInstances['filterRankSetor']?.getValues() || [];
@@ -14092,9 +14159,17 @@
       let chartErrosDiaSemanaInstance = null;
       let chartErrosEvolucaoInstance = null;
 
-      function applyErrosFilters() {
+      function applyErrosFilters(reloadIfNeeded) {
         const dataInicial = document.getElementById('filterErrosDataInicial').value;
         const dataFinal = document.getElementById('filterErrosDataFinal').value;
+
+        // Se data inicial anterior ao período carregado, recarrega do servidor antes de filtrar
+        if (reloadIfNeeded && dataInicial && _dashLoadedFrom && dataInicial < _dashLoadedFrom) {
+          _dashLoadedFrom = dataInicial;
+          if (dataFinal && dataFinal > (_dashLoadedTo || '')) _dashLoadedTo = dataFinal;
+          loadDashboardChunked_(function(buf) { allDashboardRecords = buf; applyErrosFilters(); }, function() { applyErrosFilters(); }, _dashLoadedFrom, _dashLoadedTo);
+          return;
+        }
 
         // Get multi-select values
         const tiposErro = multiSelectInstances['filterErrosTipo']?.getValues() || [];

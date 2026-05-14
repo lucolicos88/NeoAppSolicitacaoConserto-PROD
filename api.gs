@@ -616,8 +616,9 @@ function getBootstrapLite() {
  * - Calcula SLA em batch (não por registro)
  * - Ordena por data de pedido (mais antigos primeiro)
  */
-// Registros por shard de cache — 20 × ~4KB max/registro = 80KB < 100KB limite CacheService
-var OE_SHARD_SIZE_ = 30;
+// Shard size 100: ~700 bytes/registro × 100 = ~70KB/shard < 100KB limite CacheService
+// Menos shards = menos cache.get() por chunk = leituras mais rápidas
+var OE_SHARD_SIZE_ = 100;
 
 function getOpenErros(limit, offset) {
   const debugId = Utilities.getUuid();
@@ -639,8 +640,10 @@ function getOpenErros(limit, offset) {
         const nStr = cache.get(bKey + "_n");
         if (nStr) {
           const totalCount = parseInt(nStr);
+          const totalShards = Math.ceil(totalCount / OE_SHARD_SIZE_);
           const shardStart = Math.floor(PAGE_OFFSET / OE_SHARD_SIZE_);
-          const shardEnd = Math.ceil((PAGE_OFFSET + PAGE_SIZE) / OE_SHARD_SIZE_);
+          // Cap shardEnd no total de shards existentes — evita cache miss no último chunk
+          const shardEnd = Math.min(Math.ceil((PAGE_OFFSET + PAGE_SIZE) / OE_SHARD_SIZE_), totalShards);
           const combined = [];
           let cacheOk = true;
           for (let s = shardStart; s < shardEnd; s++) {
@@ -726,7 +729,7 @@ function getOpenErros(limit, offset) {
 // 891 records / 100 = ~9 shards → putAll with 9 keys ≈ 0.3s (vs 30 keys = 1.4s)
 var DASH_SHARD_SIZE_ = 100;
 
-function getDashboardRecords(limit, offset) {
+function getDashboardRecords(limit, offset, dataInicio, dataFim) {
   const debugId = Utilities.getUuid();
   const startTime = new Date().getTime();
   const PAGE_SIZE = (limit && limit > 0) ? Math.min(limit, 500) : 300;
@@ -738,15 +741,18 @@ function getDashboardRecords(limit, offset) {
     const cache = CacheService.getScriptCache();
     const ver = getDataVersion_();
     const emailKey = userEmail.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 40);
-    const bKey = "dsh4_" + ver + "_" + emailKey;
+    const dateKey = (dataInicio || '').replace(/-/g,'') + '_' + (dataFim || '').replace(/-/g,'');
+    const bKey = "dsh5_" + ver + "_" + emailKey + (dateKey !== '_' ? '_' + dateKey : '');
 
     if (PAGE_OFFSET > 0) {
       try {
         const nStr = cache.get(bKey + "_n");
         if (nStr) {
           const totalCount = parseInt(nStr);
+          const totalShards = Math.ceil(totalCount / DASH_SHARD_SIZE_);
           const shardStart = Math.floor(PAGE_OFFSET / DASH_SHARD_SIZE_);
-          const shardEnd = Math.ceil((PAGE_OFFSET + PAGE_SIZE) / DASH_SHARD_SIZE_);
+          // Cap shardEnd no total de shards existentes — evita cache miss no último chunk
+          const shardEnd = Math.min(Math.ceil((PAGE_OFFSET + PAGE_SIZE) / DASH_SHARD_SIZE_), totalShards);
           const combined = [];
           let cacheOk = true;
           for (let s = shardStart; s < shardEnd; s++) {
@@ -767,7 +773,7 @@ function getDashboardRecords(limit, offset) {
       } catch(e) { /* cache miss — fallback */ }
     }
 
-    const { records: allRecords, totalCount } = getDashboardRecords_();
+    const { records: allRecords, totalCount } = getDashboardRecords_(dataInicio, dataFim);
 
     try {
       const numShards = Math.ceil(allRecords.length / DASH_SHARD_SIZE_);
@@ -3158,10 +3164,10 @@ function getUsuarios_() {
   return list;
 }
 
-function getDashboardRecords_() {
+function getDashboardRecords_(dataInicio, dataFim) {
   try {
     const startTime = new Date().getTime();
-    safeLogDebug_("getDashboardRecords_", "start", {});
+    safeLogDebug_("getDashboardRecords_", "start", { dataInicio: dataInicio, dataFim: dataFim });
 
     const errosSheet = getSheet_(CONFIG.SHEETS.ERROS);
     const respostasSheet = getSheet_(CONFIG.SHEETS.RESPOSTAS);
@@ -3182,6 +3188,11 @@ function getDashboardRecords_() {
     // OPTIMIZATION: Read thresholds ONCE (not for each record)
     const thresholds = getThresholds_();
     const now = new Date();
+
+    // Server-side date filter — reduz dataset antes do join (evita timeout com 3000+ registros)
+    let tsFrom = null, tsTo = null;
+    if (dataInicio) { const d = new Date(dataInicio + 'T00:00:00'); d.setHours(0,0,0,0); tsFrom = d.getTime(); }
+    if (dataFim)   { const d = new Date(dataFim + 'T00:00:00'); d.setHours(23,59,59,999); tsTo = d.getTime(); }
 
     // Create lookup maps
     const solicitacoesMap = {};
@@ -3213,6 +3224,8 @@ function getDashboardRecords_() {
 
       const dataHoraPedido = solicitacaoData[3];
       const timestamp = dataHoraPedido instanceof Date ? dataHoraPedido.getTime() : new Date(dataHoraPedido).getTime();
+      if (tsFrom !== null && timestamp < tsFrom) continue;
+      if (tsTo !== null && timestamp > tsTo) continue;
       minimalList.push({ idx: i, ts: timestamp });
     }
 
