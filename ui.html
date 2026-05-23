@@ -3199,15 +3199,15 @@
 
 
             <div class="form-group required">
-              <label for="erro">Tipo de Erro</label>
-              <select id="erro" class="form-control" aria-label="Tipo de Erro" required></select>
+              <label for="setorLocal">Setor/Local</label>
+              <select id="setorLocal" class="form-control" aria-label="Setor/Local" required></select>
             </div>
 
 
 
             <div class="form-group required">
-              <label for="setorLocal">Setor/Local</label>
-              <select id="setorLocal" class="form-control" aria-label="Setor/Local" required></select>
+              <label for="erro">Tipo de Erro</label>
+              <select id="erro" class="form-control" aria-label="Tipo de Erro" required></select>
             </div>
 
 
@@ -6112,6 +6112,11 @@
 
       function gerarHistoricoVersoesHTML() {
         const versoes = [
+          {
+            v: 'v324', data: 'Mai/2026', tipo: 'fix', cor: '#0891b2',
+            titulo: 'UI — Solicitação: Setor/Local antes de Tipo de Erro',
+            desc: 'Invertida a posição dos campos Tipo de Erro e Setor/Local no formulário da aba Solicitação. Setor/Local agora aparece antes, mantendo a sequência natural de preenchimento.'
+          },
           {
             v: 'v323', data: 'Mai/2026', tipo: 'fix', cor: '#dc2626',
             titulo: 'Fix — Aba Resposta: timeout em contas com GAS lento + Dashboard filtra por setor',
