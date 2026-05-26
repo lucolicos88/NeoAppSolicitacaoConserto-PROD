@@ -3299,8 +3299,9 @@
             <div id="openErrosHasMoreNotice" style="display:none;margin-top:6px;padding:0.4rem 0.75rem;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:6px;font-size:0.8rem;"></div>
           </div>
 
-          <div class="d-flex justify-between align-center flex-wrap gap-1">
-            <div class="d-flex flex-wrap align-center" style="gap: 1rem;">
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <!-- Linha 1: identificação e categorização -->
+            <div class="d-flex flex-wrap align-center" style="gap: 0.75rem;">
               <div class="form-group" style="margin: 0; min-width: 120px;">
                 <label>🔍 Requisição</label>
                 <input type="text" id="filterRespostaRequisicao" class="form-control" placeholder="Nº requisição" onkeyup="filterOpenErrors()" style="width: 120px;">
@@ -3318,9 +3319,16 @@
                 <div id="filterRespostaSetor"></div>
               </div>
               <div class="form-group" style="margin: 0; min-width: 160px;">
+                <label>⚠️ Tipo de Erro</label>
+                <div id="filterRespostaErro"></div>
+              </div>
+              <div class="form-group" style="margin: 0; min-width: 160px;">
                 <label>📊 Status</label>
                 <div id="filterRespostaStatus"></div>
               </div>
+            </div>
+            <!-- Linha 2: qualificadores, datas e ações -->
+            <div class="d-flex flex-wrap align-center" style="gap: 0.75rem;">
               <div class="form-group" style="margin: 0; min-width: 130px;">
                 <label>💰 Dif. Valor?</label>
                 <div id="filterRespostaDiferencaValor"></div>
@@ -11230,12 +11238,16 @@
         // Get unique values
         const solicitantes = [...new Set(allOpenErros.map(item => item.solicitante).filter(s => s))].sort();
         const setores = [...new Set(allOpenErros.map(item => item.setorLocal).filter(s => s))].sort();
+        const erros = [...new Set(allOpenErros.map(item => item.erro).filter(s => s))].sort();
 
         // Create multi-select for solicitantes
         createMultiSelect('filterRespostaSolicitante', solicitantes, () => filterOpenErrors(), 'Todos');
 
         // Create multi-select for setores
         createMultiSelect('filterRespostaSetor', setores, () => filterOpenErrors(), 'Todos');
+
+        // Create multi-select for tipo de erro
+        createMultiSelect('filterRespostaErro', erros, () => filterOpenErrors(), 'Todos');
 
         // Create multi-select for status sem filtro padrão
         const statusOptions = ['Pendente', 'Atrasada', 'Corrigida', 'Alteração Técnica', 'Alt. Tec. Verificada'];
@@ -11330,6 +11342,7 @@
         // Get multi-select values
         const filterSolicitantes = multiSelectInstances['filterRespostaSolicitante']?.getValues() || [];
         const filterSetores = multiSelectInstances['filterRespostaSetor']?.getValues() || [];
+        const filterErros = multiSelectInstances['filterRespostaErro']?.getValues() || [];
         const filterStatus = multiSelectInstances['filterRespostaStatus']?.getValues() || [];
         const filterDiferencaValor = multiSelectInstances['filterRespostaDiferencaValor']?.getValues() || [];
         const filterConfMedica = multiSelectInstances['filterRespostaConfMedica']?.getValues() || [];
@@ -11354,6 +11367,11 @@
 
           // Filter by setores (multi-select)
           if (filterSetores.length > 0 && !filterSetores.includes(item.setorLocal)) {
+            return false;
+          }
+
+          // Filter by tipo de erro (multi-select)
+          if (filterErros.length > 0 && !filterErros.includes(item.erro)) {
             return false;
           }
 
@@ -11416,6 +11434,7 @@
             dataFinal: document.getElementById('filterRespostaDataFinal').value,
             solicitantes: multiSelectInstances['filterRespostaSolicitante']?.getValues() || [],
             setores: multiSelectInstances['filterRespostaSetor']?.getValues() || [],
+            erros: multiSelectInstances['filterRespostaErro']?.getValues() || [],
             status: multiSelectInstances['filterRespostaStatus']?.getValues() || [],
             diferencaValor: multiSelectInstances['filterRespostaDiferencaValor']?.getValues() || [],
             confMedica: multiSelectInstances['filterRespostaConfMedica']?.getValues() || [],
@@ -11447,9 +11466,10 @@
             const el = document.getElementById('filterRespostaDataFinal');
             if (el) el.value = state.dataFinal;
           }
-          ['solicitantes','setores','status','diferencaValor','confMedica','responsaveis'].forEach(key => {
+          ['solicitantes','setores','erros','status','diferencaValor','confMedica','responsaveis'].forEach(key => {
             const idMap = { solicitantes:'filterRespostaSolicitante', setores:'filterRespostaSetor',
-              status:'filterRespostaStatus', diferencaValor:'filterRespostaDiferencaValor', confMedica:'filterRespostaConfMedica',
+              erros:'filterRespostaErro', status:'filterRespostaStatus',
+              diferencaValor:'filterRespostaDiferencaValor', confMedica:'filterRespostaConfMedica',
               responsaveis:'filterRespostaResponsavel' };
             if (state[key] && state[key].length && multiSelectInstances[idMap[key]]) {
               multiSelectInstances[idMap[key]].setValues(state[key]);
@@ -11472,6 +11492,9 @@
         }
         if (multiSelectInstances['filterRespostaSetor']) {
           multiSelectInstances['filterRespostaSetor'].clear();
+        }
+        if (multiSelectInstances['filterRespostaErro']) {
+          multiSelectInstances['filterRespostaErro'].clear();
         }
         if (multiSelectInstances['filterRespostaStatus']) {
           multiSelectInstances['filterRespostaStatus'].clear();
@@ -11522,6 +11545,7 @@
         const filterDataFinal = document.getElementById('filterRespostaDataFinal').value;
         const filterSolicitantes = multiSelectInstances['filterRespostaSolicitante']?.getValues() || [];
         const filterSetores = multiSelectInstances['filterRespostaSetor']?.getValues() || [];
+        const filterErros = multiSelectInstances['filterRespostaErro']?.getValues() || [];
         const filterStatus = multiSelectInstances['filterRespostaStatus']?.getValues() || [];
         const filterDiferencaValor = multiSelectInstances['filterRespostaDiferencaValor']?.getValues() || [];
         const filterConfMedica = multiSelectInstances['filterRespostaConfMedica']?.getValues() || [];
@@ -11538,6 +11562,7 @@
           filtrosAtivos.push(`sol: ${solNames}`);
         }
         if (filterSetores.length > 0) filtrosAtivos.push(`setor: ${filterSetores.join(', ')}`);
+        if (filterErros.length > 0) filtrosAtivos.push(`erro: ${filterErros.join(', ')}`);
         if (filterStatus.length > 0) filtrosAtivos.push(`status: ${filterStatus.join(', ')}`);
         if (filterDiferencaValor.length > 0) filtrosAtivos.push(`dif. valor: ${filterDiferencaValor.join(', ')}`);
         if (filterConfMedica.length > 0) filtrosAtivos.push(`conf. médica: ${filterConfMedica.join(', ')}`);
@@ -11549,7 +11574,7 @@
 
         // Update visual filter tags area
         const filtrosContainer = document.getElementById('respostaFiltrosAtivos');
-        const hasFilters = filterRequisicao || filterDetalhamento || filterDataInicial || filterDataFinal || filterSolicitantes.length > 0 || filterSetores.length > 0 || filterStatus.length > 0 || filterDiferencaValor.length > 0 || filterConfMedica.length > 0 || filterResponsaveis.length > 0;
+        const hasFilters = filterRequisicao || filterDetalhamento || filterDataInicial || filterDataFinal || filterSolicitantes.length > 0 || filterSetores.length > 0 || filterErros.length > 0 || filterStatus.length > 0 || filterDiferencaValor.length > 0 || filterConfMedica.length > 0 || filterResponsaveis.length > 0;
 
         if (hasFilters) {
           let tagsHTML = '<span class="filtros-ativos-label">🏷️ Filtros:</span>';
@@ -11565,6 +11590,9 @@
           });
           filterSetores.forEach(setor => {
             tagsHTML += `<span class="filtro-tag filtro-setor">${setor}</span>`;
+          });
+          filterErros.forEach(erro => {
+            tagsHTML += `<span class="filtro-tag" style="background:#fef3c7;color:#92400e;border-color:#fcd34d;">⚠️ ${erro}</span>`;
           });
           filterStatus.forEach(status => {
             tagsHTML += `<span class="filtro-tag filtro-status">${status}</span>`;
@@ -11592,7 +11620,7 @@
         const filtrosBadge = document.getElementById('filtrosBadge');
         if (filtrosBadge) {
           const nFiltros = (filterRequisicao ? 1 : 0) + (filterDetalhamento ? 1 : 0) + (filterDataInicial ? 1 : 0) + (filterDataFinal ? 1 : 0) + filterSolicitantes.length + filterSetores.length +
-            filterStatus.length + filterDiferencaValor.length + filterConfMedica.length + filterResponsaveis.length + (filtroUrgenteAtivo ? 1 : 0);
+            filterErros.length + filterStatus.length + filterDiferencaValor.length + filterConfMedica.length + filterResponsaveis.length + (filtroUrgenteAtivo ? 1 : 0);
           if (nFiltros > 0) {
             filtrosBadge.textContent = nFiltros + ' filtro' + (nFiltros !== 1 ? 's' : '');
             filtrosBadge.style.display = 'inline-block';
