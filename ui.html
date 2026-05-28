@@ -1707,7 +1707,7 @@
 
       /* Resposta tab: padding mínimo para maximizar espaço da tabela sem scrollbar horizontal */
       #tab-resposta { padding: 0.5rem; }
-      #tab-resposta .form-section { padding: 0.75rem; overflow: hidden; }
+      #tab-resposta .form-section { padding: 0.75rem; overflow: visible; }
       #tab-resposta .table-responsive { overflow-x: hidden; }
 
       .list tr.selected { background: #E0F2F1; }
@@ -9932,27 +9932,54 @@
       // Carregamento paginado de erros — chama getOpenErros em chunks de 300 até hasMore=false.
       // onProgress(buffer, totalCount, isLast) chamado a cada chunk; onDone(buffer) no fim.
       function loadErrosChunked_(onProgress, onDone, onError) {
-        let buffer = [];
-        function loadChunk(offset) {
-          google.script.run
-            .withSuccessHandler(function(res) {
-              if (!res) { onError && onError('timeout'); return; }
-              if (!res.ok) { onError && onError(res.error || 'Erro desconhecido'); return; }
-              buffer = buffer.concat(res.openErros || []);
-              const isLast = !res.hasMore;
-              onProgress && onProgress(buffer, res.totalCount, isLast);
-              if (res.hasMore) {
-                loadChunk(res.nextOffset);
-              } else {
-                onDone && onDone(buffer);
-              }
-            })
-            .withFailureHandler(function(err) {
-              onError && onError(String(err));
-            })
-            .getOpenErros(300, offset);
-        }
-        loadChunk(0);
+        const CHUNK = 500;
+        // First chunk: sequential — warms cache and gives totalCount
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (!res) { onError && onError('timeout'); return; }
+            if (!res.ok) { onError && onError(res.error || 'Erro desconhecido'); return; }
+            const firstBatch = res.openErros || [];
+            const totalCount = res.totalCount || firstBatch.length;
+            if (!res.hasMore) {
+              onProgress && onProgress(firstBatch, totalCount, true);
+              onDone && onDone(firstBatch);
+              return;
+            }
+            // Calculate all remaining offsets and fire in parallel
+            const offsets = [];
+            for (let off = res.nextOffset; off < totalCount; off += CHUNK) {
+              offsets.push(off);
+            }
+            const results = new Array(offsets.length);
+            let completed = 0;
+            let failed = false;
+            onProgress && onProgress(firstBatch, totalCount, false);
+            offsets.forEach(function(offset, idx) {
+              google.script.run
+                .withSuccessHandler(function(r) {
+                  if (failed) return;
+                  if (!r || !r.ok) { failed = true; onError && onError(r ? r.error : 'timeout'); return; }
+                  results[idx] = r.openErros || [];
+                  completed++;
+                  if (completed === offsets.length) {
+                    let full = firstBatch.slice();
+                    results.forEach(function(chunk) { full = full.concat(chunk); });
+                    onProgress && onProgress(full, totalCount, true);
+                    onDone && onDone(full);
+                  }
+                })
+                .withFailureHandler(function(err) {
+                  if (failed) return;
+                  failed = true;
+                  onError && onError(String(err));
+                })
+                .getOpenErros(CHUNK, offset);
+            });
+          })
+          .withFailureHandler(function(err) {
+            onError && onError(String(err));
+          })
+          .getOpenErros(CHUNK, 0);
       }
 
       // Carregamento paginado do Dashboard — chama getDashboardRecords em chunks de 300.
@@ -11292,10 +11319,7 @@
             }
           },
           function(buffer) {
-            allOpenErros = buffer;
-            filteredOpenErros = [...allOpenErros];
-            filterOpenErrors();
-            renderPage();
+            fillOpenErros(buffer);
             showOpenErrosHasMoreNotice_(false, buffer.length, buffer.length);
             if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
             showModal('✅ Atualizado', 'Lista atualizada com sucesso!<br><br>📋 <strong>' + buffer.length + '</strong> solicitação(ões) carregada(s).');

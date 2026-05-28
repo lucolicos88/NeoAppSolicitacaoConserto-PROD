@@ -661,7 +661,7 @@ function writeAllOeToCache_(ver, records) {
 function getOpenErros(limit, offset) {
   const debugId = Utilities.getUuid();
   const startTime = new Date().getTime();
-  const PAGE_SIZE = (limit && limit > 0) ? Math.min(limit, 500) : 300;
+  const PAGE_SIZE = (limit && limit > 0) ? Math.min(limit, 1000) : 500;
   const PAGE_OFFSET = offset || 0;
 
   try {
