@@ -4572,12 +4572,19 @@
                 <div class="perm-check-row"><input type="checkbox" id="imp_Erros_Cadastro" value="Erros_Cadastro" class="import-cb"><label for="imp_Erros_Cadastro">Erros_Cadastro</label></div>
                 <div class="perm-check-row"><input type="checkbox" id="imp_Colaboradores" value="Colaboradores" class="import-cb"><label for="imp_Colaboradores">Colaboradores</label></div>
                 <div class="perm-check-row"><input type="checkbox" id="imp_Limiares_SLA" value="Limiares_SLA" class="import-cb"><label for="imp_Limiares_SLA">Limiares_SLA</label></div>
+                <div class="perm-check-row"><input type="checkbox" id="imp_Config_Geral" value="Config_Geral" class="import-cb"><label for="imp_Config_Geral">Config_Geral</label></div>
               </div>
 
               <!-- Grupo: Usuários -->
               <div class="form-group">
                 <label style="font-size:0.75rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Usuários</label>
                 <div class="perm-check-row"><input type="checkbox" id="imp_Usuarios" value="Usuarios" class="import-cb"><label for="imp_Usuarios">Usuarios</label></div>
+              </div>
+
+              <!-- Grupo: Auditoria -->
+              <div class="form-group">
+                <label style="font-size:0.75rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Auditoria</label>
+                <div class="perm-check-row"><input type="checkbox" id="imp_Auditoria" value="Auditoria" class="import-cb"><label for="imp_Auditoria">Auditoria</label></div>
               </div>
 
             </div>
@@ -6120,6 +6127,36 @@
 
       function gerarHistoricoVersoesHTML() {
         const versoes = [
+          {
+            v: 'v331', data: 'Jun/2026', tipo: 'feat', cor: '#0891b2',
+            titulo: 'Formatar Planilhas — alinhamento, bordas, filtros, freeze e cores',
+            desc: 'Função "Formatar Planilhas" atualizada: dados alinhados à esquerda horizontalmente e centralizados verticalmente; cabeçalho centralizado horizontal e verticalmente com altura fixa de 30px; filtros em todas as tabelas; congelamento da linha do cabeçalho; cores alternadas; bordas em todas as células. Aplica-se a formatarSheet_ (tabelas principais) e formatarSheetLista_ (listas de configuração).'
+          },
+          {
+            v: 'v330', data: 'Jun/2026', tipo: 'perf', cor: '#16a34a',
+            titulo: 'Performance no envio de solicitação',
+            desc: 'PERF: chamadas ao Session (getActiveUser/getEmail e getTemporaryActiveUserKey) memoizadas por execução — submitRequest passava de ~5 round-trips para 2. submitRequest agora usa getUserLock (por usuário) em vez de getScriptLock (global), eliminando serialização entre usuários distintos; flush de auditoria e invalidação de cache movidos para fora do lock. Logs_Debug removido do import PROD→DEV (PROD não grava debug logs; importar sobrescreveria dados do DEV com aba vazia).'
+          },
+          {
+            v: 'v328', data: 'Jun/2026', tipo: 'fix', cor: '#dc2626',
+            titulo: 'Fix auditoria: flush em todas as funções + timezone + dedup submissão',
+            desc: 'PR#1: flushAuditLogs_() adicionado em updateSolicitacao, deleteSolicitacao, addUsuario, updateUsuario, deleteUsuario, importarDadosProd, arquivamento e limpeza — alterações agora são gravadas na planilha Auditoria. PR#2: withAuditFlush_() helper criado; addConfigItem e deleteConfigItem passam a gerar auditoria. PR#3: fix de timezone em getAuditLogs — datas "yyyy-mm-dd" eram interpretadas como UTC, deslocando o filtro; agora parseadas como data local (BRT). PR#4: idempotência em submitRequest via clientReqId (UUID por sessão) + LockService + CacheService TTL 60s; botão bloqueado antes do diálogo de confirmação.'
+          },
+          {
+            v: 'v327', data: 'Jun/2026', tipo: 'feat', cor: '#7c3aed',
+            titulo: 'Importar dados PROD — adiciona abas Auditoria e Config_Geral',
+            desc: 'A funcionalidade de importação PROD→DEV agora inclui as abas Auditoria e Config_Geral. O frontend exibe os novos checkboxes nos grupos correspondentes (Auditoria em grupo próprio; Config_Geral dentro do grupo Configurações). O backend valida e aceita os novos nomes nas chamadas de importação.'
+          },
+          {
+            v: 'v326', data: 'Jun/2026', tipo: 'fix', cor: '#dc2626',
+            titulo: 'Fix — dropdowns sem opções + melhora performance carregamento aba Resposta',
+            desc: 'Corrige dropdowns que apareciam sem opções em determinadas condições de carregamento. Melhora a performance do carregamento da aba Resposta.'
+          },
+          {
+            v: 'v325', data: 'Mai/2026', tipo: 'feat', cor: '#16a34a',
+            titulo: 'Filtro por Tipo de Erro + filtros em 2 linhas na aba Resposta',
+            desc: 'Adicionado filtro por Tipo de Erro na aba Resposta. Os filtros foram reorganizados em 2 linhas para melhor aproveitamento do espaço e legibilidade.'
+          },
           {
             v: 'v324', data: 'Mai/2026', tipo: 'fix', cor: '#0891b2',
             titulo: 'UI — Solicitação: Setor/Local antes de Tipo de Erro',
@@ -8833,6 +8870,15 @@
 
 
       let isSubmittingRequest = false;
+      // UUID por sessão de formulário — regenerado em clearSolicitacaoForm() após sucesso.
+      // Enviado ao backend para dedup server-side contra retry de rede / dupla submissão.
+      let _clientReqId_ = generateClientReqId_();
+      function generateClientReqId_() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
 
       function submitRequest() {
         // Prevent double submission
@@ -8854,11 +8900,15 @@
           setorLocal: document.getElementById('setorLocal').value,
           diferencaNoValor: document.getElementById('diferencaNoValor').value,
           confirmacaoMedica: document.getElementById('confirmacaoMedica').value,
-          urgente: document.getElementById('urgente').checked ? 'SIM' : 'NAO'
+          urgente: document.getElementById('urgente').checked ? 'SIM' : 'NAO',
+          clientReqId: _clientReqId_
 
         };
 
         logUI('submitRequest.payload', payload);
+
+        // Bloqueia antes do confirm para impedir duplo-clique durante o diálogo
+        isSubmittingRequest = true;
 
         // Show confirmation dialog
         showConfirm(
@@ -8866,6 +8916,7 @@
           'Confirma o envio desta solicitação de conserto?',
           (confirmed) => {
             if (!confirmed) {
+              isSubmittingRequest = false;
               logUI('submitRequest.cancelled', 'User cancelled');
               return;
             }
@@ -8873,7 +8924,6 @@
             // User confirmed
             logUI('submitRequest.confirmed', 'User confirmed submission');
 
-            isSubmittingRequest = true;
             showLoading('Enviando solicitação...');
 
             google.script.run
@@ -16580,6 +16630,9 @@
           const el = document.getElementById(id);
           if (el) el.classList.remove('invalid');
         });
+
+        // Novo ID de dedup para a próxima submissão
+        _clientReqId_ = generateClientReqId_();
 
       }
 

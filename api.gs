@@ -417,7 +417,7 @@ function healthCheck(autoFix) {
  * @returns {string} Email do usuário
  */
 function getEmailValidado_() {
-  const email = Session.getActiveUser().getEmail();
+  const email = getActiveEmail_(); // PERF: memoizado por execução (audit.gs)
   if (!email) throw new Error("Sessão inválida. Faça login no Google e tente novamente.");
   return email;
 }
@@ -943,29 +943,25 @@ function getAuditLogs(dataInicial, dataFinal) {
       return { ok: true, debugId: debugId, logs: [], total: 0 };
     }
 
-    // Parse dates
-    var startDate = new Date(dataInicial);
-    if (isNaN(startDate.getTime())) {
-      var parts = String(dataInicial).split('-');
+    // Parse dates — sempre como data LOCAL para evitar deslocamento UTC→BRT.
+    // new Date("yyyy-mm-dd") interpreta como UTC meia-noite; aqui forçamos fuso local.
+    function parseDateLocal_(str) {
+      var parts = String(str).split('-');
       if (parts.length === 3) {
-        startDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        if (!isNaN(d.getTime())) return d;
       }
+      return new Date(str); // fallback para outros formatos
     }
 
+    var startDate = parseDateLocal_(dataInicial);
     if (isNaN(startDate.getTime())) {
       Logger.log("getAuditLogs: Invalid start date");
       return { ok: false, errors: ["Data inicial inválida: " + dataInicial], debugId: debugId, logs: [], total: 0 };
     }
     startDate.setHours(0, 0, 0, 0);
 
-    var endDate = new Date(dataFinal);
-    if (isNaN(endDate.getTime())) {
-      var parts = String(dataFinal).split('-');
-      if (parts.length === 3) {
-        endDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-      }
-    }
-
+    var endDate = parseDateLocal_(dataFinal);
     if (isNaN(endDate.getTime())) {
       Logger.log("getAuditLogs: Invalid end date");
       return { ok: false, errors: ["Data final inválida: " + dataFinal], debugId: debugId, logs: [], total: 0 };
@@ -1336,10 +1332,39 @@ function submitRequest(payload) {
 
   const userEmail = getEmailValidado_();
   checkRateLimit_(userEmail);
-  const result = insertSolicitacaoEErro_(payload, userEmail);
+
+  // Dedup por clientReqId — protege contra retry de rede e dupla submissão.
+  // Frontend gera um UUID por "sessão de formulário" e regenera após sucesso.
+  // PERF: getUserLock (por usuário) em vez de getScriptLock (global) — o dedup é
+  // por usuário, então não há razão para serializar submissões de usuários distintos.
+  // O lock cobre apenas check+insert+set-cache; flush/invalidate ficam fora (não precisam de lock).
+  const clientReqId = String(payload.clientReqId || "").trim();
+  let result;
+  if (clientReqId) {
+    const cache = CacheService.getScriptCache();
+    const cacheKey = "req_dedup_" + clientReqId;
+    const lock = LockService.getUserLock();
+    lock.waitLock(10000);
+    try {
+      const cached = cache.get(cacheKey);
+      if (cached) {
+        safeLogDebug_("submitRequest", "dedup_hit", { clientReqId: clientReqId });
+        return JSON.parse(cached); // resposta já gravada; nada a fazer
+      }
+      result = insertSolicitacaoEErro_(payload, userEmail);
+      const response = { ok: true, data: result, debugId: debugId };
+      cache.put(cacheKey, JSON.stringify(response), 60); // TTL 60s
+    } finally {
+      lock.releaseLock();
+    }
+  } else {
+    // Caminho sem clientReqId (compatibilidade com clientes legados)
+    result = insertSolicitacaoEErro_(payload, userEmail);
+  }
+
   invalidateDataCache_();
+  flushAuditLogs_();
   safeLogDebug_("submitRequest", "inserted", result);
-  flushAuditLogs_(); // PERF: grava todos os audits em lote (1 API call em vez de N appendRow)
   return { ok: true, data: result, debugId: debugId };
 }
 
@@ -1425,6 +1450,7 @@ function deleteSolicitacao(solicitacaoId) {
   }
 
   invalidateDataCache_();
+  flushAuditLogs_();
   safeLogDebug_("deleteSolicitacao", "deleted", { solicitacaoId: solicitacaoId });
   return { ok: true, debugId: debugId };
 }
@@ -1676,9 +1702,11 @@ function updateSolicitacao(payload) {
     }
 
     invalidateDataCache_();
+    flushAuditLogs_();
     return { ok: true, debugId: debugId };
 
   } catch (error) {
+    flushAuditLogs_(); // grava audits parciais mesmo em caso de erro
     return { ok: false, errors: ["Erro interno: " + String(error)], debugId: debugId };
   }
 }
@@ -1738,6 +1766,8 @@ function addConfigItem(type, value) {
   sheet.appendRow([trimmed]);
   if (type === "erro") sortErrosCadastro_();
   invalidateConfigCache_();
+  auditLog_("CREATE", "config_" + type, "valor=" + trimmed, null, null, null);
+  flushAuditLogs_();
   return { ok: true, debugId: debugId };
 }
 
@@ -1779,7 +1809,9 @@ function deleteConfigItem(type, value) {
   }
 
   sheet.deleteRow(rowToDelete);
-  invalidateConfigCache_(); // Clear cache after deleting item
+  invalidateConfigCache_();
+  auditLog_("DELETE", "config_" + type, "valor=" + trimmed, null, null, null);
+  flushAuditLogs_();
   safeLogDebug_("deleteConfigItem", "deleted", { row: rowToDelete });
   return { ok: true, debugId: debugId };
 }
@@ -1904,6 +1936,7 @@ function addUsuario(payload) {
   sheet.appendRow([email, nome, perfil, setores, permissoesJson]);
   invalidateUsuarioCache_(email);
   auditLog_("CREATE", "usuarios", "email=" + email, null, null, null);
+  flushAuditLogs_();
   grantSpreadsheetAccess_(email);
   return { ok: true, debugId: debugId };
 }
@@ -1949,6 +1982,7 @@ function updateUsuario(payload) {
   auditLog_("UPDATE", "usuarios", "email=" + email, "nome", oldRow[1], nome);
   auditLog_("UPDATE", "usuarios", "email=" + email, "perfil", oldRow[2], perfil);
   auditLog_("UPDATE", "usuarios", "email=" + email, "setores", oldRow[3], setores);
+  flushAuditLogs_();
   safeLogDebug_("updateUsuario", "updated", { debugId: debugId });
   grantSpreadsheetAccess_(email);
   return { ok: true, debugId: debugId };
@@ -1975,6 +2009,7 @@ function deleteUsuario(payload) {
       sheet.deleteRow(i + 1);
       invalidateUsuarioCache_(email);
       auditLog_("DELETE", "usuarios", "email=" + email, null, null, null);
+      flushAuditLogs_();
       safeLogDebug_("deleteUsuario", "deleted", { debugId: debugId });
       return { ok: true, debugId: debugId };
     }
@@ -2139,7 +2174,8 @@ function limparCache() {
 const IMPORT_ALLOWED_SHEETS_ = [
   "Solicitacoes", "Erros", "Respostas",
   "Solicitantes", "Setores_Local", "Erros_Cadastro",
-  "Colaboradores", "Limiares_SLA", "Usuarios"
+  "Colaboradores", "Limiares_SLA", "Config_Geral",
+  "Usuarios", "Auditoria"
 ];
 
 function importarDadosProd(payload) {
@@ -2225,6 +2261,7 @@ function importarDadosProd(payload) {
   } catch(e) {}
 
   auditLog_("IMPORT", "sistema", "import_prod_to_dev", "tabelas", null, tabelas.join(","));
+  flushAuditLogs_();
   safeLogDebug_("importarDadosProd", "done", { debugId: debugId, resultados: resultados.length, erros: erros.length });
 
   return { ok: true, resultados: resultados, erros: erros, debugId: debugId };
@@ -2681,6 +2718,7 @@ function executarArquivamentoMensal(payload) {
 
     const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     auditLog_("ARCHIVE", "sistema", "arquivamento_mensal", meses[mes-1] + "/" + ano, null, idsDoMesSet.size + " registros");
+    flushAuditLogs_();
 
     return {
       ok: true,
@@ -2871,6 +2909,7 @@ function executarLimpeza(payload) {
     });
 
     auditLog_("CLEANUP", "sistema", "limpeza_dados", "meses", meses, totalRemovidos + " registros");
+    flushAuditLogs_();
 
     // Limpa checkpoint após conclusão com sucesso
     setConfigGeral_("checkpoint_limpeza", "");

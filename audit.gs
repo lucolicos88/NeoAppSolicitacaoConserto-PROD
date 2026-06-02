@@ -2,6 +2,21 @@
 // Cada execução GAS começa com o buffer vazio (variável de módulo reiniciada a cada request).
 let _auditBuffer_ = [];
 
+// PERF: memoiza chamadas ao Session dentro de uma mesma execução.
+// Session.getActiveUser().getEmail() e getTemporaryActiveUserKey() são round-trips
+// que custam ~50-150ms cada; em submitRequest eram chamados ~5x. Memoizar reduz a 2.
+// Variáveis de módulo reiniciam a cada request, então o valor nunca fica obsoleto.
+let _memoEmail_ = null;
+let _memoClientKey_ = null;
+
+function getActiveEmail_() {
+  if (_memoEmail_ === null) {
+    try { _memoEmail_ = Session.getActiveUser().getEmail() || ""; }
+    catch (e) { _memoEmail_ = ""; }
+  }
+  return _memoEmail_;
+}
+
 /**
  * Enfileira uma entrada de auditoria no buffer em memória.
  * NÃO grava na planilha — chame flushAuditLogs_() ao final da operação.
@@ -9,7 +24,7 @@ let _auditBuffer_ = [];
  */
 function auditLog_(actionType, tableName, recordKey, fieldName, oldValue, newValue) {
   try {
-    const userEmail = Session.getActiveUser().getEmail() || "unknown";
+    const userEmail = getActiveEmail_() || "unknown";
     _auditBuffer_.push([
       Utilities.getUuid(),
       userEmail,
@@ -53,11 +68,12 @@ function getClientIp_() {
   // GAS Web Apps não expõem o IP real do cliente.
   // Session.getTemporaryActiveUserKey() retorna uma chave opaca por usuário/sessão —
   // útil para correlacionar ações do mesmo usuário, mas não é um IP.
-  try {
-    return Session.getTemporaryActiveUserKey();
-  } catch (error) {
-    return "unknown";
+  // PERF: memoizado por execução (eram N chamadas, uma por auditLog_).
+  if (_memoClientKey_ === null) {
+    try { _memoClientKey_ = Session.getTemporaryActiveUserKey() || "unknown"; }
+    catch (error) { _memoClientKey_ = "unknown"; }
   }
+  return _memoClientKey_;
 }
 
 /**
@@ -135,5 +151,18 @@ function safeLogDebug_(context, message, payload) {
     logDebug_(context, message, payload);
   } catch (error) {
     Logger.log("safeLogDebug_ failed: " + error);
+  }
+}
+
+/**
+ * Executa fn() e garante flushAuditLogs_() no finally.
+ * Uso em novas funções públicas mutadoras para nunca esquecer o flush.
+ * Exemplo: return withAuditFlush_(() => { auditLog_(...); return { ok: true }; });
+ */
+function withAuditFlush_(fn) {
+  try {
+    return fn();
+  } finally {
+    flushAuditLogs_();
   }
 }

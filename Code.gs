@@ -74,7 +74,7 @@ const CONFIG = {
     CRITICAL_MINUTES: 30,
     TIMEZONE: "America/Sao_Paulo"
   },
-  APP_VERSION: "v326",
+  APP_VERSION: "v331",
   APP_ENV: "PROD"
 };
 // DEBUG_ENABLED automático: ativo em DEV, desativado em PROD
@@ -744,6 +744,7 @@ function formatarSheet_(ss, sheetName, config) {
   if (lastRow > 1) {
     const dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
     dataRange.setFontSize(9);
+    dataRange.setHorizontalAlignment('left');
     dataRange.setVerticalAlignment('middle');
     dataRange.setBackground('#ffffff');
     dataRange.setWrap(true);
@@ -821,6 +822,8 @@ function formatarSheetLista_(ss, sheetName, headerColor) {
   headerRange.setFontWeight('bold');
   headerRange.setFontSize(10);
   headerRange.setHorizontalAlignment('center');
+  headerRange.setVerticalAlignment('middle');
+  sheet.setRowHeight(1, 30);
 
   // Largura da coluna
   sheet.setColumnWidth(1, 300);
@@ -829,6 +832,8 @@ function formatarSheetLista_(ss, sheetName, headerColor) {
   if (lastRow > 1) {
     const dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
     dataRange.setFontSize(10);
+    dataRange.setHorizontalAlignment('left');
+    dataRange.setVerticalAlignment('middle');
     dataRange.setWrap(true);
 
     // Cores alternadas — batch setBackgrounds() em vez de N chamadas individuais
