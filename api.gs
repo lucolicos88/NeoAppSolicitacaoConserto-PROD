@@ -2510,7 +2510,8 @@ function executarArquivamentoMensal(payload) {
     }
 
     // === PREPARAR BACKUP ===
-    const backupFileName = "Backup_Looker_Studio";
+    // Um arquivo por mês: "Backup_Looker_Studio - Mês mm/yyyy"
+    const backupFileName = "Backup_Looker_Studio - Mês " + String(mes).padStart(2, "0") + "/" + ano;
     let backupSS = obterOuCriarPlanilhaBackup_(folder, backupFileName);
     let dadosSheet = backupSS.getSheetByName("Dados");
     if (!dadosSheet) {
@@ -2673,15 +2674,17 @@ function executarArquivamentoMensal(payload) {
       }
     }
 
-    // Checkpoint de segurança: grava os IDs a arquivar antes de qualquer clearContents.
-    // Se o script for morto pelo timeout durante a reescrita, o ADMIN pode ver quais IDs foram removidos
-    // e restaurar a partir do backup que foi criado antes desta etapa.
+    // Checkpoint de segurança: grava o período arquivado antes de qualquer clearContents.
+    // Se o script for morto pelo timeout durante a reescrita, o ADMIN sabe qual período foi removido
+    // e restaura a partir do arquivo de backup (que contém todos os IDs na coluna ID_Solicitacao).
+    // Não gravar a lista de IDs aqui: o Sheets limita células a 50.000 caracteres.
     setConfigGeral_("checkpoint_arquivamento", JSON.stringify({
       debugId: debugId,
       operacao: "arquivamento_mensal",
       mes: mes,
       ano: ano,
-      ids: Array.from(idsDoMesSet),
+      totalIds: idsDoMesSet.size,
+      backupFile: backupFileName,
       timestamp: new Date().toISOString()
     }));
 

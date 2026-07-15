@@ -6128,6 +6128,11 @@
       function gerarHistoricoVersoesHTML() {
         const versoes = [
           {
+            v: 'v332', data: 'Jul/2026', tipo: 'fix', cor: '#dc2626',
+            titulo: 'Fix arquivamento mensal (limite 50k) + arquivo de backup por mês',
+            desc: 'FIX: o arquivamento falhava com "limite máximo de 50000 caracteres em uma única célula" — o checkpoint de segurança gravava a lista completa de IDs do mês numa única célula do Config_Geral. Agora o checkpoint guarda apenas o período, total de registros e o nome do arquivo de backup (os IDs ficam no próprio backup). FEAT: o backup passa a gerar um arquivo por mês com o nome "Backup_Looker_Studio - Mês mm/yyyy" para importação manual na base do Looker Studio.'
+          },
+          {
             v: 'v331', data: 'Jun/2026', tipo: 'feat', cor: '#0891b2',
             titulo: 'Formatar Planilhas — alinhamento, bordas, filtros, freeze e cores',
             desc: 'Função "Formatar Planilhas" atualizada: dados alinhados à esquerda horizontalmente e centralizados verticalmente; cabeçalho centralizado horizontal e verticalmente com altura fixa de 30px; filtros em todas as tabelas; congelamento da linha do cabeçalho; cores alternadas; bordas em todas as células. Aplica-se a formatarSheet_ (tabelas principais) e formatarSheetLista_ (listas de configuração).'
