@@ -3445,6 +3445,9 @@
               <button type="button" class="btn" onclick="printDashboardPDF()" title="Gerar relatório em PDF">
                 🖨️ Imprimir PDF
               </button>
+              <button type="button" class="btn secondary" onclick="abrirRelatorioLegado()" title="Abrir relatório legado (Google Data Studio / Looker Studio)">
+                📈 Relatório Legado
+              </button>
             </div>
           </div>
         </div>
@@ -6127,6 +6130,11 @@
 
       function gerarHistoricoVersoesHTML() {
         const versoes = [
+          {
+            v: 'v333', data: 'Jul/2026', tipo: 'feat', cor: '#0891b2',
+            titulo: 'Dashboard — botão para relatório legado (Data Studio)',
+            desc: 'Adicionado o botão "Relatório Legado" na aba Dashboard, que abre em nova aba o relatório legado do Google Data Studio/Looker Studio conectado à planilha de backup mensal.'
+          },
           {
             v: 'v332', data: 'Jul/2026', tipo: 'fix', cor: '#dc2626',
             titulo: 'Fix arquivamento mensal (limite 50k) + arquivo de backup por mês',
@@ -13150,6 +13158,13 @@
         }
 
         logUI('switchDashboardTab', { tab });
+      }
+
+      // Abre o relatório legado (Google Data Studio / Looker Studio) em nova aba
+      function abrirRelatorioLegado() {
+        const url = 'https://datastudio.google.com/reporting/e8350add-83f8-4e73-b5c9-85c7526effaf/page/page_12345';
+        window.open(url, '_blank', 'noopener');
+        logUI('abrirRelatorioLegado', {});
       }
 
       // Print Dashboard to PDF - Professional Layout
